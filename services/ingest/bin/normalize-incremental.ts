@@ -4,6 +4,7 @@ import * as path from 'path';
 import * as crypto from 'crypto';
 import axios from 'axios';
 import { getAllGames, GameConfig } from '@cardflux/config';
+import { onShutdown, setCurrentOperation, isShuttingDown } from '@cardflux/shared';
 
 const RAW_DIR = path.resolve(__dirname, '../../../data/raw');
 const CURATED_DIR = path.resolve(__dirname, '../../../data/curated');
@@ -199,8 +200,17 @@ function detectChanges(
 }
 
 async function processGameIncremental(config: GameConfig) {
+  setCurrentOperation(`Processing ${config.name}`);
+
   try {
     const previousState = loadSyncState(config.slug);
+
+    // Check for shutdown signal
+    if (isShuttingDown()) {
+      console.log(`\n⚠️  Shutdown requested, stopping ${config.slug} processing...`);
+      return { new: 0, updated: 0, unchanged: previousState?.totalCards || 0 };
+    }
+
     const { data: rawData, changed, etag } = await fetchGameDataIncremental(config, previousState);
 
     // If no changes detected via ETag, we're done!
@@ -232,6 +242,27 @@ async function processGameIncremental(config: GameConfig) {
     const stats = { new: 0, updated: 0, unchanged: 0 };
 
     for (const rawCard of rawData) {
+      // Check for shutdown every 1000 cards
+      if (stats.new + stats.updated + stats.unchanged % 1000 === 0 && isShuttingDown()) {
+        console.log(`\n⚠️  Shutdown requested during processing, saving partial state...`);
+
+        // Save what we have so far
+        const curatedPath = path.join(CURATED_DIR, `${config.slug}.jsonl`);
+        const jsonlData = normalizedCards.map((card: Card) => JSON.stringify(card)).join('\n');
+        fs.writeFileSync(curatedPath, jsonlData);
+
+        saveSyncState({
+          game: config.slug,
+          lastSync: new Date().toISOString(),
+          lastETag: etag,
+          totalCards: normalizedCards.length,
+          checksum: calculateChecksum(normalizedCards),
+        });
+
+        console.log(`✓ Saved ${normalizedCards.length} cards before shutdown`);
+        return stats;
+      }
+
       const normalized = normalizeCard(rawCard, config);
       const existing = existingCards.get(normalized.id);
 
@@ -287,15 +318,31 @@ async function main() {
   fs.mkdirSync(CURATED_DIR, { recursive: true });
   fs.mkdirSync(STATE_DIR, { recursive: true });
 
+  // Register shutdown handler
+  onShutdown({
+    name: 'Save normalization state',
+    handler: () => {
+      console.log('State already saved during processing');
+    },
+    timeout: 3000,
+  });
+
   const games = getAllGames();
   const totalStats = { new: 0, updated: 0, unchanged: 0 };
 
   for (const game of games) {
+    if (isShuttingDown()) {
+      console.log('\n⚠️  Shutdown requested, stopping pipeline...');
+      break;
+    }
+
     const stats = await processGameIncremental(game);
     totalStats.new += stats.new;
     totalStats.updated += stats.updated;
     totalStats.unchanged += stats.unchanged;
   }
+
+  setCurrentOperation(null);
 
   console.log('\n' + '='.repeat(60));
   console.log('INCREMENTAL SYNC COMPLETE');
