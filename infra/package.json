@@ -1,0 +1,20 @@
+{
+  "name": "@cardflux/infra",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "build": "tsc",
+    "cdk": "cdk",
+    "deploy": "cdk deploy --all",
+    "synth": "cdk synth"
+  },
+  "dependencies": {
+    "aws-cdk-lib": "^2.116.0",
+    "constructs": "^10.3.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20.10.6",
+    "aws-cdk": "^2.116.0",
+    "typescript": "^5.3.3"
+  }
+}

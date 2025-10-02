@@ -1,0 +1,16 @@
+{
+  "name": "@cardflux/publisher",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "generate-manifests": "ts-node bin/generate_manifests.ts"
+  },
+  "dependencies": {
+    "@cardflux/config": "workspace:*"
+  },
+  "devDependencies": {
+    "@types/node": "^20.10.6",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.3.3"
+  }
+}

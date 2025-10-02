@@ -1,0 +1,22 @@
+{
+  "name": "Digimon Card Game",
+  "slug": "digimon",
+  "source": {
+    "type": "api",
+    "url": "https://digimoncard.io/api/cards",
+    "rateLimit": 100
+  },
+  "schema": {
+    "id": "id",
+    "name": "name",
+    "set": "set_name",
+    "rarity": "rarity",
+    "type": "type",
+    "image": "image_url"
+  },
+  "normalization": {
+    "idField": "id",
+    "nameField": "name",
+    "imageField": "image_url"
+  }
+}

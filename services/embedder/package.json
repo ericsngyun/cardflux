@@ -1,0 +1,8 @@
+{
+  "name": "@cardflux/embedder",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "embed": "python bin/embed_cards.py"
+  }
+}

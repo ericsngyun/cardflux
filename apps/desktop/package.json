@@ -1,0 +1,64 @@
+{
+  "name": "@cardflux/desktop",
+  "version": "1.0.0",
+  "description": "CardFlux Desktop - Real-time Trading Card Scanner",
+  "main": "dist/main/index.js",
+  "scripts": {
+    "dev": "electron-forge start",
+    "build": "tsc && electron-builder",
+    "start": "electron .",
+    "package": "electron-builder",
+    "lint": "eslint src --ext .ts,.tsx"
+  },
+  "keywords": [
+    "electron",
+    "trading-cards",
+    "scanner",
+    "computer-vision"
+  ],
+  "author": "CardFlux",
+  "license": "MIT",
+  "dependencies": {
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
+    "electron": "^28.0.0",
+    "opencv4nodejs": "^6.0.0",
+    "onnxruntime-node": "^1.16.0",
+    "tesseract.js": "^5.0.0",
+    "better-sqlite3": "^9.0.0",
+    "@cardflux/shared": "workspace:*",
+    "@cardflux/config": "workspace:*"
+  },
+  "devDependencies": {
+    "@types/react": "^18.2.0",
+    "@types/react-dom": "^18.2.0",
+    "@types/node": "^20.0.0",
+    "@types/better-sqlite3": "^7.6.0",
+    "typescript": "^5.3.0",
+    "electron-builder": "^24.9.0",
+    "@electron-forge/cli": "^7.2.0",
+    "eslint": "^8.56.0"
+  },
+  "build": {
+    "appId": "com.cardflux.desktop",
+    "productName": "CardFlux",
+    "directories": {
+      "output": "out"
+    },
+    "files": [
+      "dist/**/*",
+      "src/python/**/*",
+      "package.json"
+    ],
+    "win": {
+      "target": ["nsis"]
+    },
+    "mac": {
+      "target": ["dmg"],
+      "category": "public.app-category.utilities"
+    },
+    "linux": {
+      "target": ["AppImage"]
+    }
+  }
+}

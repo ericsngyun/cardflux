@@ -1,0 +1,22 @@
+{
+  "name": "One Piece Card Game",
+  "slug": "onepiece",
+  "source": {
+    "type": "api",
+    "url": "https://api.onepiece-cardgame.com/cards",
+    "rateLimit": 100
+  },
+  "schema": {
+    "id": "id",
+    "name": "name",
+    "set": "set",
+    "rarity": "rarity",
+    "type": "type",
+    "image": "image_url"
+  },
+  "normalization": {
+    "idField": "id",
+    "nameField": "name",
+    "imageField": "image_url"
+  }
+}

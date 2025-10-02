@@ -1,0 +1,21 @@
+{
+  "name": "@cardflux/ingest",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "normalize": "ts-node bin/normalize.ts",
+    "fetch-images": "ts-node bin/fetch_images.ts",
+    "build-sqlite": "ts-node bin/build_sqlite.ts"
+  },
+  "dependencies": {
+    "@cardflux/config": "workspace:*",
+    "axios": "^1.6.2",
+    "better-sqlite3": "^9.2.2"
+  },
+  "devDependencies": {
+    "@types/better-sqlite3": "^7.6.8",
+    "@types/node": "^20.10.6",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.3.3"
+  }
+}

@@ -1,0 +1,37 @@
+{
+  "name": "cardflux-monorepo",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Offline TCG card scanner with cloud pipeline",
+  "engines": {
+    "node": ">=20.0.0",
+    "pnpm": ">=9.0.0"
+  },
+  "scripts": {
+    "build": "turbo run build",
+    "lint": "eslint .",
+    "format": "prettier --write \"**/*.{ts,tsx,js,jsx,json,md}\"",
+    "format:check": "prettier --check \"**/*.{ts,tsx,js,jsx,json,md}\"",
+    "typecheck": "turbo run typecheck",
+    "clean": "turbo run clean && rm -rf node_modules",
+    "pipeline:normalize": "tsx services/ingest/bin/normalize.ts",
+    "pipeline:fetch-images": "tsx services/ingest/bin/fetch_images.ts",
+    "pipeline:embed": "python services/embedder/bin/embed_cards.py",
+    "pipeline:index": "python services/indexer/bin/build_faiss.py",
+    "pipeline:metadata": "tsx services/ingest/bin/build_sqlite.ts",
+    "pipeline:manifests": "tsx services/publisher/bin/generate_manifests.ts",
+    "pipeline:all": "node scripts/make/run-pipeline.mjs"
+  },
+  "devDependencies": {
+    "@types/node": "^20.11.0",
+    "@typescript-eslint/eslint-plugin": "^7.0.0",
+    "@typescript-eslint/parser": "^7.0.0",
+    "eslint": "^8.56.0",
+    "eslint-config-prettier": "^9.1.0",
+    "prettier": "^3.2.4",
+    "turbo": "^1.12.0",
+    "typescript": "^5.3.3",
+    "tsx": "^4.7.0"
+  },
+  "packageManager": "pnpm@9.0.0"
+}

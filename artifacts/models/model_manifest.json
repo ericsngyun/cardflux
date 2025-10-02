@@ -1,0 +1,15 @@
+{
+  "version": "1.0.0",
+  "models": [
+    {
+      "name": "clip-vit-base-patch32",
+      "provider": "openai",
+      "type": "multimodal-embedding",
+      "dimension": 512,
+      "huggingface_id": "openai/clip-vit-base-patch32",
+      "description": "CLIP model for card image embeddings",
+      "usedFor": ["card-search", "visual-similarity"]
+    }
+  ],
+  "updated": "2025-01-01T00:00:00Z"
+}

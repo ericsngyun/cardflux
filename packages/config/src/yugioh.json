@@ -1,0 +1,22 @@
+{
+  "name": "Yu-Gi-Oh!",
+  "slug": "yugioh",
+  "source": {
+    "type": "api",
+    "url": "https://db.ygoprodeck.com/api/v7/cardinfo.php",
+    "rateLimit": 20
+  },
+  "schema": {
+    "id": "id",
+    "name": "name",
+    "set": "card_sets[0].set_name",
+    "rarity": "card_sets[0].set_rarity",
+    "type": "type",
+    "image": "card_images[0].image_url"
+  },
+  "normalization": {
+    "idField": "id",
+    "nameField": "name",
+    "imageField": "card_images[0].image_url"
+  }
+}

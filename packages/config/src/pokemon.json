@@ -1,0 +1,22 @@
+{
+  "name": "Pokemon TCG",
+  "slug": "pokemon",
+  "source": {
+    "type": "api",
+    "url": "https://api.pokemontcg.io/v2/cards",
+    "rateLimit": 1000
+  },
+  "schema": {
+    "id": "id",
+    "name": "name",
+    "set": "set.name",
+    "rarity": "rarity",
+    "type": "supertype",
+    "image": "images.small"
+  },
+  "normalization": {
+    "idField": "id",
+    "nameField": "name",
+    "imageField": "images.small"
+  }
+}

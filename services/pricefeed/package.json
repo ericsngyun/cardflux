@@ -1,0 +1,17 @@
+{
+  "name": "@cardflux/pricefeed",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "build-patch": "ts-node bin/build_price_patch.ts"
+  },
+  "dependencies": {
+    "@cardflux/config": "workspace:*",
+    "axios": "^1.6.2"
+  },
+  "devDependencies": {
+    "@types/node": "^20.10.6",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.3.3"
+  }
+}

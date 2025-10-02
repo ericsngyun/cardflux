@@ -1,0 +1,21 @@
+{
+  "name": "Magic: The Gathering",
+  "slug": "mtg",
+  "source": {
+    "type": "bulk",
+    "url": "https://api.scryfall.com/bulk-data/default-cards"
+  },
+  "schema": {
+    "id": "id",
+    "name": "name",
+    "set": "set_name",
+    "rarity": "rarity",
+    "type": "type_line",
+    "image": "image_uris.normal"
+  },
+  "normalization": {
+    "idField": "id",
+    "nameField": "name",
+    "imageField": "image_uris.normal"
+  }
+}
