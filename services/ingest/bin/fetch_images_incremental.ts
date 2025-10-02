@@ -4,7 +4,7 @@ import * as path from 'path';
 import * as crypto from 'crypto';
 import axios from 'axios';
 import { getAllGames } from '@cardflux/config';
-import { parseJsonLines, sleep, retry, safeJsonParse, checkDiskSpace, estimatePipelineSpace, formatBytes } from '@cardflux/shared';
+import { parseJsonLines, sleep, retry, safeJsonParse, checkDiskSpace, estimatePipelineSpace, formatBytes, onShutdown, setCurrentOperation, isShuttingDown } from '@cardflux/shared';
 import pLimit from 'p-limit';
 
 const CURATED_DIR = path.resolve(__dirname, '../../../data/curated');
@@ -174,10 +174,18 @@ function getCardsNeedingImages(
 }
 
 async function fetchImagesForGameIncremental(gameSlug: string) {
+  setCurrentOperation(`Fetching images for ${gameSlug}`);
+
   console.log(`\nChecking images for ${gameSlug}...`);
 
   const curatedPath = path.join(CURATED_DIR, `${gameSlug}.jsonl`);
   const gameImagesDir = path.join(IMAGES_DIR, gameSlug);
+
+  // Check for shutdown signal
+  if (isShuttingDown()) {
+    console.log(`\n⚠️  Shutdown requested, stopping ${gameSlug} image fetch...`);
+    return { new: 0, skipped: 0, failed: 0 };
+  }
 
   if (!fs.existsSync(curatedPath)) {
     console.log(`No curated data found for ${gameSlug}, skipping...`);
@@ -231,6 +239,12 @@ async function fetchImagesForGameIncremental(gameSlug: string) {
 
   const downloadTasks = needDownload.map((card, index) =>
     limit(async () => {
+      // Check for shutdown before each download
+      if (isShuttingDown()) {
+        console.log(`\n⚠️  Shutdown requested, stopping downloads...`);
+        return;
+      }
+
       if (!card.imageUrl) return;
 
       const ext = path.extname(new URL(card.imageUrl).pathname) || '.jpg';
@@ -265,7 +279,19 @@ async function fetchImagesForGameIncremental(gameSlug: string) {
     })
   );
 
-  await Promise.all(downloadTasks);
+  try {
+    await Promise.all(downloadTasks);
+  } catch (error) {
+    // Save state even on error/shutdown
+    console.log(`\n⚠️  Saving state after interruption...`);
+    saveImageState({
+      game: gameSlug,
+      totalImages: cards.filter(c => c.imageUrl).length,
+      lastSync: new Date().toISOString(),
+      imageHashes,
+    });
+    throw error;
+  }
 
   console.log(`\n✓ ${gameSlug}:`);
   console.log(`  Downloaded: ${stats.new}`);
@@ -287,17 +313,33 @@ async function main() {
   fs.mkdirSync(IMAGES_DIR, { recursive: true });
   fs.mkdirSync(STATE_DIR, { recursive: true });
 
+  // Register shutdown handler
+  onShutdown({
+    name: 'Save image download state',
+    handler: () => {
+      console.log('State already saved during processing');
+    },
+    timeout: 3000,
+  });
+
   const games = getAllGames();
   const totalStats = { new: 0, skipped: 0, failed: 0 };
 
   const startTime = Date.now();
 
   for (const game of games) {
+    if (isShuttingDown()) {
+      console.log('\n⚠️  Shutdown requested, stopping image pipeline...');
+      break;
+    }
+
     const stats = await fetchImagesForGameIncremental(game.slug);
     totalStats.new += stats.new;
     totalStats.skipped += stats.skipped;
     totalStats.failed += stats.failed;
   }
+
+  setCurrentOperation(null);
 
   const duration = Math.round((Date.now() - startTime) / 1000);
 
