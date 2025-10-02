@@ -4,7 +4,7 @@ import * as path from 'path';
 import * as crypto from 'crypto';
 import axios from 'axios';
 import { getAllGames } from '@cardflux/config';
-import {parse JsonLines, sleep, retry, safeJsonParse } from '@cardflux/shared';
+import { parseJsonLines, sleep, retry, safeJsonParse, checkDiskSpace, estimatePipelineSpace, formatBytes } from '@cardflux/shared';
 import pLimit from 'p-limit';
 
 const CURATED_DIR = path.resolve(__dirname, '../../../data/curated');
@@ -202,6 +202,22 @@ async function fetchImagesForGameIncremental(gameSlug: string) {
   // Determine which cards need downloads
   const needDownload = getCardsNeedingImages(cards, gameImagesDir, previousState);
 
+  // CRITICAL: Check disk space before starting downloads
+  if (needDownload.length > 0) {
+    const estimatedSize = needDownload.length * 100000; // 100KB avg per image
+    const buffer = 1_000_000_000; // 1GB safety buffer
+
+    try {
+      checkDiskSpace(IMAGES_DIR, estimatedSize + buffer);
+      console.log(`✓ Disk space check passed (need ${formatBytes(estimatedSize)}, have sufficient space)`);
+    } catch (error: any) {
+      console.error(`\n❌ DISK SPACE ERROR: ${error.message}`);
+      console.error(`Cannot download ${needDownload.length} images for ${gameSlug}`);
+      console.error(`Please free up disk space and try again.\n`);
+      throw error;
+    }
+  }
+
   if (needDownload.length === 0) {
     console.log(`✓ All ${cards.length} images up to date`);
     return { new: 0, skipped: cards.length, failed: 0 };
@@ -225,6 +241,20 @@ async function fetchImagesForGameIncremental(gameSlug: string) {
       if (success) {
         stats.new++;
         imageHashes[card.id] = hashUrl(card.imageUrl);
+
+        // Periodic disk space check during download (every 100 images)
+        if (stats.new % 100 === 0) {
+          const remaining = needDownload.length - (stats.new + stats.failed);
+          const estimatedRemaining = remaining * 100000;
+
+          try {
+            checkDiskSpace(IMAGES_DIR, estimatedRemaining);
+          } catch (error: any) {
+            console.error(`\n❌ Running out of disk space! ${error.message}`);
+            console.error(`Downloaded ${stats.new} images, stopping early to prevent disk full.\n`);
+            throw error;
+          }
+        }
 
         if ((stats.new + stats.failed) % 50 === 0) {
           console.log(`  Progress: ${stats.new + stats.failed}/${needDownload.length} (${stats.failed} failed)`);
