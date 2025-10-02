@@ -5,10 +5,14 @@
   "main": "dist/main/index.js",
   "scripts": {
     "dev": "electron-forge start",
-    "build": "tsc && electron-builder",
+    "build": "webpack --mode production && electron-builder",
+    "build:webpack": "webpack --mode production",
+    "build:dev": "webpack --mode development",
+    "typecheck": "tsc --noEmit",
     "start": "electron .",
     "package": "electron-builder",
-    "lint": "eslint src --ext .ts,.tsx"
+    "lint": "eslint src --ext .ts,.tsx",
+    "clean": "rimraf dist out"
   },
   "keywords": [
     "electron",
@@ -22,12 +26,14 @@
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "electron": "^28.0.0",
-    "opencv4nodejs": "^6.0.0",
-    "onnxruntime-node": "^1.16.0",
     "tesseract.js": "^5.0.0",
-    "better-sqlite3": "^9.0.0",
     "@cardflux/shared": "workspace:*",
     "@cardflux/config": "workspace:*"
+  },
+  "optionalDependencies": {
+    "opencv4nodejs": "^5.6.0",
+    "onnxruntime-node": "^1.16.0",
+    "better-sqlite3": "^9.0.0"
   },
   "devDependencies": {
     "@types/react": "^18.2.0",
@@ -37,7 +43,13 @@
     "typescript": "^5.3.0",
     "electron-builder": "^24.9.0",
     "@electron-forge/cli": "^7.2.0",
-    "eslint": "^8.56.0"
+    "eslint": "^8.56.0",
+    "webpack": "^5.89.0",
+    "webpack-cli": "^5.1.4",
+    "ts-loader": "^9.5.1",
+    "style-loader": "^3.3.3",
+    "css-loader": "^6.8.1",
+    "p-limit": "^4.0.0"
   },
   "build": {
     "appId": "com.cardflux.desktop",

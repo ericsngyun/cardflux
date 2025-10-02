@@ -15,12 +15,16 @@
     "typecheck": "turbo run typecheck",
     "clean": "turbo run clean && rm -rf node_modules",
     "pipeline:normalize": "tsx services/ingest/bin/normalize.ts",
+    "pipeline:normalize:incremental": "tsx services/ingest/bin/normalize-incremental.ts",
     "pipeline:fetch-images": "tsx services/ingest/bin/fetch_images.ts",
+    "pipeline:fetch-images:incremental": "tsx services/ingest/bin/fetch_images_incremental.ts",
     "pipeline:embed": "python services/embedder/bin/embed_cards.py",
+    "pipeline:embed:incremental": "python services/embedder/bin/embed_cards_incremental.py",
     "pipeline:index": "python services/indexer/bin/build_faiss.py",
     "pipeline:metadata": "tsx services/ingest/bin/build_sqlite.ts",
     "pipeline:manifests": "tsx services/publisher/bin/generate_manifests.ts",
-    "pipeline:all": "node scripts/make/run-pipeline.mjs"
+    "pipeline:all": "node scripts/make/run-pipeline.mjs",
+    "pipeline:update": "node scripts/make/run-pipeline-incremental.mjs"
   },
   "devDependencies": {
     "@types/node": "^20.11.0",

@@ -1,0 +1,287 @@
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+  background: #1a1a1a;
+  color: #ffffff;
+  overflow: hidden;
+}
+
+.app-container {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+}
+
+.app-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1rem 2rem;
+  background: #2a2a2a;
+  border-bottom: 1px solid #3a3a3a;
+}
+
+.app-header h1 {
+  font-size: 1.5rem;
+  font-weight: 600;
+}
+
+.status-indicator {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.9rem;
+}
+
+.status-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #666;
+  transition: background 0.3s;
+}
+
+.status-dot.active {
+  background: #4ade80;
+  box-shadow: 0 0 10px #4ade80;
+}
+
+.app-main {
+  flex: 1;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  position: relative;
+  overflow: hidden;
+}
+
+.scanner-view {
+  width: 100%;
+  max-width: 1000px;
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+  padding: 2rem;
+}
+
+.camera-preview {
+  width: 100%;
+  aspect-ratio: 16/9;
+  background: #000;
+  border-radius: 12px;
+  overflow: hidden;
+  position: relative;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.camera-placeholder {
+  text-align: center;
+  color: #666;
+}
+
+.camera-icon {
+  font-size: 4rem;
+  margin-bottom: 1rem;
+}
+
+.camera-active {
+  width: 100%;
+  height: 100%;
+  position: relative;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.guide-frame {
+  width: 400px;
+  height: 560px;
+  position: relative;
+  border: 2px dashed #4ade80;
+  border-radius: 8px;
+}
+
+.corner {
+  position: absolute;
+  width: 30px;
+  height: 30px;
+  border: 3px solid #4ade80;
+}
+
+.corner.top-left {
+  top: -3px;
+  left: -3px;
+  border-right: none;
+  border-bottom: none;
+  border-top-left-radius: 8px;
+}
+
+.corner.top-right {
+  top: -3px;
+  right: -3px;
+  border-left: none;
+  border-bottom: none;
+  border-top-right-radius: 8px;
+}
+
+.corner.bottom-left {
+  bottom: -3px;
+  left: -3px;
+  border-right: none;
+  border-top: none;
+  border-bottom-left-radius: 8px;
+}
+
+.corner.bottom-right {
+  bottom: -3px;
+  right: -3px;
+  border-left: none;
+  border-top: none;
+  border-bottom-right-radius: 8px;
+}
+
+.instruction {
+  position: absolute;
+  bottom: -40px;
+  color: #4ade80;
+  font-size: 0.9rem;
+}
+
+.scanner-controls {
+  display: flex;
+  justify-content: center;
+  gap: 1rem;
+}
+
+.btn {
+  padding: 0.75rem 2rem;
+  font-size: 1rem;
+  font-weight: 600;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.btn-primary {
+  background: #4ade80;
+  color: #000;
+}
+
+.btn-primary:hover {
+  background: #22c55e;
+  transform: translateY(-2px);
+}
+
+.btn-secondary {
+  background: #ef4444;
+  color: #fff;
+}
+
+.btn-secondary:hover {
+  background: #dc2626;
+  transform: translateY(-2px);
+}
+
+.detection-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+
+.detection-box {
+  position: absolute;
+  border: 3px solid;
+  border-radius: 4px;
+  transition: all 0.2s;
+}
+
+.detection-box.detecting {
+  border-color: #fbbf24;
+  background: rgba(251, 191, 36, 0.1);
+}
+
+.detection-box.verified {
+  border-color: #4ade80;
+  background: rgba(74, 222, 128, 0.1);
+}
+
+.detection-label {
+  position: absolute;
+  top: -30px;
+  left: 0;
+  background: rgba(0, 0, 0, 0.8);
+  padding: 0.25rem 0.75rem;
+  border-radius: 4px;
+  font-size: 0.85rem;
+  white-space: nowrap;
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+.confidence {
+  color: #4ade80;
+  font-weight: 600;
+}
+
+.app-footer {
+  padding: 1rem 2rem;
+  background: #2a2a2a;
+  border-top: 1px solid #3a3a3a;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.detection-info {
+  display: flex;
+  gap: 1rem;
+  align-items: center;
+  font-size: 0.9rem;
+}
+
+.verified-badge {
+  color: #4ade80;
+  font-weight: 600;
+}
+
+.error-banner {
+  position: absolute;
+  top: 1rem;
+  right: 1rem;
+  background: #ef4444;
+  color: #fff;
+  padding: 1rem;
+  border-radius: 8px;
+  max-width: 400px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+.error-banner button {
+  background: none;
+  border: none;
+  color: #fff;
+  font-size: 1.5rem;
+  cursor: pointer;
+  padding: 0;
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}

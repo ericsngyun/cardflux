@@ -41,6 +41,7 @@ function createWindow(): void {
       nodeIntegration: false,
       contextIsolation: true,
       preload: path.join(__dirname, '../preload/preload.js'),
+      sandbox: false,
     },
     title: 'CardFlux - Real-time Card Scanner',
   });
