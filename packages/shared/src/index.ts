@@ -7,3 +7,4 @@ export * from "./logger.js";
 export * from "./pipeline-manager.js";
 export * from "./monitoring.js";
 export * from "./pipeline-status.js";
+export * from "./cloud-storage.js";

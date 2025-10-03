@@ -24,7 +24,9 @@
     "pipeline:metadata": "tsx services/ingest/bin/build_sqlite.ts",
     "pipeline:manifests": "tsx services/publisher/bin/generate_manifests.ts",
     "pipeline:all": "node scripts/make/run-pipeline.mjs",
-    "pipeline:update": "node scripts/make/run-pipeline-incremental.mjs"
+    "pipeline:update": "node scripts/make/run-pipeline-incremental.mjs",
+    "tcgplayer:scrape": "tsx services/ingest/bin/tcgplayer-scraper.ts",
+    "tcgplayer:db": "tsx services/ingest/bin/build_sqlite_tcgplayer.ts"
   },
   "devDependencies": {
     "@types/node": "^20.11.0",
