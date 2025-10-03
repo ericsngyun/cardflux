@@ -44,7 +44,7 @@ function createDatabase(dbPath: string): Database.Database {
   return db;
 }
 
-function insertCards(db: Database.Database, cards: Card[]): { inserted: number; failed: number } {
+function insertCards(db: Database.Database, cards: Card[], game: string): { inserted: number; failed: number } {
   const insert = db.prepare(`
     INSERT OR REPLACE INTO cards (id, game, name, set, rarity, type, image_url, raw_data)
     VALUES (?, ?, ?, ?, ?, ?, ?, ?)
@@ -52,71 +52,71 @@ function insertCards(db: Database.Database, cards: Card[]): { inserted: number; 
 
   const stats = { inserted: 0, failed: 0, errors: [] as any[] };
 
-  const insertMany = db.transaction((cards: Card[]) => {
+  // Wrap entire game insertion in a transaction for atomicity
+  const insertGameCards = db.transaction((cards: Card[]) => {
     for (const card of cards) {
-      try {
-        // Validate required fields
-        if (!card.id || card.id.length > 100) {
-          throw new Error('Invalid id: must be 1-100 characters');
-        }
-        if (!card.game || card.game.length > 50) {
-          throw new Error('Invalid game: must be 1-50 characters');
-        }
-        if (!card.name || card.name.length > 500) {
-          throw new Error('Invalid name: must be 1-500 characters');
-        }
-
-        // Validate optional fields
-        if (card.set && card.set.length > 100) {
-          throw new Error('Invalid set: max 100 characters');
-        }
-        if (card.rarity && card.rarity.length > 50) {
-          throw new Error('Invalid rarity: max 50 characters');
-        }
-        if (card.type && card.type.length > 100) {
-          throw new Error('Invalid type: max 100 characters');
-        }
-        if (card.imageUrl && card.imageUrl.length > 2000) {
-          throw new Error('Invalid imageUrl: max 2000 characters');
-        }
-
-        // Sanitize and validate raw_data
-        const rawData = JSON.stringify(card.rawData);
-        if (rawData.length > 100000) {
-          throw new Error('rawData too large: max 100KB');
-        }
-
-        insert.run(
-          card.id,
-          card.game,
-          card.name,
-          card.set || null,
-          card.rarity || null,
-          card.type || null,
-          card.imageUrl || null,
-          rawData
-        );
-
-        stats.inserted++;
-      } catch (error: any) {
-        stats.failed++;
-        stats.errors.push({
-          id: card.id,
-          name: card.name,
-          error: error.message,
-        });
-
-        // Log error but continue processing
-        console.error(`Failed to insert card ${card.id}: ${error.message}`);
+      // Validate required fields
+      if (!card.id || card.id.length > 100) {
+        throw new Error('Invalid id: must be 1-100 characters');
       }
+      if (!card.game || card.game.length > 50) {
+        throw new Error('Invalid game: must be 1-50 characters');
+      }
+      if (!card.name || card.name.length > 500) {
+        throw new Error('Invalid name: must be 1-500 characters');
+      }
+
+      // Validate optional fields
+      if (card.set && card.set.length > 100) {
+        throw new Error('Invalid set: max 100 characters');
+      }
+      if (card.rarity && card.rarity.length > 50) {
+        throw new Error('Invalid rarity: max 50 characters');
+      }
+      if (card.type && card.type.length > 100) {
+        throw new Error('Invalid type: max 100 characters');
+      }
+      if (card.imageUrl && card.imageUrl.length > 2000) {
+        throw new Error('Invalid imageUrl: max 2000 characters');
+      }
+
+      // Sanitize and validate raw_data
+      const rawData = JSON.stringify(card.rawData);
+      if (rawData.length > 100000) {
+        throw new Error('rawData too large: max 100KB');
+      }
+
+      insert.run(
+        card.id,
+        card.game,
+        card.name,
+        card.set || null,
+        card.rarity || null,
+        card.type || null,
+        card.imageUrl || null,
+        rawData
+      );
+
+      stats.inserted++;
     }
   });
 
-  insertMany(cards);
+  try {
+    // Execute transaction - all or nothing
+    insertGameCards(cards);
+    console.log(`✓ ${game}: Inserted ${stats.inserted} cards in transaction`);
+  } catch (error: any) {
+    // Transaction rolled back automatically
+    console.error(`❌ Transaction failed for ${game}: ${error.message}`);
+    console.error(`   All ${cards.length} cards rolled back`);
+    stats.failed = cards.length;
+    stats.inserted = 0;
 
-  if (stats.failed > 0) {
-    console.error(`\n⚠️  Failed to insert ${stats.failed} cards`);
-    console.error('First 10 errors:', stats.errors.slice(0, 10));
+    stats.errors.push({
+      game,
+      totalCards: cards.length,
+      error: error.message,
+    });
   }
 
   return { inserted: stats.inserted, failed: stats.failed };
@@ -150,8 +150,12 @@ function main() {
       console.warn(`⚠️  Skipped ${parseErrors} corrupted lines in ${game.slug}.jsonl`);
     }
 
-    const { inserted, failed } = insertCards(db, cards);
-    console.log(`✓ ${game.slug}: Inserted ${inserted} cards (${failed} failed, ${parseErrors} corrupted lines)`);
+    const { inserted, failed } = insertCards(db, cards, game.slug);
+    if (failed === 0) {
+      console.log(`✓ ${game.slug}: Inserted ${inserted} cards (${parseErrors} corrupted lines skipped)`);
+    } else {
+      console.error(`⚠️  ${game.slug}: ${failed} cards failed to insert`);
+    }
   }
 
   db.close();

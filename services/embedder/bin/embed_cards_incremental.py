@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 import os
+import sys
 import json
 import torch
 import numpy as np
@@ -8,6 +9,7 @@ from PIL import Image
 from transformers import CLIPProcessor, CLIPModel
 from tqdm import tqdm
 import hashlib
+import signal
 
 IMAGES_DIR = Path(__file__).parent.parent.parent.parent / "data" / "images"
 CURATED_DIR = Path(__file__).parent.parent.parent.parent / "data" / "curated"
@@ -16,6 +18,40 @@ STATE_DIR = Path(__file__).parent.parent.parent.parent / "data" / "state"
 MODELS_DIR = Path(__file__).parent.parent.parent.parent / "artifacts" / "models"
 
 MODEL_NAME = "openai/clip-vit-base-patch32"
+
+# Graceful shutdown handling
+class ShutdownHandler:
+    def __init__(self):
+        self.shutting_down = False
+        self.current_operation = None
+
+    def request_shutdown(self, signum, frame):
+        if self.shutting_down:
+            print("\n⚠️  Force exit requested...")
+            sys.exit(1)
+
+        self.shutting_down = True
+        print("\n\n" + "="*60)
+        print("GRACEFUL SHUTDOWN INITIATED")
+        print("="*60)
+
+        if self.current_operation:
+            print(f"Current operation: {self.current_operation}")
+
+        print("\nPress Ctrl+C again to force exit (NOT RECOMMENDED)\n")
+        print("Finishing current card and saving state...\n")
+
+    def is_shutting_down(self):
+        return self.shutting_down
+
+    def set_current_operation(self, operation):
+        self.current_operation = operation
+
+shutdown_handler = ShutdownHandler()
+
+# Register signal handlers
+signal.signal(signal.SIGINT, shutdown_handler.request_shutdown)
+signal.signal(signal.SIGTERM, shutdown_handler.request_shutdown)
 
 def load_state(game_slug):
     """Load previous embedding state"""
@@ -98,9 +134,16 @@ def load_existing_embeddings(game_slug):
     return embeddings_dict, metadata
 
 def process_game_incremental(game_slug, model, processor, device):
+    shutdown_handler.set_current_operation(f"Embedding {game_slug}")
+
     print(f"\n{'='*60}")
     print(f"Processing {game_slug}")
     print(f"{'='*60}")
+
+    # Check for shutdown signal
+    if shutdown_handler.is_shutting_down():
+        print(f"\n⚠️  Shutdown requested, stopping {game_slug} embedding...")
+        return {"new": 0, "skipped": 0, "failed": 0}
 
     curated_path = CURATED_DIR / f"{game_slug}.jsonl"
     game_images_dir = IMAGES_DIR / game_slug
@@ -166,7 +209,12 @@ def process_game_incremental(game_slug, model, processor, device):
     new_metadata = []
     new_image_hashes = {}
 
-    for card, image_path in tqdm(cards_to_process, desc=f"Embedding {game_slug}"):
+    for i, (card, image_path) in enumerate(tqdm(cards_to_process, desc=f"Embedding {game_slug}")):
+        # Check for shutdown every 100 cards
+        if i % 100 == 0 and shutdown_handler.is_shutting_down():
+            print(f"\n⚠️  Shutdown requested, saving partial embeddings...")
+            break
+
         embedding = get_image_embedding(image_path, model, processor, device)
 
         if embedding is not None:
@@ -253,10 +301,16 @@ def main():
     total_stats = {"new": 0, "skipped": 0, "failed": 0}
 
     for game in games:
+        if shutdown_handler.is_shutting_down():
+            print("\n⚠️  Shutdown requested, stopping embedding pipeline...")
+            break
+
         stats = process_game_incremental(game, model, processor, device)
         total_stats['new'] += stats['new']
         total_stats['skipped'] += stats['skipped']
         total_stats['failed'] += stats['failed']
+
+    shutdown_handler.set_current_operation(None)
 
     print(f"\n{'='*60}")
     print("INCREMENTAL EMBEDDING COMPLETE")

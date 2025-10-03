@@ -15,6 +15,8 @@ data/curated/*
 !data/curated/.gitkeep
 data/images/*
 !data/images/.gitkeep
+data/state/*
+!data/state/.gitkeep
 
 # Artifacts (exclude built artifacts)
 artifacts/faiss/*
