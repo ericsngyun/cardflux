@@ -27,9 +27,9 @@ function checkNodeVersion() {
 
 // Check 2: Python availability
 async function checkPython() {
-  return new Promise((resolve) => {
-    const { spawn } = require('child_process');
-    const proc = spawn('python', ['--version'], { shell: true });
+  return new Promise(async (resolve) => {
+    const { spawn } = await import('child_process');
+    const proc = spawn.spawn('python', ['--version'], { shell: true });
 
     let output = '';
     proc.stdout.on('data', (data) => (output += data));
@@ -159,10 +159,10 @@ function checkDiskSpace() {
 
 // Check 8: API connectivity
 async function checkApiConnectivity() {
-  return new Promise((resolve) => {
-    const https = require('https');
+  return new Promise(async (resolve) => {
+    const https = await import('https');
 
-    https
+    https.default
       .get('https://tcgcsv.com/tcgplayer/categories', (res) => {
         if (res.statusCode === 200) {
           resolve({ passed: true, message: 'tcgcsv.com API reachable ✓' });
