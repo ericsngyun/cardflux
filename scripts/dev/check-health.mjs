@@ -29,7 +29,7 @@ function checkNodeVersion() {
 async function checkPython() {
   return new Promise(async (resolve) => {
     const { spawn } = await import('child_process');
-    const proc = spawn.spawn('python', ['--version'], { shell: true });
+    const proc = spawn('python', ['--version'], { shell: true });
 
     let output = '';
     proc.stdout.on('data', (data) => (output += data));

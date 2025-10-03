@@ -125,7 +125,7 @@ function insertCards(db: Database.Database, cards: TCGCard[], categoryName: stri
         card.groupId,
         card.groupName,
         card.name,
-        card.cleanName,
+        card.cleanName || card.name.toLowerCase().replace(/[^a-z0-9]/g, ' ').trim(),
         card.imageUrl || null,
         card.url || null,
         card.rarity || null,

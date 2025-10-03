@@ -149,13 +149,17 @@ export function getCategoryByName(name: string): TCGCategory | undefined {
 /**
  * Parse extended data from product
  */
-export function parseExtendedData(extendedData: Array<{ name: string; value: string }>): {
+export function parseExtendedData(extendedData: Array<{ name: string; value: string }> | null | undefined): {
   rarity?: string;
   number?: string;
   subType?: string;
   oracleText?: string;
 } {
   const parsed: any = {};
+
+  if (!extendedData || !Array.isArray(extendedData)) {
+    return parsed;
+  }
 
   for (const item of extendedData) {
     switch (item.name) {

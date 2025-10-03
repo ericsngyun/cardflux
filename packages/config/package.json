@@ -4,6 +4,16 @@
   "private": true,
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    },
+    "./tcgplayer-config": {
+      "types": "./dist/tcgplayer-config.d.ts",
+      "default": "./dist/tcgplayer-config.js"
+    }
+  },
   "scripts": {
     "build": "tsc",
     "clean": "rm -rf dist"

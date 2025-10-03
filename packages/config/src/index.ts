@@ -28,11 +28,11 @@ export interface GameConfig {
 }
 
 export const games: Record<string, GameConfig> = {
-  mtg: mtgConfig,
-  pokemon: pokemonConfig,
-  yugioh: yugiohConfig,
-  onepiece: onepieceConfig,
-  digimon: digimonConfig,
+  mtg: mtgConfig as GameConfig,
+  pokemon: pokemonConfig as GameConfig,
+  yugioh: yugiohConfig as GameConfig,
+  onepiece: onepieceConfig as GameConfig,
+  digimon: digimonConfig as GameConfig,
 };
 
 export function getGameConfig(slug: string): GameConfig | undefined {
