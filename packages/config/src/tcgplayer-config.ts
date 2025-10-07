@@ -94,11 +94,12 @@ export const TCGCSV_CONFIG = {
     { categoryId: 3, name: 'Pokemon', enabled: true },
     { categoryId: 17, name: 'Cardfight!! Vanguard', enabled: false },
     { categoryId: 19, name: 'Final Fantasy', enabled: false },
-    { categoryId: 24, name: 'One Piece', enabled: true },
+    { categoryId: 24, name: 'Final Fantasy', enabled: false },
     { categoryId: 26, name: 'Digimon', enabled: true },
     { categoryId: 28, name: 'Dragon Ball Super', enabled: false },
     { categoryId: 58, name: 'Flesh and Blood', enabled: false },
-    { categoryId: 68, name: 'Lorcana', enabled: false },
+    { categoryId: 68, name: 'One Piece Card Game', enabled: true }, // Category 68 is One Piece (not Lorcana)
+    { categoryId: 80, name: 'Lorcana', enabled: false },
   ] as TCGCategory[],
 
   // Rate limiting
@@ -179,6 +180,60 @@ export function parseExtendedData(extendedData: Array<{ name: string; value: str
   }
 
   return parsed;
+}
+
+/**
+ * Check if a product is a sealed product (not a single card)
+ *
+ * This filters out:
+ * - Booster packs, boxes, cases
+ * - Starter/structure decks (the sealed product, not individual cards)
+ * - Display boxes, bundles, kits
+ * - Promotional tins, blisters, gift sets
+ *
+ * But keeps individual cards like:
+ * - "Card Name (Deck Name)" - single cards from a deck
+ * - "Card Name - Starter Deck Promo" - promo cards
+ */
+export function isSealedProduct(product: TCGProduct): boolean {
+  const nameLower = product.name.toLowerCase();
+  const cleanNameLower = product.cleanName.toLowerCase();
+
+  // Definite sealed product patterns (whole products, not single cards)
+  const sealedPatterns = [
+    /booster\s+(pack|box|case)/i,
+    /display\s*(box)?/i,
+    /\b(deck|starter|structure)\s+(set|box|display)\b/i,
+    /\bcase\b(?!.*\(.*\))/i, // "Case" but not in parentheses (card names)
+    /\b(bundle|kit|collection)\b/i,
+    /fat\s*pack/i,
+    /gift\s+(box|set)/i,
+    /\b(tin|blister)\b/i,
+    /prerelease\s+(kit|pack|box)/i,
+    /pre-release\s+starter\s+deck/i, // Pre-release starter decks
+    /sleeved\s+booster/i,
+    /learn\s+together\s+deck\s+set/i, // Specific to One Piece
+  ];
+
+  // Check if it matches any sealed product pattern
+  const isSealed = sealedPatterns.some(pattern =>
+    pattern.test(nameLower) || pattern.test(cleanNameLower)
+  );
+
+  // Additional heuristic: if name is very short and contains "pack", "box", "case", likely sealed
+  if (!isSealed) {
+    const words = nameLower.split(/\s+/);
+    if (words.length <= 6 && (
+      nameLower.includes('booster box') ||
+      nameLower.includes('booster pack') ||
+      nameLower.includes('starter deck') && !nameLower.includes('(') ||
+      nameLower.includes('structure deck') && !nameLower.includes('(')
+    )) {
+      return true;
+    }
+  }
+
+  return isSealed;
 }
 
 /**

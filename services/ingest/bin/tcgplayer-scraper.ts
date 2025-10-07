@@ -12,6 +12,7 @@ import {
   getEnabledCategories,
   getCategoryById,
   mergeProductAndPrices,
+  isSealedProduct,
   type TCGCategory,
   type TCGGroup,
   type TCGProduct,
@@ -157,16 +158,23 @@ async function fetchGroupData(
     priceMap.get(price.productId)!.push(price);
   }
 
-  // Merge products with prices
-  const cards: TCGCard[] = products.map(product => {
-    const productPrices = priceMap.get(product.productId) || [];
-    const card = mergeProductAndPrices(product, productPrices);
+  // Filter out sealed products and merge with prices
+  const cards: TCGCard[] = products
+    .filter(product => !isSealedProduct(product))
+    .map(product => {
+      const productPrices = priceMap.get(product.productId) || [];
+      const card = mergeProductAndPrices(product, productPrices);
 
-    // Add category and group names
-    card.categoryName = category.name;
-    card.groupName = group.name;
+      // Add category and group names
+      card.categoryName = category.name;
+      card.groupName = group.name;
 
-    return card;
+      return card;
+    });
+
+  logger.info(`Filtered to ${cards.length} cards (removed ${products.length - cards.length} sealed products)`, {
+    category: category.name,
+    group: group.name,
   });
 
   // Save raw data
