@@ -1,0 +1,48 @@
+{
+  "timestamp": "2025-10-09 14:03:27",
+  "summary": {
+    "total": 4,
+    "passed": 3,
+    "failed": 1,
+    "success_rate": 75.0,
+    "avg_time_ms": 1109.0636849403381
+  },
+  "results": [
+    {
+      "test_name": "bege.png",
+      "passed": true,
+      "expected": "Capone\"Gang\"Bege",
+      "got": "Capone\"Gang\"Bege",
+      "confidence": "HIGH",
+      "score": 0.7515033699380211,
+      "time_ms": 1962
+    },
+    {
+      "test_name": "blackbeard.png",
+      "passed": true,
+      "expected": "Marshall.D.Teach",
+      "got": "Marshall.D.Teach (093) (Manga)",
+      "confidence": "HIGH",
+      "score": 0.6798635449958191,
+      "time_ms": 579
+    },
+    {
+      "test_name": "blackbeard-db.jpg",
+      "passed": true,
+      "expected": "Marshall.D.Teach",
+      "got": "Marshall.D.Teach (093) (Manga)",
+      "confidence": "HIGH",
+      "score": 1.0,
+      "time_ms": 1192
+    },
+    {
+      "test_name": "yellow_event.png",
+      "passed": false,
+      "expected": "You're the One Who Should Disappear",
+      "got": "You're the One Who Should Disappear",
+      "confidence": "LOW",
+      "score": 0.5428197086164772,
+      "time_ms": 701
+    }
+  ]
+}
