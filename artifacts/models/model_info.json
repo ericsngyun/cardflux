@@ -1,0 +1,5 @@
+{
+  "name": "openai/clip-vit-base-patch32",
+  "dimension": 512,
+  "type": "clip"
+}

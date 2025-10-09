@@ -1,0 +1,6 @@
+{
+  "name": "facebook/dinov2-small",
+  "dimension": 384,
+  "type": "dinov2",
+  "variant": "small"
+}
