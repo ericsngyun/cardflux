@@ -22,27 +22,40 @@ class CardOCRService:
 
     def __init__(self, lang='en'):
         """
-        Initialize OCR service.
+        Initialize OCR service with fallback support.
 
         Args:
             lang: Language code (default: 'en')
         """
+        self.ocr_backend = None
+        self.enabled = False
+
+        # Try PaddleOCR first (best for cards)
         try:
             from paddleocr import PaddleOCR
-            # Initialize PaddleOCR
-            # use_angle_cls=True enables rotated text detection
-            # show_log=False reduces noise
             self.ocr = PaddleOCR(
                 use_angle_cls=True,
                 lang=lang,
                 show_log=False,
-                use_gpu=False  # Set to True if CUDA available
+                use_gpu=False
             )
+            self.ocr_backend = 'paddle'
             self.enabled = True
-        except ImportError:
-            print("WARNING: PaddleOCR not installed. OCR verification disabled.")
-            print("Install with: pip install paddleocr")
-            self.enabled = False
+            print("Using PaddleOCR backend")
+        except (ImportError, ModuleNotFoundError, Exception) as e:
+            # Try EasyOCR as fallback
+            try:
+                import easyocr
+                print("Initializing EasyOCR (downloading models on first run)...")
+                self.ocr = easyocr.Reader(['en'], gpu=False, verbose=False)
+                self.ocr_backend = 'easy'
+                self.enabled = True
+                print("Using EasyOCR backend")
+            except (ImportError, ModuleNotFoundError, Exception) as e2:
+                print(f"WARNING: No OCR backend available. OCR verification disabled.")
+                print(f"Error: {e2}")
+                print("Install with: pip install easyocr  (recommended)")
+                self.enabled = False
 
     def extract_text_from_image(self, image_path: str) -> List[Tuple[str, float]]:
         """
@@ -58,19 +71,29 @@ class CardOCRService:
             return []
 
         try:
-            result = self.ocr.ocr(image_path, cls=True)
+            if self.ocr_backend == 'paddle':
+                result = self.ocr.ocr(image_path, cls=True)
 
-            if not result or not result[0]:
-                return []
+                if not result or not result[0]:
+                    return []
 
-            # Extract text and confidence
-            text_results = []
-            for line in result[0]:
-                text = line[1][0]  # Text content
-                conf = line[1][1]  # Confidence score
-                text_results.append((text, conf))
+                # Extract text and confidence
+                text_results = []
+                for line in result[0]:
+                    text = line[1][0]  # Text content
+                    conf = line[1][1]  # Confidence score
+                    text_results.append((text, conf))
 
-            return text_results
+                return text_results
+
+            elif self.ocr_backend == 'easy':
+                result = self.ocr.readtext(image_path)
+
+                # EasyOCR returns (bbox, text, confidence)
+                text_results = [(text, conf) for (bbox, text, conf) in result]
+                return text_results
+
+            return []
         except Exception as e:
             print(f"OCR error on {image_path}: {e}")
             return []
@@ -100,20 +123,29 @@ class CardOCRService:
             # Convert to numpy array
             img_array = np.array(cropped)
 
-            # Run OCR
-            result = self.ocr.ocr(img_array, cls=True)
+            # Run OCR based on backend
+            if self.ocr_backend == 'paddle':
+                result = self.ocr.ocr(img_array, cls=True)
 
-            if not result or not result[0]:
-                return []
+                if not result or not result[0]:
+                    return []
 
-            # Extract text and confidence
-            text_results = []
-            for line in result[0]:
-                text = line[1][0]
-                conf = line[1][1]
-                text_results.append((text, conf))
+                # Extract text and confidence
+                text_results = []
+                for line in result[0]:
+                    text = line[1][0]
+                    conf = line[1][1]
+                    text_results.append((text, conf))
 
-            return text_results
+                return text_results
+
+            elif self.ocr_backend == 'easy':
+                result = self.ocr.readtext(img_array)
+                # EasyOCR returns (bbox, text, confidence)
+                text_results = [(text, conf) for (bbox, text, conf) in result]
+                return text_results
+
+            return []
         except Exception as e:
             print(f"OCR region error: {e}")
             return []

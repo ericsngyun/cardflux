@@ -1,0 +1,194 @@
+[
+  {
+    "image": "bege.png",
+    "best_match": "Capone\"Gang\"Bege",
+    "number": "ST02-004",
+    "confidence": "HIGH",
+    "visual": 0.8935943841934204,
+    "geometric": 1.0,
+    "final": 0.9255160689353943,
+    "margin": 0.04274016036987316,
+    "time_ms": 766.7455673217773,
+    "top_5": [
+      {
+        "name": "Capone\"Gang\"Bege",
+        "number": "ST02-004",
+        "visual": 0.8935943841934204,
+        "geometric": 1.0,
+        "final": 0.9255160689353943
+      },
+      {
+        "name": "Capone\"Gang\"Bege",
+        "number": "ST02-004",
+        "visual": 0.8702512979507446,
+        "geometric": 0.9119999999999999,
+        "final": 0.8827759085655211
+      },
+      {
+        "name": "Capone\"Gang\"Bege (ST02-004) (Jolly Roger Foil)",
+        "number": "ST02-004",
+        "visual": 0.8512662053108215,
+        "geometric": 0.6000000000000001,
+        "final": 0.775886343717575
+      },
+      {
+        "name": "Capone\"Gang\"Bege (ST02-004) (Full Art)",
+        "number": "ST02-004",
+        "visual": 0.8173860311508179,
+        "geometric": 0.534,
+        "final": 0.7323702218055724
+      },
+      {
+        "name": "Usopp",
+        "number": "OP01-004",
+        "visual": 0.6936893463134766,
+        "geometric": 0.138,
+        "final": 0.5269825424194335
+      }
+    ]
+  },
+  {
+    "image": "blackbeard-db.jpg",
+    "best_match": "Marshall.D.Teach (093) (Manga)",
+    "number": "OP09-093",
+    "confidence": "HIGH",
+    "visual": 1.0,
+    "geometric": 1.0,
+    "final": 1.0,
+    "margin": 0.4410106142997743,
+    "time_ms": 527.0922183990479,
+    "top_5": [
+      {
+        "name": "Marshall.D.Teach (093) (Manga)",
+        "number": "OP09-093",
+        "visual": 1.0,
+        "geometric": 1.0,
+        "final": 1.0
+      },
+      {
+        "name": "Marshall.D.Teach (081)",
+        "number": "OP09-081",
+        "visual": 0.767699122428894,
+        "geometric": 0.07200000000000001,
+        "final": 0.5589893857002257
+      },
+      {
+        "name": "Vegapunk (Parallel)",
+        "number": "OP07-097",
+        "visual": 0.7510741949081421,
+        "geometric": 0.03,
+        "final": 0.5347519364356994
+      },
+      {
+        "name": "Jinbe - PRB02-007",
+        "number": "PRB02-007",
+        "visual": 0.7304707765579224,
+        "geometric": 0.06,
+        "final": 0.5293295435905456
+      },
+      {
+        "name": "Sabo (OP04-083) (Manga)",
+        "number": "OP04-083",
+        "visual": 0.7377252578735352,
+        "geometric": 0.042,
+        "final": 0.5290076805114745
+      }
+    ]
+  },
+  {
+    "image": "blackbeard.png",
+    "best_match": "Marshall.D.Teach (093) (Manga)",
+    "number": "OP09-093",
+    "confidence": "HIGH",
+    "visual": 0.7696326971054077,
+    "geometric": 0.246,
+    "final": 0.6125428879737853,
+    "margin": 0.11927008275985712,
+    "time_ms": 333.96053314208984,
+    "top_5": [
+      {
+        "name": "Marshall.D.Teach (093) (Manga)",
+        "number": "OP09-093",
+        "visual": 0.7696326971054077,
+        "geometric": 0.246,
+        "final": 0.6125428879737853
+      },
+      {
+        "name": "Usopp (Parallel)",
+        "number": "ST21-002",
+        "visual": 0.7046754360198975,
+        "geometric": 0.0,
+        "final": 0.4932728052139282
+      },
+      {
+        "name": "Donquixote Doflamingo (SP)",
+        "number": "OP01-073",
+        "visual": 0.7044959664344788,
+        "geometric": 0.0,
+        "final": 0.4931471765041351
+      },
+      {
+        "name": "Monkey.D.Luffy (024)",
+        "number": "OP01-024",
+        "visual": 0.7008742094039917,
+        "geometric": 0.0,
+        "final": 0.49061194658279417
+      },
+      {
+        "name": "More Pizza!! (Reprint)",
+        "number": "OP07-037",
+        "visual": 0.7001753449440002,
+        "geometric": 0.0,
+        "final": 0.49012274146080015
+      }
+    ]
+  },
+  {
+    "image": "yellow_event.png",
+    "best_match": "You're the One Who Should Disappear",
+    "number": "OP06-115",
+    "confidence": "HIGH",
+    "visual": 0.7259652018547058,
+    "geometric": 0.252,
+    "final": 0.5837756412982941,
+    "margin": 0.016300508117675805,
+    "time_ms": 488.10482025146484,
+    "top_5": [
+      {
+        "name": "You're the One Who Should Disappear",
+        "number": "OP06-115",
+        "visual": 0.7259652018547058,
+        "geometric": 0.252,
+        "final": 0.5837756412982941
+      },
+      {
+        "name": "You're the One Who Should Disappear (Reprint)",
+        "number": "OP06-115",
+        "visual": 0.6692501902580261,
+        "geometric": 0.33,
+        "final": 0.5674751331806183
+      },
+      {
+        "name": "Captain John",
+        "number": "OP07-082",
+        "visual": 0.6003597974777222,
+        "geometric": 0.084,
+        "final": 0.4454518582344055
+      },
+      {
+        "name": "Barrier!!",
+        "number": "OP04-095",
+        "visual": 0.6124482154846191,
+        "geometric": 0.05399999999999999,
+        "final": 0.44491375083923335
+      },
+      {
+        "name": "Captain John",
+        "number": "OP07-082",
+        "visual": 0.6010397672653198,
+        "geometric": 0.078,
+        "final": 0.44412783708572384
+      }
+    ]
+  }
+]

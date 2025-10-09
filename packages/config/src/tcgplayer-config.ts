@@ -89,16 +89,16 @@ export const TCGCSV_CONFIG = {
 
   // Primary categories we support (card games only)
   enabledCategories: [
-    { categoryId: 1, name: 'Magic', enabled: true },
-    { categoryId: 2, name: 'YuGiOh', enabled: true },
-    { categoryId: 3, name: 'Pokemon', enabled: true },
+    { categoryId: 1, name: 'Magic', enabled: false },
+    { categoryId: 2, name: 'YuGiOh', enabled: false },
+    { categoryId: 3, name: 'Pokemon', enabled: false },
     { categoryId: 17, name: 'Cardfight!! Vanguard', enabled: false },
     { categoryId: 19, name: 'Final Fantasy', enabled: false },
     { categoryId: 24, name: 'Final Fantasy', enabled: false },
-    { categoryId: 26, name: 'Digimon', enabled: true },
+    { categoryId: 26, name: 'Digimon', enabled: false },
     { categoryId: 28, name: 'Dragon Ball Super', enabled: false },
     { categoryId: 58, name: 'Flesh and Blood', enabled: false },
-    { categoryId: 68, name: 'One Piece Card Game', enabled: true }, // Category 68 is One Piece (not Lorcana)
+    { categoryId: 68, name: 'One Piece Card Game', enabled: true }, // Only One Piece enabled
     { categoryId: 80, name: 'Lorcana', enabled: false },
   ] as TCGCategory[],
 
@@ -237,6 +237,27 @@ export function isSealedProduct(product: TCGProduct): boolean {
 }
 
 /**
+ * Transform TCGPlayer CDN image URL to higher resolution
+ *
+ * Transforms URLs from:
+ *   https://tcgplayer-cdn.tcgplayer.com/product/510897_200w.jpg
+ * To:
+ *   https://tcgplayer-cdn.tcgplayer.com/product/510897_in_600x600.jpg
+ */
+export function transformImageUrl(url: string): string {
+  if (!url) return url;
+
+  // Extract product ID from URL
+  const match = url.match(/\/product\/(\d+)[._]/);
+  if (!match) return url;
+
+  const productId = match[1];
+
+  // Always use _in_600x600.jpg format
+  return `https://tcgplayer-cdn.tcgplayer.com/product/${productId}_in_600x600.jpg`;
+}
+
+/**
  * Merge product and price data
  */
 export function mergeProductAndPrices(
@@ -252,7 +273,7 @@ export function mergeProductAndPrices(
     productId: product.productId,
     name: product.name,
     cleanName: product.cleanName,
-    imageUrl: product.imageUrl,
+    imageUrl: transformImageUrl(product.imageUrl), // Transform to 600w resolution
     categoryId: product.categoryId,
     categoryName: '', // Will be filled by scraper
     groupId: product.groupId,

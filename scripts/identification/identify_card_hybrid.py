@@ -32,15 +32,15 @@ IMAGES_DIR = Path(__file__).parent.parent.parent / "data" / "images"
 MODEL_NAME = "facebook/dinov2-small"
 GAME = "one-piece"
 
-# Scoring weights
-WEIGHT_VISUAL = 0.50    # DINOv2 similarity
-WEIGHT_OCR = 0.30       # Text match score
-WEIGHT_GEOMETRIC = 0.20 # ORB feature match
+# Scoring weights - Visual-focused for real-world card photos
+WEIGHT_VISUAL = 0.70    # DINOv2 similarity (primary signal)
+WEIGHT_OCR = 0.05       # Text match score (optional, low weight)
+WEIGHT_GEOMETRIC = 0.25 # ORB feature match (strong verification)
 
-# Confidence thresholds
-THRESHOLD_AUTO_ACCEPT = 0.85  # Auto-accept if score >= this
+# Confidence thresholds - Optimized for visual-only matching
+THRESHOLD_AUTO_ACCEPT = 0.75  # Auto-accept if score >= this (lower due to less OCR dependency)
 THRESHOLD_MARGIN = 0.15       # Auto-accept if (top1 - top2) >= this
-OCR_CONF_MIN = 0.70           # Minimum OCR confidence
+OCR_CONF_MIN = 0.65           # Minimum OCR confidence
 
 
 class HybridCardIdentifier:
@@ -96,9 +96,60 @@ class HybridCardIdentifier:
         elapsed = time.time() - start
         print(f"[OK] Loaded {self.index.ntotal} cards in {elapsed:.2f}s\\n")
 
+    def preprocess_image(self, image: Image.Image) -> Image.Image:
+        """
+        Preprocess image for better quality (optimized for 600x600 images).
+
+        Args:
+            image: PIL Image to preprocess
+
+        Returns:
+            Enhanced PIL Image
+        """
+        import numpy as np
+
+        # Convert to numpy for opencv processing
+        img_array = np.array(image)
+
+        # Apply bilateral filter to reduce noise while preserving edges
+        # Lighter filtering for 600x600 images (better quality to start)
+        if img_array.dtype != np.uint8:
+            img_array = (img_array * 255).astype(np.uint8)
+
+        filtered = cv2.bilateralFilter(img_array, 5, 50, 50)
+
+        # Subtle contrast enhancement
+        enhanced = cv2.convertScaleAbs(filtered, alpha=1.05, beta=3)
+
+        # Convert back to PIL
+        return Image.fromarray(enhanced)
+
     def get_image_embedding(self, image_path: str) -> np.ndarray:
-        """Generate DINOv2 embedding for an image."""
+        """
+        Generate DINOv2 embedding for an image (optimized for 600x600 images).
+
+        For images <400px, upscaling is applied for better feature extraction.
+        For images 400px+, minimal preprocessing is used to preserve quality.
+        """
         image = Image.open(image_path).convert("RGB")
+
+        # Get image size
+        original_size = image.size
+        min_dim = min(original_size)
+
+        # Only preprocess and upscale if image is small
+        if min_dim < 400:
+            # Preprocess to enhance quality
+            image = self.preprocess_image(image)
+
+            # Upscale small images with high-quality resampling
+            scale_factor = 400 / min_dim
+            new_size = (int(original_size[0] * scale_factor), int(original_size[1] * scale_factor))
+            image = image.resize(new_size, Image.Resampling.LANCZOS)
+        else:
+            # For larger images (600x600), just light preprocessing
+            image = self.preprocess_image(image)
+
         inputs = self.processor(images=image, return_tensors="pt").to(self.device)
 
         with torch.no_grad():
@@ -116,6 +167,7 @@ class HybridCardIdentifier:
     ) -> float:
         """
         Compute ORB-based geometric similarity between two images.
+        Optimized for small images with enhanced preprocessing.
 
         Returns:
             Similarity score [0.0, 1.0] based on feature matching
@@ -128,30 +180,54 @@ class HybridCardIdentifier:
             if img1 is None or img2 is None:
                 return 0.0
 
+            # Upscale small images for better feature detection
+            if min(img1.shape) < 300:
+                scale = 300 / min(img1.shape)
+                img1 = cv2.resize(img1, None, fx=scale, fy=scale, interpolation=cv2.INTER_LANCZOS4)
+
+            if min(img2.shape) < 300:
+                scale = 300 / min(img2.shape)
+                img2 = cv2.resize(img2, None, fx=scale, fy=scale, interpolation=cv2.INTER_LANCZOS4)
+
+            # Apply CLAHE for better contrast on small/compressed images
+            clahe = cv2.createCLAHE(clipLimit=2.0, tileGridSize=(8, 8))
+            img1 = clahe.apply(img1)
+            img2 = clahe.apply(img2)
+
             # Detect ORB keypoints and descriptors
             kp1, des1 = self.orb.detectAndCompute(img1, None)
             kp2, des2 = self.orb.detectAndCompute(img2, None)
 
-            if des1 is None or des2 is None:
+            if des1 is None or des2 is None or len(des1) < 10 or len(des2) < 10:
                 return 0.0
 
-            # Match descriptors using BFMatcher
-            bf = cv2.BFMatcher(cv2.NORM_HAMMING, crossCheck=True)
-            matches = bf.match(des1, des2)
+            # Match descriptors using BFMatcher with ratio test
+            bf = cv2.BFMatcher(cv2.NORM_HAMMING, crossCheck=False)
+            matches = bf.knnMatch(des1, des2, k=2)
 
-            # Sort matches by distance
-            matches = sorted(matches, key=lambda x: x.distance)
+            # Apply Lowe's ratio test for better matches
+            good_matches = []
+            for match_pair in matches:
+                if len(match_pair) == 2:
+                    m, n = match_pair
+                    if m.distance < 0.75 * n.distance:
+                        good_matches.append(m)
 
-            # Calculate match ratio
-            if len(kp1) == 0 or len(kp2) == 0:
+            if len(good_matches) < 4:
                 return 0.0
 
-            # Use top 50 matches
-            good_matches = matches[:50]
-            match_score = len(good_matches) / min(len(kp1), len(kp2))
+            # Calculate match score with improved weighting
+            match_ratio = len(good_matches) / max(len(kp1), len(kp2))
+
+            # Weight by match quality (inverse of average distance)
+            avg_distance = np.mean([m.distance for m in good_matches])
+            quality_factor = 1.0 / (1.0 + avg_distance / 50.0)  # Normalize distance
+
+            # Combined score
+            score = match_ratio * quality_factor
 
             # Normalize to [0, 1]
-            return min(match_score, 1.0)
+            return min(score * 2.5, 1.0)  # Scale up since ratio can be low
 
         except Exception as e:
             print(f"ORB matching error: {e}")
@@ -254,10 +330,10 @@ class HybridCardIdentifier:
 
                 candidate['ocr_score'] = ocr_score
 
-        # Stage 3: Geometric verification (top 10 candidates only)
+        # Stage 3: Geometric verification (top 5 candidates only for speed)
         if use_geometric:
             print(f"[Stage 3] Geometric verification (ORB)...")
-            top_candidates = candidates[:10]
+            top_candidates = candidates[:5]  # Reduced from 10 to 5 for faster processing
 
             for candidate in top_candidates:
                 card_id = candidate['card_id']
