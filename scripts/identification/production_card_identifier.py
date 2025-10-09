@@ -265,6 +265,8 @@ class ProductionCardIdentifier:
                 'set': meta.get('set'),
                 'rarity': meta.get('rarity'),
                 'imageUrl': meta.get('imageUrl'),
+                'prices': meta.get('prices', {}),
+                'url': meta.get('url', ''),
                 'visual_score': float(dist),
                 'geometric_score': 0.0,
                 'card_number_match': 0.0,
@@ -498,6 +500,39 @@ class ProductionCardIdentifier:
         print(f"  Product ID: {best['product_id']}")
         print(f"  Card Number: {best['number']}")
         print(f"  Rarity: {best['rarity']}")
+
+        # Display prices
+        prices = best.get('prices', {})
+        if prices:
+            print(f"\nPrices (TCGPlayer):")
+            # Check for foil/normal prices
+            if 'foil' in prices and prices['foil']:
+                foil_prices = prices['foil']
+                market = foil_prices.get('market')
+                low = foil_prices.get('low')
+                mid = foil_prices.get('mid')
+                high = foil_prices.get('high')
+
+                if market:
+                    print(f"  Market (Foil): ${market:.2f}")
+                if low:
+                    print(f"  Low (Foil):    ${low:.2f}")
+                if mid:
+                    print(f"  Mid (Foil):    ${mid:.2f}")
+
+            if 'normal' in prices and prices['normal']:
+                normal_prices = prices['normal']
+                market = normal_prices.get('market')
+                low = normal_prices.get('low')
+                mid = normal_prices.get('mid')
+                high = normal_prices.get('high')
+
+                if market:
+                    print(f"  Market:        ${market:.2f}")
+                if low and mid:
+                    print(f"  Range:         ${low:.2f} - ${mid:.2f}")
+        else:
+            print(f"\nPrices: Not available")
         print(f"\nConfidence: {result['confidence']}")
         print(f"  Final Score: {scores['final']:.4f}")
         print(f"  Visual:      {scores['visual']:.4f} (weight: {WEIGHT_VISUAL})")
