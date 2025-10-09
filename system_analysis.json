@@ -1,0 +1,109 @@
+{
+  "faults": [
+    {
+      "severity": "CRITICAL",
+      "category": "Confidence Calibration",
+      "issue": "75% of correct matches flagged as LOW confidence",
+      "root_cause": "Thresholds too aggressive for real-world images",
+      "impact": "Users won't trust system, manual verification needed"
+    },
+    {
+      "severity": "CRITICAL",
+      "category": "Threshold Calibration",
+      "issue": "AUTO_ACCEPT threshold (0.75) too high for real-world images",
+      "evidence": "3/4 correct matches score below threshold",
+      "root_cause": "Thresholds tuned for perfect DB images, not user photos",
+      "fix": "Lower to 0.55-0.60 based on empirical data"
+    },
+    {
+      "severity": "HIGH",
+      "category": "Visual Component",
+      "issue": "DINOv2 embeddings inconsistent for watermarked/photographed cards",
+      "evidence": "Score range: 0.73 - 1.00",
+      "impact": "Same card gets different scores based on photo quality"
+    },
+    {
+      "severity": "MEDIUM",
+      "category": "OCR Component",
+      "issue": "OCR provides near-zero contribution to identification",
+      "root_cause": "No spatial awareness - extracts wrong text regions",
+      "impact": "Wasted computation with 5% weight doing nothing",
+      "fix": "Either fix region extraction or reduce weight to 0%"
+    },
+    {
+      "severity": "HIGH",
+      "category": "Geometric Component",
+      "issue": "ORB matching fails on real-world photo conditions",
+      "root_cause": "Sensitive to rotation, watermarks, lighting changes",
+      "impact": "25% weight component contributes little for user photos",
+      "fix": "Use more robust features or expand candidate set"
+    },
+    {
+      "severity": "CRITICAL",
+      "category": "Preprocessing Mismatch",
+      "issue": "Query preprocessing != Database preprocessing",
+      "root_cause": "preprocess_image() only called in get_image_embedding()",
+      "impact": "Embeddings computed in different spaces, reduces accuracy",
+      "fix": "Either preprocess ALL images or disable query preprocessing",
+      "evidence": "Visual scores show high variance (0.77-1.0) for same card type"
+    },
+    {
+      "severity": "HIGH",
+      "category": "Architecture",
+      "issue": "Geometric verification limited to top 5 visual candidates",
+      "scenario": "Watermarked cards rank low visually, never get geometric check",
+      "fix": "Expand geometric verification to top 10-15 candidates",
+      "tradeoff": "~2x slower geometric stage, but more robust"
+    }
+  ],
+  "bottlenecks": [
+    {
+      "severity": "HIGH",
+      "component": "OCR Processing",
+      "time": "~800ms",
+      "impact": "50% of identification time",
+      "fix": "Disable OCR (contributes 0%) or optimize regions"
+    },
+    {
+      "severity": "MEDIUM",
+      "component": "Geometric Verification",
+      "time": "~400ms for 5 candidates",
+      "impact": "25% of identification time",
+      "optimization": "Parallelize ORB matching or reduce candidate count"
+    }
+  ],
+  "improvements": [
+    {
+      "category": "Weight Optimization",
+      "current": "Visual: 0.70, OCR: 0.05, Geometric: 0.25",
+      "proposed": "Visual: 0.75, OCR: 0.00, Geometric: 0.25",
+      "rationale": "OCR contributes nothing, redistribute to visual",
+      "expected_impact": "Slight accuracy improvement, 10% faster"
+    },
+    {
+      "category": "Preprocessing",
+      "issue": "Aggressive upscaling may hurt accuracy",
+      "fix": "Use DINOv2's native rescaling instead of manual upscale",
+      "expected_impact": "More consistent embeddings"
+    },
+    {
+      "category": "Performance",
+      "optimization": "Skip OCR entirely",
+      "expected_speedup": "~800ms (53% faster)",
+      "tradeoff": "None - OCR contributes nothing currently"
+    },
+    {
+      "category": "Preprocessing",
+      "feature": "Watermark detection and masking",
+      "approach": "Detect text overlay regions, mask before embedding",
+      "expected_impact": "10-15% improvement in visual scores"
+    },
+    {
+      "category": "Architecture",
+      "feature": "Model ensemble",
+      "approach": "Combine DINOv2 + CLIP embeddings",
+      "expected_impact": "5-10% accuracy improvement",
+      "tradeoff": "2x embedding time"
+    }
+  ]
+}

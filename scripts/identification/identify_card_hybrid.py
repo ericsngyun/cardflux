@@ -32,15 +32,15 @@ IMAGES_DIR = Path(__file__).parent.parent.parent / "data" / "images"
 MODEL_NAME = "facebook/dinov2-small"
 GAME = "one-piece"
 
-# Scoring weights - Visual-focused for real-world card photos
-WEIGHT_VISUAL = 0.70    # DINOv2 similarity (primary signal)
-WEIGHT_OCR = 0.05       # Text match score (optional, low weight)
+# Scoring weights - Visual + Geometric (OCR disabled due to ineffectiveness)
+WEIGHT_VISUAL = 0.75    # DINOv2 similarity (primary signal)
+WEIGHT_OCR = 0.00       # Disabled - extracts wrong regions, wastes 800ms
 WEIGHT_GEOMETRIC = 0.25 # ORB feature match (strong verification)
 
-# Confidence thresholds - Optimized for visual-only matching
-THRESHOLD_AUTO_ACCEPT = 0.75  # Auto-accept if score >= this (lower due to less OCR dependency)
-THRESHOLD_MARGIN = 0.15       # Auto-accept if (top1 - top2) >= this
-OCR_CONF_MIN = 0.65           # Minimum OCR confidence
+# Confidence thresholds - Calibrated for real-world photo conditions
+THRESHOLD_AUTO_ACCEPT = 0.60  # Lowered from 0.75 based on empirical data
+THRESHOLD_MARGIN = 0.12       # Lowered from 0.15 for better sensitivity
+OCR_CONF_MIN = 0.65           # Minimum OCR confidence (unused)
 
 
 class HybridCardIdentifier:
@@ -126,30 +126,15 @@ class HybridCardIdentifier:
 
     def get_image_embedding(self, image_path: str) -> np.ndarray:
         """
-        Generate DINOv2 embedding for an image (optimized for 600x600 images).
+        Generate DINOv2 embedding for an image.
 
-        For images <400px, upscaling is applied for better feature extraction.
-        For images 400px+, minimal preprocessing is used to preserve quality.
+        IMPORTANT: No preprocessing applied to maintain consistency with database embeddings.
+        DINOv2's processor handles normalization internally.
         """
         image = Image.open(image_path).convert("RGB")
 
-        # Get image size
-        original_size = image.size
-        min_dim = min(original_size)
-
-        # Only preprocess and upscale if image is small
-        if min_dim < 400:
-            # Preprocess to enhance quality
-            image = self.preprocess_image(image)
-
-            # Upscale small images with high-quality resampling
-            scale_factor = 400 / min_dim
-            new_size = (int(original_size[0] * scale_factor), int(original_size[1] * scale_factor))
-            image = image.resize(new_size, Image.Resampling.LANCZOS)
-        else:
-            # For larger images (600x600), just light preprocessing
-            image = self.preprocess_image(image)
-
+        # Let DINOv2's processor handle all transformations
+        # This ensures query embeddings match database embedding space
         inputs = self.processor(images=image, return_tensors="pt").to(self.device)
 
         with torch.no_grad():
@@ -297,43 +282,18 @@ class HybridCardIdentifier:
 
         print(f"  Found {len(candidates)} visual candidates")
 
-        # Stage 2: OCR verification
+        # Stage 2: OCR verification (DISABLED - ineffective and slow)
         ocr_info = {}
-        if use_ocr and self.ocr_service.enabled:
-            print(f"[Stage 2] OCR text extraction...")
-            ocr_info = self.ocr_service.extract_card_info(image_path)
-            print(f"  Extracted: name='{ocr_info.get('name', '')}', "
-                  f"number='{ocr_info.get('card_number', '')}'")
+        # OCR disabled: use_ocr parameter kept for backward compatibility
+        # Rationale: Extracts wrong regions (ATK values instead of names), wastes ~800ms
+        # if use_ocr and self.ocr_service.enabled:
+        #     print(f"[Stage 2] OCR text extraction...")
+        #     ... (code removed to save processing time)
 
-            # Score candidates based on OCR match
-            for candidate in candidates:
-                ocr_score = 0.0
-
-                # Name match (if confidence sufficient)
-                if ocr_info.get('name_confidence', 0) >= OCR_CONF_MIN:
-                    name_sim = self.ocr_service.fuzzy_match_name(
-                        ocr_info['name'],
-                        candidate['name']
-                    )
-                    ocr_score += name_sim * 0.7  # 70% weight to name
-
-                # Card number exact match (if available)
-                # Extract number from database name (e.g., "Luffy - OP01-001")
-                card_name = candidate['name']
-                if ' - ' in card_name and ocr_info.get('card_number'):
-                    db_number = card_name.split(' - ')[-1].strip()
-                    if self.ocr_service.exact_match_number(
-                        ocr_info['card_number'],
-                        db_number
-                    ):
-                        ocr_score += 0.3  # 30% weight to exact number
-
-                candidate['ocr_score'] = ocr_score
-
-        # Stage 3: Geometric verification (top 5 candidates only for speed)
+        # Stage 3: Geometric verification (top 10 candidates for robustness)
         if use_geometric:
             print(f"[Stage 3] Geometric verification (ORB)...")
-            top_candidates = candidates[:5]  # Reduced from 10 to 5 for faster processing
+            top_candidates = candidates[:10]  # Expanded to catch watermarked cards ranked lower
 
             for candidate in top_candidates:
                 card_id = candidate['card_id']
