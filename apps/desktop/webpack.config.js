@@ -1,9 +1,13 @@
 const path = require('path');
+const CopyWebpackPlugin = require('copy-webpack-plugin');
+
+const isDevelopment = process.env.NODE_ENV !== 'production';
 
 module.exports = [
   // Main process config
   {
-    mode: process.env.NODE_ENV || 'development',
+    mode: isDevelopment ? 'development' : 'production',
+    devtool: isDevelopment ? 'eval-source-map' : 'source-map',
     entry: './src/main/index.ts',
     target: 'electron-main',
     output: {
@@ -22,6 +26,13 @@ module.exports = [
         },
       ],
     },
+    plugins: [
+      new CopyWebpackPlugin({
+        patterns: [
+          { from: 'src/python', to: '../python' },
+        ],
+      }),
+    ],
     node: {
       __dirname: false,
       __filename: false,
@@ -29,7 +40,8 @@ module.exports = [
   },
   // Preload process config
   {
-    mode: process.env.NODE_ENV || 'development',
+    mode: isDevelopment ? 'development' : 'production',
+    devtool: isDevelopment ? 'eval-source-map' : 'source-map',
     entry: './src/preload/preload.ts',
     target: 'electron-preload',
     output: {
@@ -51,7 +63,13 @@ module.exports = [
   },
   // Renderer process config
   {
-    mode: process.env.NODE_ENV || 'development',
+    mode: isDevelopment ? 'development' : 'production',
+    devtool: isDevelopment ? 'eval-source-map' : 'source-map',
+    performance: {
+      hints: false,
+      maxAssetSize: 512000,
+      maxEntrypointSize: 512000,
+    },
     entry: './src/renderer/app.tsx',
     target: 'electron-renderer',
     output: {
@@ -74,5 +92,12 @@ module.exports = [
         },
       ],
     },
+    plugins: [
+      new CopyWebpackPlugin({
+        patterns: [
+          { from: 'src/renderer/index.html', to: 'index.html' },
+        ],
+      }),
+    ],
   },
 ];
