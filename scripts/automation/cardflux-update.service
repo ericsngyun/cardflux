@@ -1,0 +1,35 @@
+[Unit]
+Description=CardFlux Automated Database Update Service
+Documentation=https://github.com/yourusername/cardflux
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=cardflux
+Group=cardflux
+WorkingDirectory=/opt/cardflux
+ExecStart=/usr/bin/node /opt/cardflux/scripts/automation/update-orchestrator.mjs --daemon
+Restart=on-failure
+RestartSec=60
+StandardOutput=journal
+StandardError=journal
+
+# Security settings
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/opt/cardflux/data /opt/cardflux/artifacts /opt/cardflux/logs /opt/cardflux/backups
+
+# Resource limits
+MemoryMax=4G
+CPUQuota=80%
+TimeoutStopSec=60
+
+# Environment
+Environment="NODE_ENV=production"
+Environment="PYTHONUNBUFFERED=1"
+
+[Install]
+WantedBy=multi-user.target

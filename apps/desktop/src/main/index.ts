@@ -1,10 +1,11 @@
 import { app, BrowserWindow, ipcMain, systemPreferences } from 'electron';
 import * as path from 'path';
+import * as fs from 'fs';
 import { setupIpcHandlers } from './ipc/handlers';
-import { RealtimeScanner } from './scanner/realtime-scanner';
+import { PythonIdentificationBridge } from './identifier/python-bridge';
 
 let mainWindow: BrowserWindow | null = null;
-let scanner: RealtimeScanner | null = null;
+let identificationService: PythonIdentificationBridge | null = null;
 
 /**
  * Request camera permissions on macOS
@@ -42,61 +43,32 @@ function createWindow(): void {
       contextIsolation: true,
       preload: path.join(__dirname, '../preload/preload.js'),
       sandbox: false,
+      // Disable background throttling for consistent performance
+      backgroundThrottling: false,
     },
     title: 'CardFlux - Real-time Card Scanner',
+    // Ensure smooth rendering
+    backgroundColor: '#0a0a0a',
   });
 
-  // Load the app
+  // Load the app from built files
+  mainWindow.loadFile(path.join(__dirname, '../renderer/index.html'));
+
+  // Open dev tools in development
   if (process.env.NODE_ENV === 'development') {
-    mainWindow.loadURL('http://localhost:3000');
     mainWindow.webContents.openDevTools();
-  } else {
-    mainWindow.loadFile(path.join(__dirname, '../renderer/index.html'));
   }
 
   mainWindow.on('closed', () => {
     mainWindow = null;
-    if (scanner) {
-      scanner.stop();
-      scanner = null;
-    }
   });
 }
 
-/**
- * Initialize the realtime scanner
- */
-async function initializeScanner(): Promise<void> {
-  if (!mainWindow) {
-    console.error('Cannot initialize scanner: main window not available');
-    return;
-  }
-
-  try {
-    scanner = new RealtimeScanner({
-      cameraId: 0, // Default camera
-      fps: 30,
-      detectionThreshold: 0.7,
-      verificationThreshold: 0.8,
-    });
-
-    // Forward detection results to renderer
-    scanner.on('detection', (result) => {
-      mainWindow?.webContents.send('scanner:detection', result);
-    });
-
-    scanner.on('error', (error) => {
-      console.error('Scanner error:', error);
-      mainWindow?.webContents.send('scanner:error', error.message);
-    });
-
-    await scanner.initialize();
-    console.log('Scanner initialized successfully');
-  } catch (error) {
-    console.error('Failed to initialize scanner:', error);
-    throw error;
-  }
-}
+// Performance optimizations - enable hardware acceleration
+app.commandLine.appendSwitch('enable-gpu-rasterization');
+app.commandLine.appendSwitch('enable-zero-copy');
+app.commandLine.appendSwitch('disable-gpu-vsync'); // Remove vsync for instant rendering
+app.commandLine.appendSwitch('disable-frame-rate-limit'); // No FPS throttling
 
 // App lifecycle events
 app.whenReady().then(async () => {
@@ -112,15 +84,6 @@ app.whenReady().then(async () => {
   createWindow();
   setupIpcHandlers(ipcMain);
 
-  // Initialize scanner after window is ready
-  mainWindow?.webContents.once('did-finish-load', async () => {
-    try {
-      await initializeScanner();
-    } catch (error) {
-      console.error('Scanner initialization failed:', error);
-    }
-  });
-
   app.on('activate', () => {
     if (BrowserWindow.getAllWindows().length === 0) {
       createWindow();
@@ -134,30 +97,87 @@ app.on('window-all-closed', () => {
   }
 });
 
-app.on('will-quit', () => {
-  if (scanner) {
-    scanner.stop();
-    scanner = null;
+app.on('will-quit', async () => {
+  if (identificationService) {
+    await identificationService.stop();
+    identificationService = null;
   }
 });
 
-// Handle scanner control from IPC
-ipcMain.handle('scanner:start', async () => {
-  if (!scanner) {
-    await initializeScanner();
+// Handle identification service
+ipcMain.handle('identifier:initialize', async (_event, game: string = 'one-piece') => {
+  try {
+    if (!identificationService) {
+      identificationService = new PythonIdentificationBridge();
+      await identificationService.start(game);
+    }
+    return { success: true, game };
+  } catch (error: any) {
+    console.error('Failed to initialize identification service:', error);
+    return { success: false, error: error.message };
   }
-  await scanner?.start();
+});
+
+ipcMain.handle('identifier:identify', async (_event, imagePath: string, options: any = {}) => {
+  try {
+    if (!identificationService || !identificationService.isInitialized()) {
+      // Auto-initialize if not ready
+      identificationService = new PythonIdentificationBridge();
+      await identificationService.start(options.game || 'one-piece');
+    }
+
+    const result = await identificationService.identifyCard(imagePath, options);
+    return { success: true, result };
+  } catch (error: any) {
+    console.error('Identification failed:', error);
+    return { success: false, error: error.message };
+  }
+});
+
+ipcMain.handle('identifier:status', async () => {
+  if (!identificationService) {
+    return { initialized: false, ready: false, running: false };
+  }
+
+  try {
+    const status = await identificationService.getStatus();
+    return {
+      ...status,
+      running: identificationService.isRunning(),
+    };
+  } catch (error) {
+    return { initialized: false, ready: false, running: false };
+  }
+});
+
+ipcMain.handle('identifier:stop', async () => {
+  if (identificationService) {
+    await identificationService.stop();
+    identificationService = null;
+  }
   return { success: true };
 });
 
-ipcMain.handle('scanner:stop', async () => {
-  await scanner?.stop();
-  return { success: true };
-});
+// Handle camera capture for identification
+ipcMain.handle('camera:capture', async (_event, imageData: string) => {
+  try {
+    // Use temp directory
+    const tempDir = path.join(app.getPath('temp'), 'cardflux');
+    if (!fs.existsSync(tempDir)) {
+      fs.mkdirSync(tempDir, { recursive: true });
+    }
 
-ipcMain.handle('scanner:status', () => {
-  return {
-    running: scanner?.isRunning() ?? false,
-    initialized: scanner !== null,
-  };
+    const outputPath = path.join(tempDir, `capture-${Date.now()}.jpg`);
+
+    // Convert base64 to buffer and save
+    const base64Data = imageData.replace(/^data:image\/\w+;base64,/, '');
+    const buffer = Buffer.from(base64Data, 'base64');
+    fs.writeFileSync(outputPath, buffer);
+
+    console.log('[Camera] Image saved:', outputPath);
+    return { success: true, imagePath: outputPath };
+  } catch (error: any) {
+    console.error('Camera capture failed:', error);
+    return { success: false, error: error.message };
+  }
 });

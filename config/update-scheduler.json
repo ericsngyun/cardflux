@@ -1,0 +1,108 @@
+{
+  "$schema": "./update-scheduler.schema.json",
+  "version": "1.0.0",
+  "enabled": true,
+  "description": "Automated database update scheduler configuration",
+
+  "schedule": {
+    "timezone": "America/Los_Angeles",
+    "dailyUpdateTime": "14:00",
+    "retryAttempts": 3,
+    "retryDelayMinutes": 30,
+    "maxDurationHours": 4,
+    "skipWeekends": false,
+    "comment": "TCGPlayer updates at 1 PM PDT daily - we run at 2 PM PDT to get fresh data"
+  },
+
+  "games": {
+    "one-piece": {
+      "enabled": true,
+      "priority": 1,
+      "updateSteps": [
+        "scrape",
+        "normalize",
+        "fetch-images",
+        "embed",
+        "index"
+      ]
+    },
+    "pokemon": {
+      "enabled": false,
+      "priority": 2,
+      "updateSteps": [
+        "scrape",
+        "normalize",
+        "fetch-images",
+        "embed",
+        "index"
+      ]
+    },
+    "magic": {
+      "enabled": false,
+      "priority": 3,
+      "updateSteps": [
+        "scrape",
+        "normalize",
+        "fetch-images",
+        "embed",
+        "index"
+      ]
+    }
+  },
+
+  "notifications": {
+    "enabled": true,
+    "onSuccess": true,
+    "onFailure": true,
+    "channels": {
+      "email": {
+        "enabled": false,
+        "recipients": ["admin@cardshop.com"]
+      },
+      "slack": {
+        "enabled": false,
+        "webhookUrl": ""
+      },
+      "discord": {
+        "enabled": false,
+        "webhookUrl": ""
+      },
+      "log": {
+        "enabled": true,
+        "directory": "logs/updates"
+      }
+    }
+  },
+
+  "rollback": {
+    "enabled": true,
+    "keepBackups": 3,
+    "backupBeforeUpdate": true,
+    "autoRollbackOnFailure": false
+  },
+
+  "monitoring": {
+    "enabled": true,
+    "healthCheck": {
+      "beforeUpdate": true,
+      "afterUpdate": true,
+      "checkIndexIntegrity": true,
+      "checkImageCount": true,
+      "checkEmbeddingCount": true
+    },
+    "alertThresholds": {
+      "maxDurationMinutes": 240,
+      "minNewCards": 0,
+      "maxFailedImages": 100
+    }
+  },
+
+  "advanced": {
+    "concurrentGames": 1,
+    "pauseOnError": true,
+    "dryRun": false,
+    "verboseLogging": true,
+    "cleanupOldBackups": true,
+    "compressBackups": false
+  }
+}

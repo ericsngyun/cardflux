@@ -1,0 +1,210 @@
+name: Daily Card Database Update
+
+# Runs daily at 2 PM PDT (9 PM UTC in summer, 10 PM UTC in winter)
+# TCGPlayer updates at 1 PM PDT, so we run 1 hour later
+on:
+  schedule:
+    # 21:00 UTC = 2 PM PDT (during daylight saving)
+    # 22:00 UTC = 2 PM PST (during standard time)
+    - cron: '0 21 * * *'  # Summer schedule (PDT)
+    - cron: '0 22 * * *'  # Winter schedule (PST)
+
+  # Allow manual trigger
+  workflow_dispatch:
+    inputs:
+      game:
+        description: 'Game to update (or "all")'
+        required: false
+        default: 'one-piece'
+      dry_run:
+        description: 'Dry run (no commits)'
+        required: false
+        default: 'false'
+
+jobs:
+  update-database:
+    runs-on: ubuntu-latest
+    timeout-minutes: 240  # 4 hours max
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v3
+        with:
+          version: 9
+
+      - name: Install Node dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Install Python dependencies
+        run: |
+          pip install torch transformers faiss-cpu pillow numpy tqdm opencv-python easyocr
+          pip install -r services/embedder/requirements.txt || true
+
+      - name: Configure Git
+        run: |
+          git config user.name "CardFlux Bot"
+          git config user.email "bot@cardflux.com"
+
+      - name: Check system health (pre-update)
+        run: |
+          echo "=== Pre-Update Health Check ==="
+          echo "Node version: $(node --version)"
+          echo "Python version: $(python --version)"
+          echo "Disk space:"
+          df -h
+          echo "Memory:"
+          free -h
+
+      - name: Create backup of current state
+        run: |
+          mkdir -p backups/pre-update-$(date +%Y%m%d)
+          if [ -d "artifacts/faiss" ]; then
+            cp -r artifacts/faiss backups/pre-update-$(date +%Y%m%d)/ || true
+          fi
+          if [ -d "artifacts/metadata" ]; then
+            cp -r artifacts/metadata backups/pre-update-$(date +%Y%m%d)/ || true
+          fi
+          echo "Backup created: backups/pre-update-$(date +%Y%m%d)"
+
+      - name: Run incremental update
+        id: update
+        run: |
+          echo "Starting CardFlux incremental update..."
+          echo "Game: ${{ github.event.inputs.game || 'one-piece' }}"
+          echo "Time: $(date)"
+
+          # Run the incremental pipeline
+          pnpm pipeline:update || exit 1
+
+          echo "Update completed successfully"
+          echo "update_status=success" >> $GITHUB_OUTPUT
+        continue-on-error: false
+
+      - name: Generate update report
+        if: always()
+        run: |
+          cat > update-report.md << 'EOF'
+          # CardFlux Update Report
+
+          **Date:** $(date)
+          **Status:** ${{ steps.update.outputs.update_status || 'failed' }}
+          **Game:** ${{ github.event.inputs.game || 'one-piece' }}
+
+          ## Changes
+
+          $(git diff --stat || echo "No changes detected")
+
+          ## New Files
+
+          $(git status --short || echo "No new files")
+
+          ## Artifacts Status
+
+          $(ls -lh artifacts/faiss/*/index.faiss 2>/dev/null || echo "No index files found")
+          $(ls -lh artifacts/metadata/embeddings/*/metadata.jsonl 2>/dev/null || echo "No metadata files found")
+
+          ## System Info
+
+          - Node: $(node --version)
+          - Python: $(python --version)
+          - Disk: $(df -h . | tail -1)
+
+          EOF
+
+          cat update-report.md
+
+      - name: Check for changes
+        id: check_changes
+        run: |
+          git add -A
+          if git diff --staged --quiet; then
+            echo "has_changes=false" >> $GITHUB_OUTPUT
+            echo "No changes detected"
+          else
+            echo "has_changes=true" >> $GITHUB_OUTPUT
+            echo "Changes detected"
+            git status --short
+          fi
+
+      - name: Commit and push changes
+        if: steps.check_changes.outputs.has_changes == 'true' && github.event.inputs.dry_run != 'true'
+        run: |
+          # Get stats for commit message
+          NEW_CARDS=$(git diff --cached --stat | grep -o '[0-9]* insertion' | awk '{sum+=$1} END {print sum}' || echo "0")
+
+          git commit -m "chore: Automated database update - $(date +%Y-%m-%d)
+
+          Incremental update from TCGPlayer API:
+          - Scraped latest card data
+          - Downloaded new images
+          - Generated embeddings
+          - Rebuilt FAISS indices
+
+          🤖 Automated update via GitHub Actions
+          📅 $(date -u +%Y-%m-%dT%H:%M:%SZ)" || true
+
+          git push origin main
+
+      - name: Post-update health check
+        if: steps.update.outputs.update_status == 'success'
+        run: |
+          echo "=== Post-Update Health Check ==="
+
+          # Check if indices exist
+          for game in one-piece pokemon magic; do
+            INDEX="artifacts/faiss/${game}-dinov2/index.faiss"
+            META="artifacts/metadata/embeddings/${game}-dinov2/metadata.jsonl"
+
+            if [ -f "$INDEX" ]; then
+              echo "✅ Index exists: $INDEX ($(du -h $INDEX | cut -f1))"
+            fi
+
+            if [ -f "$META" ]; then
+              CARDS=$(wc -l < "$META")
+              echo "✅ Metadata exists: $META ($CARDS cards)"
+            fi
+          done
+
+      - name: Upload update artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: update-report-${{ github.run_number }}
+          path: |
+            update-report.md
+            logs/**/*.log
+          retention-days: 30
+
+      - name: Notify on failure
+        if: failure()
+        run: |
+          echo "❌ Update failed!"
+          echo "Check the logs: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+
+          # You can add webhook notifications here (Slack, Discord, etc.)
+          # curl -X POST ${{ secrets.SLACK_WEBHOOK }} -d '{"text":"CardFlux update failed"}'
+
+      - name: Cleanup old backups
+        if: always()
+        run: |
+          # Keep only last 3 backups
+          cd backups
+          ls -t | tail -n +4 | xargs -r rm -rf
+          echo "Cleaned up old backups"

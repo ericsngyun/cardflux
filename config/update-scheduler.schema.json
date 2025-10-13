@@ -1,0 +1,80 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "CardFlux Update Scheduler Configuration",
+  "description": "Configuration schema for automated database updates",
+  "type": "object",
+  "required": ["version", "enabled", "schedule"],
+  "properties": {
+    "version": {
+      "type": "string",
+      "description": "Configuration version"
+    },
+    "enabled": {
+      "type": "boolean",
+      "description": "Master switch for automated updates"
+    },
+    "schedule": {
+      "type": "object",
+      "required": ["timezone", "dailyUpdateTime"],
+      "properties": {
+        "timezone": {
+          "type": "string",
+          "description": "IANA timezone (e.g., America/New_York)"
+        },
+        "dailyUpdateTime": {
+          "type": "string",
+          "pattern": "^([0-1][0-9]|2[0-3]):[0-5][0-9]$",
+          "description": "Time in HH:MM format (24-hour)"
+        },
+        "retryAttempts": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 10
+        },
+        "retryDelayMinutes": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "maxDurationHours": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 24
+        },
+        "skipWeekends": {
+          "type": "boolean"
+        }
+      }
+    },
+    "games": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "object",
+        "properties": {
+          "enabled": { "type": "boolean" },
+          "priority": { "type": "integer" },
+          "updateSteps": {
+            "type": "array",
+            "items": { "type": "string" }
+          }
+        }
+      }
+    },
+    "notifications": {
+      "type": "object",
+      "properties": {
+        "enabled": { "type": "boolean" },
+        "onSuccess": { "type": "boolean" },
+        "onFailure": { "type": "boolean" }
+      }
+    },
+    "rollback": {
+      "type": "object",
+      "properties": {
+        "enabled": { "type": "boolean" },
+        "keepBackups": { "type": "integer", "minimum": 1 },
+        "backupBeforeUpdate": { "type": "boolean" },
+        "autoRollbackOnFailure": { "type": "boolean" }
+      }
+    }
+  }
+}

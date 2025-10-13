@@ -16,6 +16,14 @@ export interface ScannerAPI {
 export interface CameraAPI {
   checkPermission: () => Promise<{ granted: boolean; error?: string }>;
   getDevices: () => Promise<{ devices: Array<{ id: number; label: string }>; error?: string }>;
+  capture: (imageData: string) => Promise<{ success: boolean; imagePath?: string; error?: string }>;
+}
+
+export interface IdentifierAPI {
+  initialize: (game?: string) => Promise<{ success: boolean; game?: string; error?: string }>;
+  identify: (imagePath: string, options?: any) => Promise<{ success: boolean; result?: any; error?: string }>;
+  getStatus: () => Promise<{ initialized: boolean; ready: boolean; running: boolean }>;
+  stop: () => Promise<{ success: boolean }>;
 }
 
 // Expose protected APIs to renderer
@@ -48,12 +56,21 @@ contextBridge.exposeInMainWorld('scanner', {
 contextBridge.exposeInMainWorld('camera', {
   checkPermission: () => ipcRenderer.invoke('camera:check-permission'),
   getDevices: () => ipcRenderer.invoke('camera:get-devices'),
+  capture: (imageData: string) => ipcRenderer.invoke('camera:capture', imageData),
 } as CameraAPI);
+
+contextBridge.exposeInMainWorld('identifier', {
+  initialize: (game?: string) => ipcRenderer.invoke('identifier:initialize', game),
+  identify: (imagePath: string, options?: any) => ipcRenderer.invoke('identifier:identify', imagePath, options),
+  getStatus: () => ipcRenderer.invoke('identifier:status'),
+  stop: () => ipcRenderer.invoke('identifier:stop'),
+} as IdentifierAPI);
 
 // Expose type declarations for TypeScript support in renderer
 declare global {
   interface Window {
     scanner: ScannerAPI;
     camera: CameraAPI;
+    identifier: IdentifierAPI;
   }
 }

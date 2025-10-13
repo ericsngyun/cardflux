@@ -3,12 +3,28 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; media-src 'self' blob:; img-src 'self' data: blob:;">
   <title>CardFlux - Real-time Card Scanner</title>
-  <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-  <div id="root"></div>
-  <script src="./app.js"></script>
+  <div id="root">
+    <div style="padding: 20px; font-family: sans-serif;">
+      <h1>Loading CardFlux...</h1>
+      <p>If you see this message, the HTML loaded but React is not mounting.</p>
+    </div>
+  </div>
+  <script>
+    console.log('[HTML] Page loaded, DOM ready');
+    console.log('[HTML] Root element:', document.getElementById('root'));
+
+    // Listen for script load errors
+    window.addEventListener('error', function(e) {
+      console.error('[HTML] Script error:', e.message, e.filename, e.lineno, e.colno, e.error);
+    });
+  </script>
+  <script src="./app.js" onerror="console.error('[HTML] Failed to load app.js')"></script>
+  <script>
+    console.log('[HTML] app.js script tag processed');
+  </script>
 </body>
 </html>

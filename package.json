@@ -31,7 +31,15 @@
     "dev:health": "node scripts/dev/check-health.mjs",
     "dev:test-scrape": "node scripts/dev/test-scraper.mjs",
     "dev:validate": "tsx services/ingest/bin/validate-data.ts",
-    "dev:pipeline": "node scripts/dev/local-pipeline.mjs"
+    "dev:pipeline": "node scripts/dev/local-pipeline.mjs",
+    "update:now": "node scripts/automation/update-orchestrator.mjs",
+    "update:daemon": "node scripts/automation/update-orchestrator.mjs --daemon",
+    "update:dry-run": "node scripts/automation/update-orchestrator.mjs --dry-run",
+    "update:monitor": "node scripts/automation/monitor.mjs",
+    "update:logs": "node scripts/automation/monitor.mjs --logs",
+    "update:watch": "node scripts/automation/monitor.mjs --watch",
+    "update:rollback": "node scripts/automation/rollback.mjs",
+    "update:sync": "pwsh -File scripts/automation/sync-from-cloud.ps1"
   },
   "devDependencies": {
     "@types/node": "^20.11.0",
