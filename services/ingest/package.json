@@ -7,9 +7,11 @@
     "normalize": "ts-node bin/normalize.ts",
     "fetch-images": "ts-node bin/fetch_images.ts",
     "build-sqlite": "ts-node bin/build_sqlite.ts",
-    "generate-manifests": "ts-node bin/generate_manifests.ts"
+    "generate-manifests": "ts-node bin/generate_manifests.ts",
+    "upload-s3": "ts-node bin/upload_s3.ts"
   },
   "dependencies": {
+    "@aws-sdk/client-s3": "^3.474.0",
     "@cardflux/config": "workspace:*",
     "@cardflux/shared": "workspace:*",
     "axios": "^1.6.2",
