@@ -16,7 +16,8 @@
       "Bash(git commit -m \"$(cat <<''EOF''\nchore: Add debug scripts for identification troubleshooting\n\nDebug utilities used during development to diagnose issues:\n\n- debug_blackbeard.py: Find where Marshall.D.Teach appears in match rankings\n  (Discovered it was at rank #46, leading to geometric-first strategy)\n\n- debug_embedding.py: Verify embedding generation consistency\n\n- trace_embedding_issue.py: Trace embedding differences between methods\n\n- test_geometric_features.py: Test ORB geometric feature matching\n\nThese scripts helped identify the watermark issue and verify the solution.\n\n🤖 Generated with [Claude Code](https://claude.com/claude-code)\n\nCo-Authored-By: Claude <noreply@anthropic.com>\nEOF\n)\")",
       "Bash(git commit:*)",
       "Bash(pnpm --filter desktop build:dev)",
-      "Bash(NODE_ENV=production pnpm run build:webpack)"
+      "Bash(NODE_ENV=production pnpm run build:webpack)",
+      "Bash(git push:*)"
     ],
     "deny": [],
     "ask": []
