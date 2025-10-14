@@ -6,7 +6,8 @@
     "pull-tcgcsv": "ts-node bin/pull_tcgcsv.ts",
     "normalize": "ts-node bin/normalize.ts",
     "fetch-images": "ts-node bin/fetch_images.ts",
-    "build-sqlite": "ts-node bin/build_sqlite.ts"
+    "build-sqlite": "ts-node bin/build_sqlite.ts",
+    "generate-manifests": "ts-node bin/generate_manifests.ts"
   },
   "dependencies": {
     "@cardflux/config": "workspace:*",
