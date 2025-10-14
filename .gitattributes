@@ -1,0 +1,47 @@
+# CardFlux Git Attributes
+# Only track tiny sample artifacts via LFS for development
+
+# =============================================================================
+# Sample Artifacts (for development/testing)
+# =============================================================================
+
+# Tiny sample FAISS indices (<1 MB each)
+artifacts/samples/**/*.faiss filter=lfs diff=lfs merge=lfs -text
+artifacts/samples/**/*.bin filter=lfs diff=lfs merge=lfs -text
+artifacts/samples/**/*.npy filter=lfs diff=lfs merge=lfs -text
+
+# Tiny sample databases (<5 MB)
+artifacts/samples/**/*.db filter=lfs diff=lfs merge=lfs -text
+artifacts/samples/**/*.sqlite filter=lfs diff=lfs merge=lfs -text
+
+# Sample images for testing (<100 KB each, max 10 images)
+artifacts/samples/**/*.jpg filter=lfs diff=lfs merge=lfs -text
+artifacts/samples/**/*.png filter=lfs diff=lfs merge=lfs -text
+
+# Documentation media
+docs/media/**/*.jpg filter=lfs diff=lfs merge=lfs -text
+docs/media/**/*.png filter=lfs diff=lfs merge=lfs -text
+docs/media/**/*.gif filter=lfs diff=lfs merge=lfs -text
+
+# =============================================================================
+# Everything Else: Regular Git (no LFS)
+# =============================================================================
+
+# JSON files are never LFS (manifests, configs, etc.)
+*.json !filter !diff !merge text
+
+# Markdown files
+*.md !filter !diff !merge text
+
+# Source code
+*.ts !filter !diff !merge text
+*.tsx !filter !diff !merge text
+*.js !filter !diff !merge text
+*.jsx !filter !diff !merge text
+*.py !filter !diff !merge text
+
+# =============================================================================
+# Production Artifacts: NOT IN GIT AT ALL
+# =============================================================================
+# Production data/ and artifacts/ are in .gitignore
+# They are published to S3/CloudFront, not stored in Git
