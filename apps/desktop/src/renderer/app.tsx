@@ -33,6 +33,14 @@ const App: React.FC = () => {
     message: string;
   } | null>(null);
   const [showSettings, setShowSettings] = useState(false);
+  const [showCaptureFlash, setShowCaptureFlash] = useState(false);
+  const [scanStats, setScanStats] = useState({
+    totalScans: 0,
+    highConfidence: 0,
+    moderateConfidence: 0,
+    lowConfidence: 0,
+    sessionStart: Date.now(),
+  });
   const [settings, setSettings] = useState<IdentificationSettings>(() => {
     // Load settings from localStorage
     try {
@@ -55,6 +63,7 @@ const App: React.FC = () => {
       console.error('[App] Failed to save settings to localStorage:', error);
     }
   }, [settings]);
+
 
   // Initialize identification service on mount
   useEffect(() => {
@@ -87,6 +96,10 @@ const App: React.FC = () => {
     async (imagePath: string) => {
       if (isIdentifying) return;
 
+      // Capture flash animation - instant professional feedback
+      setShowCaptureFlash(true);
+      setTimeout(() => setShowCaptureFlash(false), 150);
+
       // Optimistic UI update - immediate feedback
       setIsIdentifying(true);
 
@@ -106,11 +119,32 @@ const App: React.FC = () => {
         }
 
         const { card, confidence } = result.result;
+        const price = card.prices?.normal?.market || card.prices?.foil?.market || 0;
 
-        // Only add HIGH confidence cards to stack
-        if (confidence === 'HIGH') {
-          // Get price
-          const price = card.prices?.normal?.market || card.prices?.foil?.market || 0;
+        // Update scan statistics
+        setScanStats((prev) => ({
+          ...prev,
+          totalScans: prev.totalScans + 1,
+          highConfidence: prev.highConfidence + (confidence === 'HIGH' ? 1 : 0),
+          moderateConfidence: prev.moderateConfidence + (confidence === 'MODERATE' ? 1 : 0),
+          lowConfidence: prev.lowConfidence + (confidence === 'LOW' ? 1 : 0),
+        }));
+
+        // Accept HIGH and MODERATE confidence (60%+ threshold)
+        if (confidence === 'HIGH' || confidence === 'MODERATE') {
+          // Check for duplicates in last 30 seconds
+          const now = Date.now();
+          const recentDuplicate = cards.find(
+            (c) => c.productId === card.productId && now - c.timestamp < 30000
+          );
+
+          if (recentDuplicate) {
+            const secondsAgo = Math.floor((now - recentDuplicate.timestamp) / 1000);
+            showNotification(
+              'warning',
+              `Duplicate: ${card.name} was scanned ${secondsAgo}s ago. Added anyway.`
+            );
+          }
 
           const stackItem: CardStackItem = {
             id: `${card.productId}-${Date.now()}`,
@@ -125,15 +159,19 @@ const App: React.FC = () => {
           };
 
           setCards((prev) => [stackItem, ...prev]);
-          showNotification('success', `Added: ${card.name} ($${price.toFixed(2)})`);
 
-          // Visual feedback
+          const confidenceEmoji = confidence === 'HIGH' ? '✓' : '~';
+          showNotification(
+            confidence === 'HIGH' ? 'success' : 'warning',
+            `${confidenceEmoji} ${card.name} - $${price.toFixed(2)} (${confidence})`
+          );
+
           playSuccessSound();
         } else {
-          // Low confidence warning
+          // Low confidence - show what was identified with helpful tips
           showNotification(
-            'warning',
-            `Low confidence (${confidence}) - Not added to stack. Try again with better positioning.`
+            'error',
+            `Low confidence: Found "${card.name}" but not confident. Try: better lighting, center card, reduce glare.`
           );
         }
 
@@ -141,11 +179,12 @@ const App: React.FC = () => {
       } catch (error: any) {
         console.error('[App] Identification error:', error);
         showNotification('error', `Identification failed: ${error.message}`);
+        setScanStats((prev) => ({ ...prev, totalScans: prev.totalScans + 1, lowConfidence: prev.lowConfidence + 1 }));
       } finally {
         setIsIdentifying(false);
       }
     },
-    [isIdentifying, settings]
+    [isIdentifying, settings, cards]
   );
 
   const handleClearStack = useCallback(() => {
@@ -223,6 +262,32 @@ const App: React.FC = () => {
     // audio.play().catch(() => {});
   };
 
+  // Global keyboard shortcuts - defined after all handlers
+  useEffect(() => {
+    const handleKeyPress = (e: KeyboardEvent) => {
+      // Don't trigger if user is in settings or typing
+      if (showSettings) return;
+
+      switch (e.key.toLowerCase()) {
+        case 'c':
+          if (cards.length > 0) handleClearStack();
+          break;
+        case 'e':
+          if (cards.length > 0) handleExportStack();
+          break;
+        case 's':
+          setShowSettings(true);
+          break;
+        case 'escape':
+          setNotification(null);
+          break;
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyPress);
+    return () => window.removeEventListener('keydown', handleKeyPress);
+  }, [showSettings, cards, handleClearStack, handleExportStack]);
+
   if (initError) {
     return (
       <div className="app-container error-state">
@@ -253,6 +318,13 @@ const App: React.FC = () => {
   const totalValue = useMemo(() => {
     return cards.reduce((sum, card) => sum + card.price, 0);
   }, [cards]);
+
+  // Calculate scan statistics
+  const sessionDuration = Math.floor((Date.now() - scanStats.sessionStart) / 60000); // minutes
+  const scansPerMinute = sessionDuration > 0 ? (scanStats.totalScans / sessionDuration).toFixed(1) : '0.0';
+  const successRate = scanStats.totalScans > 0
+    ? (((scanStats.highConfidence + scanStats.moderateConfidence) / scanStats.totalScans) * 100).toFixed(0)
+    : '0';
 
   return (
     <div className="app-container">
@@ -342,22 +414,37 @@ const App: React.FC = () => {
         />
       )}
 
+      {/* Capture Flash */}
+      {showCaptureFlash && <div className="capture-flash" />}
+
       {/* Footer */}
       <footer className="app-footer">
         <div className="footer-help">
           <span className="help-item">
-            <kbd>SPACE</kbd> Capture Card
+            <kbd>SPACE</kbd> Capture
           </span>
           <span className="help-item">
-            <kbd>ESC</kbd> Clear notification
+            <kbd>C</kbd> Clear
+          </span>
+          <span className="help-item">
+            <kbd>E</kbd> Export
+          </span>
+          <span className="help-item">
+            <kbd>S</kbd> Settings
           </span>
         </div>
         <div className="footer-stats">
-          <span>Cards Scanned: {cards.length}</span>
+          <span>Cards: {cards.length}</span>
           <span className="separator">•</span>
-          <span>
-            Total Value: ${totalValue.toFixed(2)}
-          </span>
+          <span>Value: ${totalValue.toFixed(2)}</span>
+          {scanStats.totalScans > 0 && (
+            <>
+              <span className="separator">•</span>
+              <span>Success: {successRate}%</span>
+              <span className="separator">•</span>
+              <span>{scansPerMinute} scans/min</span>
+            </>
+          )}
         </div>
       </footer>
     </div>
