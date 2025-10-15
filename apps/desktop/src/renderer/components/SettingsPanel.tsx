@@ -23,7 +23,7 @@ const TCG_GAMES = [
   { value: 'lorcana', label: 'Disney Lorcana' },
 ];
 
-export const SettingsPanel: React.FC<SettingsPanelProps> = ({
+export const SettingsPanel: React.FC<SettingsPanelProps> = React.memo(({
   settings,
   onSettingsChange,
   onClose,
@@ -171,7 +171,7 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
       </div>
     </div>
   );
-};
+});
 
 /**
  * Estimate identification speed based on settings

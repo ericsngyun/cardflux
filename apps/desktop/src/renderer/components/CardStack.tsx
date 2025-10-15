@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 
 export interface CardStackItem {
   id: string;
@@ -20,7 +20,11 @@ interface CardStackProps {
 }
 
 export const CardStack: React.FC<CardStackProps> = React.memo(({ cards, onClear, onExport, onRemoveCard }) => {
-  const totalValue = cards.reduce((sum, card) => sum + card.price, 0);
+  // Memoize expensive calculations for performance
+  const totalValue = useMemo(() => {
+    return cards.reduce((sum, card) => sum + card.price, 0);
+  }, [cards]);
+
   const cardCount = cards.length;
 
   return (
