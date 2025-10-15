@@ -4,6 +4,20 @@
 
 CardFlux uses computer vision and machine learning to identify trading cards in real-time, with support for multiple TCG games and automatic variant/reprint detection.
 
+---
+
+## ⚠️ IMPORTANT: Data Requirements
+
+**This repository does NOT include data files (gitignored due to size).**
+
+After cloning, you must obtain the required data (~500 MB):
+- **Option 1 (Fast)**: Download pre-built package → See [DATA_REQUIREMENTS.md](DATA_REQUIREMENTS.md)
+- **Option 2 (Fresh)**: Build from scratch (15 min) → See below
+
+📖 **[Read DATA_REQUIREMENTS.md](DATA_REQUIREMENTS.md)** for complete instructions.
+
+---
+
 ## Features
 
 - **Fast Card Identification**: Sub-200ms identification using CLIP embeddings and FAISS similarity search
@@ -15,11 +29,15 @@ CardFlux uses computer vision and machine learning to identify trading cards in 
 
 ## Quick Start
 
-### For Desktop App Users
+### For Desktop App Users (Demo)
 
 **New to CardFlux? Start here:**
 
-👉 **[Complete Deployment Guide](DEPLOYMENT_GUIDE.md)** - Step-by-step setup for Windows, macOS, and Linux
+👉 **[Quick Demo Setup](DEMO_SETUP.md)** - Get running in 10 minutes (demo version)
+
+👉 **[Complete Deployment Guide](DEPLOYMENT_GUIDE.md)** - Full production setup for Windows, macOS, and Linux
+
+👉 **[Data Requirements](DATA_REQUIREMENTS.md)** - ⚠️ Required data files not in Git
 
 **Quick automated setup:**
 
