@@ -58,6 +58,10 @@ infra/.cdk.staging/
 *.tmp
 .cache/
 
+# Data packages (too large for Git - upload to GitHub Releases instead)
+*.zip
+cardflux-data-*.zip
+
 # Testing
 coverage/
 .nyc_output/
