@@ -91,7 +91,7 @@ pnpm start
 
 ## 📊 What's Included
 
-- **2,826 One Piece TCG cards** indexed
+- **4,815 One Piece TCG cards** indexed (92.7% coverage)
 - **DINOv2 AI model** for visual identification
 - **ORB geometric verification** (watermark-resistant)
 - **Offline operation** (no internet needed after setup)
@@ -102,7 +102,7 @@ pnpm start
 
 1. **No card images displayed** - Only text metadata (name, price, rarity)
 2. **One Piece TCG only** - Other games not yet supported
-3. **53% card coverage** - 2,826 of 5,195 total cards (some images failed to download)
+3. **92.7% card coverage** - 4,815 of 5,195 total cards (380 cards missing images)
 4. **No inventory features** - Price checking only
 
 **This is a proof-of-concept demo**, not production-ready for shop deployment.
@@ -180,13 +180,13 @@ Before showing the demo:
 - **Shortcuts**: "Press E to export everything instantly"
 
 **What NOT to say**:
-- ❌ "It has every One Piece card" (only 53%)
+- ❌ "It has every One Piece card" (only 92.7%)
 - ❌ "It's ready for production" (demo version)
 - ❌ "You can see the card images" (not implemented)
 
 **What to say instead**:
 - ✅ "This demo shows the core technology working"
-- ✅ "We have 2,826 cards indexed as proof-of-concept"
+- ✅ "We have 4,815 cards indexed with 92.7% coverage"
 - ✅ "The identification accuracy is 100% on clean images"
 
 ---

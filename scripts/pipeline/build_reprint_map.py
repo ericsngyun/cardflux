@@ -8,8 +8,8 @@ from pathlib import Path
 from collections import defaultdict
 from typing import Dict, List
 
-ARTIFACTS_DIR = Path(__file__).parent.parent / "artifacts" / "metadata"
-GAME = "one-piece"
+ARTIFACTS_DIR = Path(__file__).parent.parent.parent / "artifacts" / "metadata"
+GAME = "one-piece-dinov2"
 
 def build_reprint_map():
     """Build a mapping of card names to all their product IDs (reprints)"""

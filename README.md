@@ -153,10 +153,10 @@ cardflux/
 
 ## Performance
 
-- **Identification Speed**: 200ms per card (CPU)
+- **Identification Speed**: 200-500ms per card (CPU)
 - **Accuracy**: 100% on exact matches, 92-99% on variants
-- **Database**: 5,186 One Piece cards (324 sealed products filtered)
-- **Reprint Detection**: 1,014 unique cards with multiple versions
+- **Database**: 4,815 One Piece cards indexed (92.7% coverage)
+- **Reprint Detection**: 1,011 unique cards with multiple versions
 
 ## Technology Stack
 

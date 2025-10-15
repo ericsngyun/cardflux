@@ -12,9 +12,9 @@ When you clone this repository, these critical directories will be **empty**:
 ```
 data/                    ← All card data (gitignored)
 ├── curated/
-│   └── one-piece.jsonl  ← 2.7 MB - Card metadata (4,813 cards)
+│   └── one-piece.jsonl  ← 2.7 MB - Card metadata (5,195 cards)
 └── images/
-    └── one-piece/       ← 400 MB - Card images (2,732 files)
+    └── one-piece/       ← 400 MB - Card images (5,113 files)
 
 artifacts/               ← All ML artifacts (gitignored)
 ├── faiss/
@@ -30,7 +30,7 @@ artifacts/               ← All ML artifacts (gitignored)
             └── reprints.json     ← Reprint mapping
 ```
 
-**Total size**: ~500 MB compressed, ~1 GB uncompressed
+**Total size**: ~600 MB compressed, ~1.2 GB uncompressed
 
 ---
 
@@ -215,10 +215,10 @@ ls data/images/one-piece/ | wc -l  # Should show 2732+
 | Component | Files | Total Size | Compressed |
 |-----------|-------|------------|------------|
 | Card metadata | 1 | 2.7 MB | ~500 KB |
-| Card images | 2,732 | 400 MB | ~200 MB |
+| Card images | 5,113 | 750 MB | ~400 MB |
 | FAISS index | 3 | 7.2 MB | ~3 MB |
 | Embeddings | 3 | 18 MB | ~8 MB |
-| **Total** | **2,739** | **~428 MB** | **~212 MB** |
+| **Total** | **5,120** | **~778 MB** | **~411 MB** |
 
 ---
 
