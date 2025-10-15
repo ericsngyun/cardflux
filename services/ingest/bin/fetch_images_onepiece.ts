@@ -13,9 +13,30 @@ interface Card {
   imageUrl?: string;
 }
 
-async function downloadImage(url: string, filepath: string): Promise<void> {
-  const response = await axios.get(url, { responseType: 'arraybuffer', timeout: 10000 });
-  fs.writeFileSync(filepath, response.data);
+async function downloadImage(url: string, filepath: string, retries = 3): Promise<void> {
+  for (let attempt = 0; attempt < retries; attempt++) {
+    try {
+      const response = await axios.get(url, {
+        responseType: 'arraybuffer',
+        timeout: 15000,
+        headers: {
+          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
+        },
+      });
+      fs.writeFileSync(filepath, response.data);
+      return;
+    } catch (error: any) {
+      if (attempt === retries - 1) throw error;
+
+      // Exponential backoff for 403 errors
+      if (error.response?.status === 403 || error.response?.status === 429) {
+        const delay = Math.pow(2, attempt) * 1000; // 1s, 2s, 4s
+        await new Promise(resolve => setTimeout(resolve, delay));
+      } else {
+        throw error;
+      }
+    }
+  }
 }
 
 async function fetchImagesForOnePiece() {
@@ -38,6 +59,7 @@ async function fetchImagesForOnePiece() {
   let downloaded = 0;
   let skipped = 0;
   let failed = 0;
+  const failedCards: string[] = [];
 
   for (let i = 0; i < lines.length; i++) {
     const card: Card = JSON.parse(lines[i]);
@@ -65,14 +87,19 @@ async function fetchImagesForOnePiece() {
       if (downloaded % 50 === 0) {
         console.log(`Progress: ${downloaded} downloaded, ${skipped} skipped, ${failed} failed (${i + 1}/${lines.length})`);
       }
+
+      // Adaptive rate limiting: slow down after every batch
+      if (downloaded % 10 === 0) {
+        await new Promise(resolve => setTimeout(resolve, 500)); // Increased delay
+      } else {
+        await new Promise(resolve => setTimeout(resolve, 100));
+      }
     } catch (error: any) {
       failed++;
-      console.error(`Failed to download ${cardId}: ${error.message}`);
-    }
-
-    // Small delay to avoid rate limiting
-    if (downloaded % 10 === 0) {
-      await new Promise(resolve => setTimeout(resolve, 100));
+      failedCards.push(cardId);
+      if (failed <= 10) {
+        console.error(`Failed to download ${cardId}: ${error.message}`);
+      }
     }
   }
 
@@ -81,6 +108,11 @@ async function fetchImagesForOnePiece() {
   console.log(`Skipped: ${skipped} (already exist)`);
   console.log(`Failed: ${failed}`);
   console.log(`Total: ${lines.length} cards`);
+  console.log(`Success rate: ${((downloaded / (downloaded + failed)) * 100).toFixed(1)}%`);
+
+  if (failed > 0) {
+    console.log(`\nFirst 20 failed card IDs: ${failedCards.slice(0, 20).join(', ')}`);
+  }
 }
 
 fetchImagesForOnePiece().catch(console.error);

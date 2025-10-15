@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useCallback } from 'react';
+import React, { useEffect, useState, useCallback, useMemo } from 'react';
 import { createRoot } from 'react-dom/client';
 import { CameraView } from './components/CameraView';
 import { CardStack, CardStackItem } from './components/CardStack';
@@ -249,6 +249,11 @@ const App: React.FC = () => {
 
   const isSystemReady = systemStatus.identifier.ready;
 
+  // Memoize total value calculation for performance
+  const totalValue = useMemo(() => {
+    return cards.reduce((sum, card) => sum + card.price, 0);
+  }, [cards]);
+
   return (
     <div className="app-container">
       {/* Top Bar */}
@@ -351,7 +356,7 @@ const App: React.FC = () => {
           <span>Cards Scanned: {cards.length}</span>
           <span className="separator">•</span>
           <span>
-            Total Value: ${cards.reduce((sum, card) => sum + card.price, 0).toFixed(2)}
+            Total Value: ${totalValue.toFixed(2)}
           </span>
         </div>
       </footer>

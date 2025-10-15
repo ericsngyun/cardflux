@@ -1,4 +1,4 @@
-import React, { useRef, useEffect, useState } from 'react';
+import React, { useRef, useEffect, useState, useMemo } from 'react';
 import { detectCard, DetectedCard } from '../utils/cardDetection';
 
 interface CameraViewProps {
@@ -14,6 +14,28 @@ export const CameraView: React.FC<CameraViewProps> = React.memo(({ onCapture, is
   const [error, setError] = useState<string | null>(null);
   const [detectedCard, setDetectedCard] = useState<DetectedCard | null>(null);
   const animationFrameRef = useRef<number>();
+
+  // Memoize canvas dimensions for performance
+  const canvasDimensions = useMemo(() => ({
+    width: detectionCanvasRef.current?.width || 1,
+    height: detectionCanvasRef.current?.height || 1,
+  }), [detectionCanvasRef.current?.width, detectionCanvasRef.current?.height]);
+
+  // Memoize detected card box style for performance
+  const detectedCardStyle = useMemo(() => {
+    if (!detectedCard) return null;
+
+    return {
+      position: 'absolute' as const,
+      left: `${(detectedCard.x / canvasDimensions.width) * 100}%`,
+      top: `${(detectedCard.y / canvasDimensions.height) * 100}%`,
+      width: `${(detectedCard.width / canvasDimensions.width) * 100}%`,
+      height: `${(detectedCard.height / canvasDimensions.height) * 100}%`,
+      border: '2px solid rgba(255, 255, 255, 0.8)',
+      borderRadius: '4px',
+      pointerEvents: 'none' as const,
+    };
+  }, [detectedCard, canvasDimensions]);
 
   useEffect(() => {
     startCamera();
@@ -55,7 +77,7 @@ export const CameraView: React.FC<CameraViewProps> = React.memo(({ onCapture, is
     }
   };
 
-  // Continuous card detection
+  // Continuous card detection (throttled for performance)
   useEffect(() => {
     if (!isCameraActive || !videoRef.current || !detectionCanvasRef.current) {
       return;
@@ -65,15 +87,29 @@ export const CameraView: React.FC<CameraViewProps> = React.memo(({ onCapture, is
     const detectionCanvas = detectionCanvasRef.current;
     const detectionCtx = detectionCanvas.getContext('2d')!;
 
-    const detectCardInFrame = () => {
+    // Throttle detection to ~5 FPS (200ms) instead of 60 FPS for better performance
+    const DETECTION_INTERVAL = 200; // ms
+    let lastDetectionTime = 0;
+
+    const detectCardInFrame = (timestamp: number) => {
+      // Throttle detection
+      if (timestamp - lastDetectionTime < DETECTION_INTERVAL) {
+        animationFrameRef.current = requestAnimationFrame(detectCardInFrame);
+        return;
+      }
+
+      lastDetectionTime = timestamp;
+
       if (!video.videoWidth || !video.videoHeight) {
         animationFrameRef.current = requestAnimationFrame(detectCardInFrame);
         return;
       }
 
-      // Set canvas size to match video
-      detectionCanvas.width = video.videoWidth;
-      detectionCanvas.height = video.videoHeight;
+      // Set canvas size once (not on every frame)
+      if (detectionCanvas.width !== video.videoWidth) {
+        detectionCanvas.width = video.videoWidth;
+        detectionCanvas.height = video.videoHeight;
+      }
 
       // Draw current frame
       detectionCtx.drawImage(video, 0, 0);
@@ -95,7 +131,7 @@ export const CameraView: React.FC<CameraViewProps> = React.memo(({ onCapture, is
     };
 
     // Start detection loop
-    detectCardInFrame();
+    animationFrameRef.current = requestAnimationFrame(detectCardInFrame);
 
     return () => {
       if (animationFrameRef.current) {
@@ -173,21 +209,9 @@ export const CameraView: React.FC<CameraViewProps> = React.memo(({ onCapture, is
 
             {isCameraActive && (
               <div className="camera-overlay">
-                {detectedCard ? (
+                {detectedCard && detectedCardStyle ? (
                   <>
-                    <div
-                      className="detected-card-box"
-                      style={{
-                        position: 'absolute',
-                        left: `${(detectedCard.x / (detectionCanvasRef.current?.width || 1)) * 100}%`,
-                        top: `${(detectedCard.y / (detectionCanvasRef.current?.height || 1)) * 100}%`,
-                        width: `${(detectedCard.width / (detectionCanvasRef.current?.width || 1)) * 100}%`,
-                        height: `${(detectedCard.height / (detectionCanvasRef.current?.height || 1)) * 100}%`,
-                        border: '2px solid rgba(255, 255, 255, 0.8)',
-                        borderRadius: '4px',
-                        pointerEvents: 'none',
-                      }}
-                    >
+                    <div className="detected-card-box" style={detectedCardStyle}>
                       <div className="detection-corners">
                         <div className="corner corner-tl" />
                         <div className="corner corner-tr" />
