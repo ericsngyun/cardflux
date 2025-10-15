@@ -27,7 +27,6 @@ def package_data():
         "artifacts/faiss/one-piece-dinov2/index.faiss",
         "artifacts/faiss/one-piece-dinov2/ids.json",
         "artifacts/faiss/one-piece-dinov2/index_config.json",
-        "artifacts/metadata/embeddings/one-piece-dinov2/embeddings.npy",
         "artifacts/metadata/embeddings/one-piece-dinov2/metadata.jsonl",
         "artifacts/metadata/embeddings/one-piece-dinov2/reprints.json",
     ]
@@ -106,7 +105,6 @@ artifacts/
 └── metadata/
     └── embeddings/
         └── one-piece-dinov2/
-            ├── embeddings.npy   (DINOv2 embeddings)
             ├── metadata.jsonl   (Card metadata, 2.7 MB)
             └── reprints.json    (Reprint mapping, 4.0 MB)
 ```
