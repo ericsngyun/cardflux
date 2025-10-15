@@ -15,13 +15,36 @@ CardFlux uses computer vision and machine learning to identify trading cards in 
 
 ## Quick Start
 
-### Prerequisites
+### For Desktop App Users
+
+**New to CardFlux? Start here:**
+
+👉 **[Complete Deployment Guide](DEPLOYMENT_GUIDE.md)** - Step-by-step setup for Windows, macOS, and Linux
+
+**Quick automated setup:**
+
+```bash
+# Windows
+git clone https://github.com/yourusername/cardflux.git
+cd cardflux
+pwsh scripts/setup/setup-windows.ps1
+
+# macOS/Linux
+git clone https://github.com/yourusername/cardflux.git
+cd cardflux
+chmod +x scripts/setup/setup-macos.sh  # or setup-linux.sh
+./scripts/setup/setup-macos.sh
+```
+
+### For Developers
+
+#### Prerequisites
 
 - Node.js 20+ and pnpm
 - Python 3.10+
 - Git
 
-### Installation
+#### Installation
 
 ```bash
 # Clone repository
@@ -32,7 +55,7 @@ cd cardflux
 pnpm install
 
 # Install Python dependencies
-pip install torch transformers faiss-cpu pillow numpy tqdm
+pip install -r requirements.txt
 ```
 
 ### Build One Piece TCG Index
@@ -95,8 +118,9 @@ cardflux/
 
 ## Documentation
 
-### Essential Guides
-- **[Local Development Guide](docs/guides/LOCAL_DEVELOPMENT.md)** - Setup and development workflow
+### Getting Started
+- **[Deployment Guide](DEPLOYMENT_GUIDE.md)** - ⭐ Complete setup guide for Windows, macOS, and Linux
+- **[Local Development Guide](docs/guides/LOCAL_DEVELOPMENT.md)** - Development workflow and testing
 - **[Testing Guide](docs/guides/TESTING_GUIDE.md)** - Running tests and validating changes
 - **[One Piece Identification Guide](docs/guides/TEST_ONEPIECE_IDENTIFICATION.md)** - Test identification system
 

@@ -1,0 +1,38 @@
+# CardFlux Python Dependencies
+# Complete requirements for desktop app and data pipeline
+# Tested with Python 3.10+
+
+# Core ML/AI Framework
+torch>=2.1.0
+torchvision>=0.16.0
+
+# Vision Transformers and Models
+transformers>=4.35.0
+
+# Vector Search and Similarity
+faiss-cpu>=1.7.4
+# For GPU support, replace faiss-cpu with: faiss-gpu>=1.7.4
+
+# Image Processing
+Pillow>=10.1.0
+opencv-python>=4.8.0
+
+# OCR Engines (choose one or both)
+easyocr>=1.7.0
+paddleocr>=2.7.0
+
+# Numerical Computing
+numpy>=1.24.0
+
+# Utilities
+tqdm>=4.66.0
+
+# Optional: Development and Testing
+# pytest>=7.4.0
+# pytest-cov>=4.1.0
+
+# Notes:
+# - For GPU acceleration: Install faiss-gpu instead of faiss-cpu
+# - For Apple Silicon (M1/M2): Use torch with MPS support
+# - EasyOCR downloads additional models on first run (~100 MB)
+# - PaddleOCR is optional alternative OCR backend
