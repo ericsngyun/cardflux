@@ -134,6 +134,20 @@ ipcMain.handle('identifier:identify', async (_event, imagePath: string, options:
   }
 });
 
+ipcMain.handle('identifier:detect-card', async (_event, imageData: string) => {
+  try {
+    if (!identificationService || !identificationService.isInitialized()) {
+      return { success: false, error: 'Service not initialized' };
+    }
+
+    const result = await identificationService.detectCard(imageData);
+    return { success: true, result };
+  } catch (error: any) {
+    console.error('Card detection failed:', error);
+    return { success: false, error: error.message };
+  }
+});
+
 ipcMain.handle('identifier:status', async () => {
   if (!identificationService) {
     return { initialized: false, ready: false, running: false };
@@ -178,6 +192,70 @@ ipcMain.handle('camera:capture', async (_event, imageData: string) => {
     return { success: true, imagePath: outputPath };
   } catch (error: any) {
     console.error('Camera capture failed:', error);
+    return { success: false, error: error.message };
+  }
+});
+
+// Handle data sync
+ipcMain.handle('sync:data', async (_event, game: string) => {
+  try {
+    console.log('[Sync] Starting data sync for:', game);
+
+    const { spawn } = require('child_process');
+    const rootDir = path.join(__dirname, '../../../..');
+
+    // Run TCGPlayer scraper for the specified game
+    const scraperPath = path.join(rootDir, 'services/ingest/bin/tcgplayer-scraper-onepiece.ts');
+
+    console.log('[Sync] Running scraper:', scraperPath);
+
+    return new Promise((resolve, reject) => {
+      const scraper = spawn('pnpm', ['tsx', scraperPath], {
+        cwd: rootDir,
+        stdio: 'pipe',
+      });
+
+      let output = '';
+      scraper.stdout?.on('data', (data: Buffer) => {
+        const text = data.toString();
+        output += text;
+        console.log('[Scraper]', text);
+      });
+
+      scraper.stderr?.on('data', (data: Buffer) => {
+        console.error('[Scraper Error]', data.toString());
+      });
+
+      scraper.on('close', (code: number) => {
+        if (code === 0) {
+          console.log('[Sync] Sync completed successfully');
+
+          // Parse output to get stats
+          const updatedMatch = output.match(/(\d+)\s+cards?\s+updated/i);
+          const newMatch = output.match(/(\d+)\s+new\s+cards?/i);
+
+          resolve({
+            success: true,
+            updatedCards: updatedMatch ? parseInt(updatedMatch[1]) : 0,
+            newCards: newMatch ? parseInt(newMatch[1]) : 0,
+          });
+        } else {
+          reject(new Error(`Scraper exited with code ${code}`));
+        }
+      });
+
+      scraper.on('error', (error: Error) => {
+        reject(error);
+      });
+
+      // Timeout after 5 minutes
+      setTimeout(() => {
+        scraper.kill();
+        reject(new Error('Sync timeout'));
+      }, 5 * 60 * 1000);
+    });
+  } catch (error: any) {
+    console.error('[Sync] Sync failed:', error);
     return { success: false, error: error.message };
   }
 });

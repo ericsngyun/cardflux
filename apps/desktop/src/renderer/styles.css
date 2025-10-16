@@ -206,6 +206,93 @@ button {
   gap: var(--spacing-lg);
 }
 
+.sync-container {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-md);
+  padding: var(--spacing-sm) var(--spacing-md);
+  background: var(--bg-tertiary);
+  border: 1px solid var(--border-primary);
+  border-radius: var(--radius-md);
+}
+
+.sync-status {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+}
+
+.sync-icon {
+  font-size: 1rem;
+  opacity: 0.7;
+  transition: transform 0.3s ease;
+}
+
+.sync-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.sync-label {
+  font-size: 0.6875rem;
+  color: var(--text-tertiary);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  font-weight: 600;
+}
+
+.sync-time {
+  font-size: 0.8125rem;
+  color: var(--text-secondary);
+  font-weight: 500;
+  font-variant-numeric: tabular-nums;
+}
+
+.sync-status-success .sync-icon {
+  opacity: 0.5;
+}
+
+.sync-status-warning .sync-icon {
+  opacity: 0.8;
+  filter: hue-rotate(30deg);
+}
+
+.sync-status-error .sync-icon {
+  opacity: 1;
+  animation: pulse 2s ease-in-out infinite;
+}
+
+.sync-status-warning .sync-time {
+  color: var(--warning);
+}
+
+.sync-status-error .sync-time {
+  color: var(--error);
+}
+
+.btn-sync {
+  position: relative;
+  overflow: hidden;
+}
+
+.btn-sync-needed {
+  animation: pulseGlow 2s ease-in-out infinite;
+}
+
+.btn-syncing .sync-icon {
+  animation: spin 1s linear infinite;
+}
+
+@keyframes pulseGlow {
+  0%, 100% {
+    box-shadow: 0 0 0 rgba(255, 255, 255, 0);
+  }
+  50% {
+    box-shadow: 0 0 12px rgba(255, 255, 255, 0.3);
+  }
+}
+
 .system-status {
   display: flex;
   align-items: center;
@@ -392,17 +479,55 @@ button {
 
 .camera-hint {
   position: absolute;
-  bottom: -48px;
+  bottom: -70px;
   color: rgba(255, 255, 255, 0.6);
   font-size: 0.875rem;
   font-weight: 500;
   letter-spacing: 0.02em;
   transition: color 0.3s ease;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-sm);
 }
 
 .camera-hint-ready {
   color: rgba(255, 255, 255, 0.9);
   font-weight: 600;
+}
+
+.hint-success {
+  color: #4CAF50 !important;
+  font-weight: 600;
+}
+
+.hint-warning {
+  color: #FFC107 !important;
+}
+
+.hint-error {
+  color: #F44336 !important;
+}
+
+.detection-warnings {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-top: 4px;
+}
+
+.warning-text {
+  font-size: 0.75rem;
+  color: rgba(255, 193, 7, 0.9);
+  font-weight: 500;
+}
+
+.detection-metrics {
+  font-size: 0.75rem;
+  color: rgba(76, 175, 80, 0.9);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  margin-top: 4px;
 }
 
 .detected-card-box {
@@ -781,43 +906,57 @@ button {
   border: 1px solid transparent;
   border-radius: var(--radius-md);
   cursor: pointer;
-  transition: all 0.05s ease-out; /* Instant feel - was 0.2s */
+  transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1); /* Smooth easing */
   text-transform: none;
   letter-spacing: 0;
   white-space: nowrap;
   /* Force GPU acceleration for buttons */
   transform: translateZ(0);
   backface-visibility: hidden;
+  will-change: transform, box-shadow;
+  /* Perfect click feedback */
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.btn:active:not(:disabled) {
+  transform: scale(0.98);
+  transition: all 0.05s ease-out;
 }
 
 .btn:disabled {
-  opacity: 0.4;
+  opacity: 0.5;
   cursor: not-allowed;
   pointer-events: none;
+  filter: grayscale(0.3);
 }
 
 .btn-primary {
   background: var(--accent);
   color: var(--bg-primary);
   border-color: var(--accent);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
 }
 
 .btn-primary:hover:not(:disabled) {
   background: var(--text-secondary);
   border-color: var(--text-secondary);
-  transform: translateY(-1px);
-  box-shadow: var(--shadow-md);
+  transform: translateY(-2px) translateZ(0);
+  box-shadow: 0 4px 12px rgba(255, 255, 255, 0.15);
 }
 
 .btn-secondary {
   background: var(--bg-tertiary);
   color: var(--text-primary);
   border-color: var(--border-primary);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
 }
 
 .btn-secondary:hover:not(:disabled) {
   background: var(--bg-elevated);
   border-color: var(--accent-dim);
+  transform: translateY(-1px) translateZ(0);
+  box-shadow: 0 3px 8px rgba(255, 255, 255, 0.08);
 }
 
 .btn-danger {
@@ -830,16 +969,20 @@ button {
   background: var(--bg-elevated);
   color: var(--text-primary);
   border-color: var(--accent-dim);
+  transform: translateY(-1px) translateZ(0);
 }
 
 .btn-sm {
-  padding: 6px 12px;
-  font-size: 0.75rem;
+  padding: 7px 14px;
+  font-size: 0.8125rem;
+  font-weight: 500;
+  border-radius: var(--radius-sm);
 }
 
 .btn-lg {
-  padding: 14px 24px;
+  padding: 14px 28px;
   font-size: 1rem;
+  font-weight: 600;
 }
 
 /* ===================================

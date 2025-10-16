@@ -18,8 +18,9 @@ const DEFAULT_SETTINGS: IdentificationSettings = {
   useGeometric: true,
 };
 
-// LocalStorage key
+// LocalStorage keys
 const SETTINGS_STORAGE_KEY = 'cardflux-settings';
+const SYNC_STATUS_STORAGE_KEY = 'cardflux-sync-status';
 
 const App: React.FC = () => {
   const [cards, setCards] = useState<CardStackItem[]>([]);
@@ -34,6 +35,15 @@ const App: React.FC = () => {
   } | null>(null);
   const [showSettings, setShowSettings] = useState(false);
   const [showCaptureFlash, setShowCaptureFlash] = useState(false);
+  const [isSyncing, setIsSyncing] = useState(false);
+  const [lastSyncTime, setLastSyncTime] = useState<number | null>(() => {
+    try {
+      const stored = localStorage.getItem(SYNC_STATUS_STORAGE_KEY);
+      return stored ? JSON.parse(stored).timestamp : null;
+    } catch {
+      return null;
+    }
+  });
   const [scanStats, setScanStats] = useState({
     totalScans: 0,
     highConfidence: 0,
@@ -262,6 +272,82 @@ const App: React.FC = () => {
     // audio.play().catch(() => {});
   };
 
+  const handleSync = useCallback(async () => {
+    if (isSyncing) return;
+
+    setIsSyncing(true);
+    showNotification('warning', 'Syncing card data and prices...');
+
+    try {
+      console.log('[App] Starting data sync...');
+
+      // Call sync IPC handler
+      const result = await window.sync.syncData(settings.tcgGame);
+
+      if (!result.success) {
+        throw new Error(result.error || 'Sync failed');
+      }
+
+      // Update last sync time
+      const now = Date.now();
+      setLastSyncTime(now);
+      localStorage.setItem(
+        SYNC_STATUS_STORAGE_KEY,
+        JSON.stringify({ timestamp: now, game: settings.tcgGame })
+      );
+
+      showNotification(
+        'success',
+        `Sync complete! Updated ${result.updatedCards || 0} cards, ${result.newCards || 0} new cards.`
+      );
+
+      console.log('[App] Sync complete:', result);
+    } catch (error: any) {
+      console.error('[App] Sync error:', error);
+      showNotification('error', `Sync failed: ${error.message}`);
+    } finally {
+      setIsSyncing(false);
+    }
+  }, [isSyncing, settings.tcgGame]);
+
+  // Calculate sync status
+  const getSyncStatus = useMemo(() => {
+    if (!lastSyncTime) {
+      return { text: 'Never synced', status: 'warning', needsSync: true };
+    }
+
+    const now = Date.now();
+    const diffMs = now - lastSyncTime;
+    const diffHours = diffMs / (1000 * 60 * 60);
+    const diffDays = diffHours / 24;
+
+    if (diffDays >= 3) {
+      return {
+        text: `${Math.floor(diffDays)} days ago`,
+        status: 'error',
+        needsSync: true,
+      };
+    } else if (diffDays >= 1) {
+      return {
+        text: `${Math.floor(diffDays)} day${Math.floor(diffDays) > 1 ? 's' : ''} ago`,
+        status: 'warning',
+        needsSync: true,
+      };
+    } else if (diffHours >= 1) {
+      return {
+        text: `${Math.floor(diffHours)} hour${Math.floor(diffHours) > 1 ? 's' : ''} ago`,
+        status: 'success',
+        needsSync: false,
+      };
+    } else {
+      return {
+        text: 'Just now',
+        status: 'success',
+        needsSync: false,
+      };
+    }
+  }, [lastSyncTime]);
+
   // Global keyboard shortcuts - defined after all handlers
   useEffect(() => {
     const handleKeyPress = (e: KeyboardEvent) => {
@@ -346,6 +432,37 @@ const App: React.FC = () => {
         </div>
 
         <div className="header-right">
+          {/* Sync Status & Button */}
+          <div className="sync-container">
+            <div className={`sync-status sync-status-${getSyncStatus.status}`}>
+              <span className="sync-icon">🔄</span>
+              <div className="sync-info">
+                <span className="sync-label">Last Sync</span>
+                <span className="sync-time">{getSyncStatus.text}</span>
+              </div>
+            </div>
+            <button
+              className={`btn btn-sync btn-sm ${isSyncing ? 'btn-syncing' : ''} ${
+                getSyncStatus.needsSync ? 'btn-sync-needed' : ''
+              }`}
+              onClick={handleSync}
+              disabled={isSyncing}
+              aria-label="Sync data"
+              title={getSyncStatus.needsSync ? 'Sync recommended - data may be outdated' : 'Sync card data and prices'}
+            >
+              {isSyncing ? (
+                <>
+                  <span className="spinner-sm" />
+                  Syncing...
+                </>
+              ) : (
+                <>
+                  🔄 Sync
+                </>
+              )}
+            </button>
+          </div>
+
           <button
             className="btn btn-secondary btn-sm"
             onClick={() => setShowSettings(true)}

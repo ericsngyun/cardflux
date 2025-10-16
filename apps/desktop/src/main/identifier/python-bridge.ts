@@ -172,7 +172,13 @@ export class PythonIdentificationBridge extends EventEmitter {
    */
   async identifyCard(
     imagePath: string,
-    options: { topK?: number; tcgHint?: string } = {}
+    options: {
+      topK?: number;
+      tcgHint?: string;
+      useGeometric?: boolean;
+      skipOCR?: boolean;
+      skipFoil?: boolean;
+    } = {}
   ): Promise<IdentifyResult> {
     if (!this.initialized) {
       throw new Error('Service not initialized');
@@ -183,7 +189,29 @@ export class PythonIdentificationBridge extends EventEmitter {
       image_path: imagePath,
       top_k: options.topK || 50,
       tcg_hint: options.tcgHint || null,
-      use_geometric: true,  // Explicitly enable geometric verification
+      use_geometric: options.useGeometric !== undefined ? options.useGeometric : true,
+      skip_ocr: options.skipOCR !== undefined ? options.skipOCR : false,
+      skip_foil: options.skipFoil !== undefined ? options.skipFoil : false,
+    });
+  }
+
+  /**
+   * Detect card in a video frame (base64 encoded)
+   */
+  async detectCard(imageData: string): Promise<{
+    status: string;
+    confidence: number;
+    qualityScore: number;
+    warnings: string[];
+    isReady: boolean;
+    bbox: [number, number, number, number] | null;
+  }> {
+    if (!this.initialized) {
+      throw new Error('Service not initialized');
+    }
+
+    return this.sendRequest('detect_card', {
+      image_data: imageData,
     });
   }
 

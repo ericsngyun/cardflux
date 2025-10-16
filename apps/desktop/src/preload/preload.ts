@@ -22,8 +22,13 @@ export interface CameraAPI {
 export interface IdentifierAPI {
   initialize: (game?: string) => Promise<{ success: boolean; game?: string; error?: string }>;
   identify: (imagePath: string, options?: any) => Promise<{ success: boolean; result?: any; error?: string }>;
+  detectCard: (imageData: string) => Promise<{ success: boolean; result?: any; error?: string }>;
   getStatus: () => Promise<{ initialized: boolean; ready: boolean; running: boolean }>;
   stop: () => Promise<{ success: boolean }>;
+}
+
+export interface SyncAPI {
+  syncData: (game: string) => Promise<{ success: boolean; updatedCards?: number; newCards?: number; error?: string }>;
 }
 
 // Expose protected APIs to renderer
@@ -62,9 +67,14 @@ contextBridge.exposeInMainWorld('camera', {
 contextBridge.exposeInMainWorld('identifier', {
   initialize: (game?: string) => ipcRenderer.invoke('identifier:initialize', game),
   identify: (imagePath: string, options?: any) => ipcRenderer.invoke('identifier:identify', imagePath, options),
+  detectCard: (imageData: string) => ipcRenderer.invoke('identifier:detect-card', imageData),
   getStatus: () => ipcRenderer.invoke('identifier:status'),
   stop: () => ipcRenderer.invoke('identifier:stop'),
 } as IdentifierAPI);
+
+contextBridge.exposeInMainWorld('sync', {
+  syncData: (game: string) => ipcRenderer.invoke('sync:data', game),
+} as SyncAPI);
 
 // Expose type declarations for TypeScript support in renderer
 declare global {
@@ -72,5 +82,6 @@ declare global {
     scanner: ScannerAPI;
     camera: CameraAPI;
     identifier: IdentifierAPI;
+    sync: SyncAPI;
   }
 }
