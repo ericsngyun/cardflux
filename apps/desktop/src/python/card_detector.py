@@ -6,11 +6,12 @@ Detects trading cards in video frames using edge detection and contour analysis.
 Handles cards at various distances, angles, and positions in frame.
 
 Features:
-- Real-time card boundary detection
+- Real-time card boundary detection with temporal stabilization
 - Edge-based contour detection
 - Perspective correction for angled cards
 - Auto-crop to card boundaries
 - Quality validation (blur, glare, lighting)
+- Hysteresis and confidence-based locking for stable detection
 
 Author: Senior Principal Engineer
 Date: 2025-10-16
@@ -20,6 +21,7 @@ import numpy as np
 from typing import Optional, Tuple, List, Dict
 from dataclasses import dataclass
 from enum import Enum
+from collections import deque
 
 
 class CardDetectionStatus(Enum):
@@ -72,9 +74,9 @@ class CardDetector:
     MAX_CARD_AREA = 0.85  # 85% of frame
     OPTIMAL_CARD_AREA = 0.25  # 25% of frame (more flexible optimal range)
 
-    # Edge detection thresholds (lower = more sensitive, better for farther cards)
-    CANNY_LOW = 30
-    CANNY_HIGH = 120
+    # Edge detection thresholds (balanced for stability and sensitivity)
+    CANNY_LOW = 40
+    CANNY_HIGH = 130
 
     # Quality thresholds
     MIN_SHARPNESS = 30  # Laplacian variance (lower threshold for farther cards)
@@ -286,7 +288,8 @@ class CardDetector:
                 best_score = score
                 best_contour = contour
 
-        return best_contour if best_score > 0.5 else None
+        # Higher threshold for more reliable detection
+        return best_contour if best_score > 0.6 else None
 
     def _correct_perspective(self, frame: np.ndarray, corners: np.ndarray, aspect_ratio: float) -> Optional[np.ndarray]:
         """
@@ -484,6 +487,236 @@ class CardDetector:
                 y_offset += 25
 
         return vis
+
+
+class StabilizedCardDetector:
+    """
+    Wrapper around CardDetector that adds temporal stabilization.
+
+    Prevents flickering by:
+    - Maintaining detection history
+    - Smoothing bounding box positions (EMA)
+    - Adding hysteresis (requires multiple NO_CARD frames)
+    - Confidence-based locking
+    - IOU validation for bbox updates
+    """
+
+    def __init__(self, frame_width: int = 1920, frame_height: int = 1080, history_size: int = 10):
+        """
+        Initialize stabilized detector.
+
+        Args:
+            frame_width: Width of camera frame
+            frame_height: Height of camera frame
+            history_size: Number of frames to keep in history
+        """
+        self.detector = CardDetector(frame_width, frame_height)
+        self.history = deque(maxlen=history_size)
+
+        # Stabilization parameters
+        self.hysteresis_threshold = 3  # Require 3 NO_CARD frames before clearing
+        self.no_card_counter = 0
+        self.lock_frames = 5  # Lock bbox for this many frames when high confidence
+        self.lock_counter = 0
+
+        # Current stabilized state
+        self.current_bbox = None
+        self.current_status = CardDetectionStatus.NO_CARD
+        self.current_confidence = 0.0
+
+        # EMA smoothing factor (0.3 = smooth, 0.7 = responsive)
+        self.alpha = 0.4
+
+    def detect_card(self, frame: np.ndarray) -> CardDetectionResult:
+        """
+        Detect card with temporal stabilization.
+
+        Args:
+            frame: Input frame
+
+        Returns:
+            Stabilized CardDetectionResult
+        """
+        # Run raw detection
+        raw_result = self.detector.detect_card(frame)
+
+        # Add to history
+        self.history.append(raw_result)
+
+        # Apply stabilization logic
+        stabilized_result = self._stabilize(raw_result, frame)
+
+        return stabilized_result
+
+    def _stabilize(self, raw_result: CardDetectionResult, frame: np.ndarray) -> CardDetectionResult:
+        """Apply temporal stabilization to detection result."""
+
+        # Case 1: No card detected in raw result
+        if raw_result.status == CardDetectionStatus.NO_CARD or raw_result.bbox is None:
+            self.no_card_counter += 1
+
+            # Check if we're currently locked
+            if self.lock_counter > 0:
+                # Still locked, maintain previous detection
+                self.lock_counter -= 1
+                return CardDetectionResult(
+                    status=self.current_status,
+                    confidence=self.current_confidence * 0.95,  # Decay confidence
+                    bbox=self.current_bbox,
+                    corners=None,
+                    cropped_card=None,
+                    quality_score=0.0,
+                    warnings=["Maintaining previous detection (locked)"]
+                )
+
+            # Check hysteresis threshold
+            if self.no_card_counter < self.hysteresis_threshold and self.current_bbox is not None:
+                # Haven't crossed threshold yet, maintain previous
+                return CardDetectionResult(
+                    status=self.current_status,
+                    confidence=self.current_confidence * 0.9,  # Decay confidence
+                    bbox=self.current_bbox,
+                    corners=None,
+                    cropped_card=None,
+                    quality_score=0.0,
+                    warnings=["Maintaining previous detection (hysteresis)"]
+                )
+
+            # Crossed threshold, clear detection
+            self.current_bbox = None
+            self.current_status = CardDetectionStatus.NO_CARD
+            self.current_confidence = 0.0
+            self.lock_counter = 0
+            return raw_result
+
+        # Case 2: Card detected
+        self.no_card_counter = 0  # Reset counter
+
+        # Validate with IOU if we have previous bbox
+        if self.current_bbox is not None:
+            iou = self._calculate_iou(self.current_bbox, raw_result.bbox)
+
+            # Reject if IOU too low (likely different object)
+            if iou < 0.3:
+                # Check if new detection has higher confidence
+                if raw_result.confidence > self.current_confidence * 1.2:
+                    # New detection is significantly better, accept it
+                    pass
+                else:
+                    # Maintain previous detection
+                    return CardDetectionResult(
+                        status=self.current_status,
+                        confidence=self.current_confidence,
+                        bbox=self.current_bbox,
+                        corners=None,
+                        cropped_card=None,
+                        quality_score=0.0,
+                        warnings=["IOU too low, maintaining previous"]
+                    )
+
+        # Smooth bounding box with EMA
+        if self.current_bbox is not None:
+            smoothed_bbox = self._smooth_bbox(self.current_bbox, raw_result.bbox)
+        else:
+            smoothed_bbox = raw_result.bbox
+
+        # Update state
+        self.current_bbox = smoothed_bbox
+        self.current_status = raw_result.status
+        self.current_confidence = raw_result.confidence
+
+        # Apply confidence-based locking
+        if raw_result.confidence > 0.75 and raw_result.status == CardDetectionStatus.CARD_READY:
+            self.lock_counter = self.lock_frames
+
+        # Get median status from history for stability
+        stabilized_status = self._get_median_status()
+
+        # Re-crop card with stabilized bbox
+        cropped_card = raw_result.cropped_card
+        if cropped_card is None and smoothed_bbox is not None:
+            x, y, w, h = smoothed_bbox
+            x, y, w, h = int(x), int(y), int(w), int(h)
+            # Ensure bbox is within frame
+            x = max(0, min(x, frame.shape[1] - 1))
+            y = max(0, min(y, frame.shape[0] - 1))
+            w = max(1, min(w, frame.shape[1] - x))
+            h = max(1, min(h, frame.shape[0] - y))
+            cropped_card = frame[y:y+h, x:x+w]
+
+        return CardDetectionResult(
+            status=stabilized_status,
+            confidence=self.current_confidence,
+            bbox=smoothed_bbox,
+            corners=raw_result.corners,
+            cropped_card=cropped_card,
+            quality_score=raw_result.quality_score,
+            warnings=raw_result.warnings
+        )
+
+    def _smooth_bbox(self, prev_bbox: Tuple[int, int, int, int],
+                     new_bbox: Tuple[int, int, int, int]) -> Tuple[int, int, int, int]:
+        """Apply exponential moving average to bbox coordinates."""
+        px, py, pw, ph = prev_bbox
+        nx, ny, nw, nh = new_bbox
+
+        # EMA: smoothed = alpha * new + (1 - alpha) * prev
+        sx = int(self.alpha * nx + (1 - self.alpha) * px)
+        sy = int(self.alpha * ny + (1 - self.alpha) * py)
+        sw = int(self.alpha * nw + (1 - self.alpha) * pw)
+        sh = int(self.alpha * nh + (1 - self.alpha) * ph)
+
+        return (sx, sy, sw, sh)
+
+    def _calculate_iou(self, bbox1: Tuple[int, int, int, int],
+                       bbox2: Tuple[int, int, int, int]) -> float:
+        """Calculate Intersection over Union between two bboxes."""
+        x1, y1, w1, h1 = bbox1
+        x2, y2, w2, h2 = bbox2
+
+        # Calculate intersection
+        x_left = max(x1, x2)
+        y_top = max(y1, y2)
+        x_right = min(x1 + w1, x2 + w2)
+        y_bottom = min(y1 + h1, y2 + h2)
+
+        if x_right < x_left or y_bottom < y_top:
+            return 0.0
+
+        intersection = (x_right - x_left) * (y_bottom - y_top)
+
+        # Calculate union
+        area1 = w1 * h1
+        area2 = w2 * h2
+        union = area1 + area2 - intersection
+
+        return intersection / union if union > 0 else 0.0
+
+    def _get_median_status(self) -> CardDetectionStatus:
+        """Get median status from recent history for stability."""
+        if len(self.history) < 3:
+            return self.current_status
+
+        # Count status occurrences in recent history (last 5 frames)
+        recent = list(self.history)[-5:]
+        status_counts = {}
+        for result in recent:
+            status = result.status
+            status_counts[status] = status_counts.get(status, 0) + 1
+
+        # Return most common status
+        if status_counts:
+            return max(status_counts, key=status_counts.get)
+        return self.current_status
+
+    def reset(self):
+        """Reset stabilization state."""
+        self.history.clear()
+        self.current_bbox = None
+        self.current_status = CardDetectionStatus.NO_CARD
+        self.current_confidence = 0.0
+        self.no_card_counter = 0
+        self.lock_counter = 0
 
 
 def test_card_detector():

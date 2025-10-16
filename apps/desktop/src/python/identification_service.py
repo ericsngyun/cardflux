@@ -17,7 +17,7 @@ scripts_dir = Path(__file__).parent.parent.parent.parent.parent / "scripts" / "i
 sys.path.insert(0, str(scripts_dir))
 
 from production_card_identifier import ProductionCardIdentifier
-from card_detector import CardDetector, CardDetectionStatus
+from card_detector import StabilizedCardDetector, CardDetectionStatus
 
 class IdentificationService:
     """JSON-RPC service for card identification."""
@@ -54,9 +54,9 @@ class IdentificationService:
             self._log(f"Initializing identifier for game: {game}")
             self.identifier = ProductionCardIdentifier(game=game, verbose=False)
 
-            # Initialize card detector
-            self._log("Initializing card detector...")
-            self.card_detector = CardDetector(frame_width=1920, frame_height=1080)
+            # Initialize stabilized card detector with temporal smoothing
+            self._log("Initializing stabilized card detector with temporal smoothing...")
+            self.card_detector = StabilizedCardDetector(frame_width=1920, frame_height=1080, history_size=10)
 
             self.initialized = True
             self._log("Identifier and card detector ready")
