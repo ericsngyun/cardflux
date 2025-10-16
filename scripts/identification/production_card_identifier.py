@@ -48,13 +48,14 @@ IMAGES_DIR = Path(__file__).parent.parent.parent / "data" / "images"
 MODEL_NAME = "facebook/dinov2-small"
 DEFAULT_GAME = "one-piece"
 
-# Scoring weights
-WEIGHT_VISUAL = 0.75
-WEIGHT_GEOMETRIC = 0.25
+# Scoring weights (base weights, dynamically adjusted per-candidate)
+WEIGHT_VISUAL_BASE = 0.70
+WEIGHT_GEOMETRIC_BASE = 0.30
 
-# Thresholds
-THRESHOLD_AUTO_ACCEPT = 0.60
-THRESHOLD_MARGIN = 0.12
+# Thresholds (tuned for real-world photos with preprocessing)
+THRESHOLD_HIGH = 0.75       # High confidence - auto-accept
+THRESHOLD_MODERATE = 0.62   # Moderate confidence - review recommended
+THRESHOLD_MARGIN = 0.10     # Margin for confidence boost
 
 
 class ProductionCardIdentifier:
@@ -138,12 +139,22 @@ class ProductionCardIdentifier:
         if self.verbose:
             print(f"  [OK] Metadata loaded ({time.time()-start:.1f}s)")
 
-        # Initialize ORB detector
+        # Initialize ORB detector with increased features for better matching
         if self.verbose:
             print(f"\n[4/5] Initializing geometric matcher (ORB)...")
-        self.orb = cv2.ORB_create(nfeatures=500)
+        # Increased from 500 to 1000 features for more robust matching
+        # Higher nfeatures = more keypoints = better matching on complex card art
+        self.orb = cv2.ORB_create(
+            nfeatures=1000,
+            scaleFactor=1.2,
+            nlevels=8,
+            edgeThreshold=15,  # Lower threshold = detect features closer to edges
+            firstLevel=0,
+            WTA_K=2,
+            patchSize=31
+        )
         if self.verbose:
-            print(f"  [OK] ORB initialized")
+            print(f"  [OK] ORB initialized (1000 features)")
 
         # Initialize universal extractors
         if self.verbose:
@@ -159,10 +170,64 @@ class ProductionCardIdentifier:
             print("SYSTEM READY")
             print("="*70 + "\n")
 
+    def _check_image_quality(self, image_path: str) -> Dict:
+        """
+        Check image quality to detect blurry or low-quality captures.
+
+        Returns:
+            {
+                'is_acceptable': bool,
+                'sharpness_score': float,
+                'brightness': float,
+                'warnings': list
+            }
+        """
+        img = cv2.imread(image_path, cv2.IMREAD_GRAYSCALE)
+
+        if img is None:
+            return {
+                'is_acceptable': False,
+                'sharpness_score': 0.0,
+                'brightness': 0.0,
+                'warnings': ['Image could not be loaded']
+            }
+
+        warnings = []
+
+        # Check image size (too small = poor quality)
+        if min(img.shape) < 200:
+            warnings.append(f'Image too small ({img.shape[1]}x{img.shape[0]})')
+
+        # Check sharpness using Laplacian variance
+        # Higher variance = sharper image
+        laplacian = cv2.Laplacian(img, cv2.CV_64F)
+        sharpness_score = laplacian.var()
+
+        if sharpness_score < 50:
+            warnings.append(f'Image may be blurry (sharpness: {sharpness_score:.1f})')
+
+        # Check brightness
+        brightness = np.mean(img)
+
+        if brightness < 50:
+            warnings.append(f'Image too dark (brightness: {brightness:.1f})')
+        elif brightness > 220:
+            warnings.append(f'Image overexposed (brightness: {brightness:.1f})')
+
+        # Acceptable if no critical issues
+        is_acceptable = sharpness_score >= 30 and 30 <= brightness <= 240
+
+        return {
+            'is_acceptable': is_acceptable,
+            'sharpness_score': float(sharpness_score),
+            'brightness': float(brightness),
+            'warnings': warnings
+        }
+
     def identify(
         self,
         image_path: str,
-        top_k: int = 30,
+        top_k: int = 50,  # Increased from 30 to 50 for better recall
         use_geometric: bool = True,
         tcg_hint: Optional[str] = None
     ) -> Dict:
@@ -171,12 +236,12 @@ class ProductionCardIdentifier:
 
         Args:
             image_path: Path to card image
-            top_k: Number of visual candidates (default: 30, increased for variants)
+            top_k: Number of visual candidates (default: 50, optimized for accuracy)
             use_geometric: Enable geometric verification (default: True)
-            tcg_hint: TCG hint for card number extraction
+            tcg_hint: TCG hint for card number extraction (e.g., 'one-piece', 'pokemon')
 
         Returns:
-            Complete identification result
+            Complete identification result with confidence scoring
         """
         start_time = time.time()
 
@@ -192,13 +257,29 @@ class ProductionCardIdentifier:
             'confidence': 'UNKNOWN',
             'foil_detected': False,
             'card_number_extracted': None,
+            'quality_check': {},
         }
 
-        # Stage 0: Foil detection and card number extraction (parallel)
+        # Stage 0a: Image quality check
         if self.verbose:
             print(f"Analyzing: {Path(image_path).name}")
             print("-" * 70)
-            print("[Stage 0] Feature extraction...")
+            print("[Stage 0a] Image quality check...")
+
+        quality = self._check_image_quality(image_path)
+        result['quality_check'] = quality
+
+        if self.verbose:
+            status = "[OK]" if quality['is_acceptable'] else "[WARN]"
+            print(f"  {status} Sharpness: {quality['sharpness_score']:.1f}, Brightness: {quality['brightness']:.1f}")
+            for warning in quality['warnings']:
+                print(f"  [WARN] {warning}")
+
+        # Continue even if quality is poor (but flag it)
+
+        # Stage 0b: Foil detection and card number extraction (parallel)
+        if self.verbose:
+            print(f"\n[Stage 0b] Feature extraction...")
 
         stage0_start = time.time()
 
@@ -304,13 +385,14 @@ class ProductionCardIdentifier:
             if self.verbose:
                 print(f"  [OK] Clustered: {matches} matching variants ({stage2_time*1000:.0f}ms)")
 
-        # Stage 3: Geometric verification (top 15, increased from 10)
+        # Stage 3: Geometric verification (top 20 for comprehensive check)
         if use_geometric:
             if self.verbose:
-                print(f"\n[Stage 3] Geometric verification (ORB, top 15)...")
+                print(f"\n[Stage 3] Geometric verification (ORB, top 20)...")
             stage3_start = time.time()
 
-            top_candidates = candidates[:15]
+            # Verify more candidates to catch cards misranked by visual alone
+            top_candidates = candidates[:20]  # Increased from 15 to 20
             verified = 0
 
             for candidate in top_candidates:
@@ -332,7 +414,7 @@ class ProductionCardIdentifier:
 
             stage3_time = time.time() - stage3_start
             if self.verbose:
-                print(f"  [OK] Verified {verified}/15 candidates ({stage3_time*1000:.0f}ms)")
+                print(f"  [OK] Verified {verified}/20 candidates ({stage3_time*1000:.0f}ms)")
 
         # Stage 4: Foil-aware scoring
         if foil_result.is_foil:
@@ -350,24 +432,46 @@ class ProductionCardIdentifier:
                 if is_foil_variant:
                     candidate['foil_match'] = 1.0
 
-        # Stage 5: Score fusion
+        # Stage 5: Dynamic score fusion with adaptive weighting
         if self.verbose:
-            print(f"\n[Stage 5] Score fusion...")
+            print(f"\n[Stage 5] Dynamic score fusion...")
 
         for candidate in candidates:
             visual = candidate['visual_score']
             geom = candidate['geometric_score']
-            card_num_boost = candidate['card_number_match'] * 0.15  # 15% boost
+            card_num_boost = candidate['card_number_match'] * 0.12  # 12% boost (reduced from 15%)
             foil_boost = candidate['foil_match'] * 0.05  # 5% boost
 
-            # Base score
+            # Adaptive weighting based on geometric quality
+            # If geometric worked well (score > 0.15), trust it more
+            # If geometric failed (score ≈ 0), rely heavily on visual
+            if geom > 0.15:
+                # Geometric successful - balanced approach
+                weight_visual = 0.60
+                weight_geometric = 0.40
+            elif geom > 0.05:
+                # Geometric weak - mostly visual
+                weight_visual = 0.75
+                weight_geometric = 0.25
+            else:
+                # Geometric failed - almost pure visual
+                weight_visual = 0.90
+                weight_geometric = 0.10
+
+            # Base score with dynamic weights
             final_score = (
-                WEIGHT_VISUAL * visual +
-                WEIGHT_GEOMETRIC * geom
+                weight_visual * visual +
+                weight_geometric * geom
             )
 
             # Apply boosts
             final_score += card_num_boost + foil_boost
+
+            # Store weights used for debugging
+            candidate['weights_used'] = {
+                'visual': weight_visual,
+                'geometric': weight_geometric
+            }
 
             candidate['final_score'] = min(final_score, 1.0)  # Cap at 1.0
 
@@ -378,16 +482,33 @@ class ProductionCardIdentifier:
         for idx, candidate in enumerate(candidates):
             candidate['rank'] = idx + 1
 
-        # Determine confidence
+        # Determine confidence with improved logic
         best = candidates[0]
         confidence = "LOW"
+        margin = 0.0
 
-        if best['final_score'] >= THRESHOLD_AUTO_ACCEPT:
-            confidence = "HIGH"
-        elif len(candidates) > 1:
+        if len(candidates) > 1:
             margin = best['final_score'] - candidates[1]['final_score']
-            if margin >= THRESHOLD_MARGIN:
-                confidence = "MODERATE"
+
+        # Multi-factor confidence determination
+        if best['final_score'] >= THRESHOLD_HIGH:
+            # High score = high confidence
+            confidence = "HIGH"
+        elif best['final_score'] >= THRESHOLD_MODERATE and margin >= THRESHOLD_MARGIN:
+            # Good score + clear winner = high confidence
+            confidence = "HIGH"
+        elif best['final_score'] >= THRESHOLD_MODERATE:
+            # Good score but close race = moderate confidence
+            confidence = "MODERATE"
+        elif best['geometric_score'] > 0.3 and best['visual_score'] > 0.65:
+            # Strong geometric + decent visual = moderate confidence (rescue case)
+            confidence = "MODERATE"
+        elif margin >= THRESHOLD_MARGIN * 1.5:
+            # Clear winner despite low score = moderate confidence
+            confidence = "MODERATE"
+        else:
+            # Everything else = low confidence
+            confidence = "LOW"
 
         # Finalize result
         total_time = time.time() - start_time
@@ -419,20 +540,44 @@ class ProductionCardIdentifier:
         return result
 
     def _get_image_embedding(self, image_path: str) -> np.ndarray:
-        """Generate DINOv2 embedding (no preprocessing for consistency)."""
+        """
+        Generate DINOv2 embedding WITH preprocessing to match index embeddings.
+
+        CRITICAL: Must match preprocessing in embed_onepiece_dinov2_with_preprocessing.py
+        to ensure embeddings are in the same vector space.
+        """
         image = Image.open(image_path).convert("RGB")
+
+        # Apply same preprocessing as embedder (bilateral filter + contrast enhancement)
+        img_array = np.array(image)
+
+        # Bilateral filter to reduce noise while preserving edges
+        filtered = cv2.bilateralFilter(img_array, 5, 50, 50)
+
+        # Contrast enhancement
+        enhanced = cv2.convertScaleAbs(filtered, alpha=1.05, beta=3)
+
+        # Convert back to PIL Image
+        image = Image.fromarray(enhanced)
+
+        # Generate embedding with DINOv2
         inputs = self.processor(images=image, return_tensors="pt").to(self.device)
 
         with torch.no_grad():
             outputs = self.model(**inputs)
             embedding = outputs.last_hidden_state[:, 0].cpu().numpy()[0]
 
-        # Normalize
+        # Normalize for cosine similarity
         embedding = embedding / np.linalg.norm(embedding)
         return embedding
 
     def _compute_orb_similarity(self, query_path: str, candidate_path: str) -> float:
-        """Compute ORB geometric similarity."""
+        """
+        Compute ORB geometric similarity with robust preprocessing.
+
+        Uses bilateral filtering + CLAHE + multi-threshold matching for
+        watermark-resistant feature detection.
+        """
         try:
             img1 = cv2.imread(query_path, cv2.IMREAD_GRAYSCALE)
             img2 = cv2.imread(candidate_path, cv2.IMREAD_GRAYSCALE)
@@ -440,16 +585,21 @@ class ProductionCardIdentifier:
             if img1 is None or img2 is None:
                 return 0.0
 
-            # Upscale if too small
-            if min(img1.shape) < 300:
-                scale = 300 / min(img1.shape)
+            # Apply bilateral filter first (consistent with visual embedding)
+            img1 = cv2.bilateralFilter(img1, 5, 50, 50)
+            img2 = cv2.bilateralFilter(img2, 5, 50, 50)
+
+            # Upscale if too small (improves feature detection)
+            min_size = 400  # Increased from 300 for better feature quality
+            if min(img1.shape) < min_size:
+                scale = min_size / min(img1.shape)
                 img1 = cv2.resize(img1, None, fx=scale, fy=scale, interpolation=cv2.INTER_LANCZOS4)
 
-            if min(img2.shape) < 300:
-                scale = 300 / min(img2.shape)
+            if min(img2.shape) < min_size:
+                scale = min_size / min(img2.shape)
                 img2 = cv2.resize(img2, None, fx=scale, fy=scale, interpolation=cv2.INTER_LANCZOS4)
 
-            # CLAHE enhancement
+            # CLAHE enhancement (improves contrast for feature detection)
             clahe = cv2.createCLAHE(clipLimit=2.0, tileGridSize=(8, 8))
             img1 = clahe.apply(img1)
             img2 = clahe.apply(img2)
@@ -458,31 +608,52 @@ class ProductionCardIdentifier:
             kp1, des1 = self.orb.detectAndCompute(img1, None)
             kp2, des2 = self.orb.detectAndCompute(img2, None)
 
-            if des1 is None or des2 is None or len(des1) < 10 or len(des2) < 10:
+            # Require minimum keypoints (lowered from 10 to 8 for robustness)
+            if des1 is None or des2 is None or len(des1) < 8 or len(des2) < 8:
                 return 0.0
 
-            # Match
+            # Match using BFMatcher with Hamming distance
             bf = cv2.BFMatcher(cv2.NORM_HAMMING, crossCheck=False)
             matches = bf.knnMatch(des1, des2, k=2)
 
-            # Lowe's ratio test
+            # Lowe's ratio test (relaxed from 0.75 to 0.80 for more matches)
             good_matches = []
             for match_pair in matches:
                 if len(match_pair) == 2:
                     m, n = match_pair
-                    if m.distance < 0.75 * n.distance:
+                    # Relaxed threshold allows more valid matches through
+                    if m.distance < 0.80 * n.distance:
                         good_matches.append(m)
 
-            if len(good_matches) < 4:
+            # Require minimum matches (lowered from 4 to 3)
+            if len(good_matches) < 3:
                 return 0.0
 
-            # Score
-            match_ratio = len(good_matches) / max(len(kp1), len(kp2))
-            avg_distance = np.mean([m.distance for m in good_matches])
-            quality_factor = 1.0 / (1.0 + avg_distance / 50.0)
+            # Calculate match quality with improved scoring
+            num_keypoints_max = max(len(kp1), len(kp2))
+            num_keypoints_min = min(len(kp1), len(kp2))
 
-            score = match_ratio * quality_factor
-            return min(score * 2.5, 1.0)
+            # Match ratio based on max keypoints (how many of the features matched)
+            match_ratio = len(good_matches) / num_keypoints_max
+
+            # Coverage ratio (ensures both images contributed to matches)
+            coverage_ratio = len(good_matches) / num_keypoints_min
+
+            # Distance quality (lower distance = better match)
+            avg_distance = np.mean([m.distance for m in good_matches])
+            distance_quality = 1.0 / (1.0 + avg_distance / 40.0)  # Adjusted from 50.0
+
+            # Combine metrics with balanced weighting
+            score = (
+                match_ratio * 0.5 +          # 50% weight on match coverage
+                coverage_ratio * 0.3 +       # 30% weight on bilateral coverage
+                distance_quality * 0.20       # 20% weight on match quality
+            )
+
+            # Amplify score (tuned from 2.5 to 2.2 for more realistic range)
+            final_score = min(score * 2.2, 1.0)
+
+            return final_score
 
         except Exception as e:
             if self.verbose:
