@@ -6,7 +6,10 @@ Runs as a background process and communicates via JSON-RPC over stdin/stdout
 import sys
 import json
 import os
+import base64
 from pathlib import Path
+import cv2
+import numpy as np
 
 # Add scripts directory to path
 # Go up from: apps/desktop/src/python -> apps/desktop/src -> apps/desktop -> apps -> root
@@ -14,12 +17,14 @@ scripts_dir = Path(__file__).parent.parent.parent.parent.parent / "scripts" / "i
 sys.path.insert(0, str(scripts_dir))
 
 from production_card_identifier import ProductionCardIdentifier
+from card_detector import CardDetector, CardDetectionStatus
 
 class IdentificationService:
     """JSON-RPC service for card identification."""
 
     def __init__(self):
         self.identifier = None
+        self.card_detector = None
         self.initialized = False
 
     def _log(self, message: str):
@@ -48,8 +53,13 @@ class IdentificationService:
         try:
             self._log(f"Initializing identifier for game: {game}")
             self.identifier = ProductionCardIdentifier(game=game, verbose=False)
+
+            # Initialize card detector
+            self._log("Initializing card detector...")
+            self.card_detector = CardDetector(frame_width=1920, frame_height=1080)
+
             self.initialized = True
-            self._log("Identifier ready")
+            self._log("Identifier and card detector ready")
             return {"status": "ready", "game": game}
         except Exception as e:
             self._log(f"Initialization error: {e}")
@@ -116,6 +126,49 @@ class IdentificationService:
             "ready": self.initialized and self.identifier is not None
         }
 
+    def detect_card_in_frame(self, image_data: str):
+        """
+        Detect card in a frame (base64 encoded image).
+
+        Returns detection status, confidence, and whether card is ready for capture.
+        """
+        if not self.initialized or self.card_detector is None:
+            raise RuntimeError("Service not initialized. Call 'initialize' first.")
+
+        try:
+            # Decode base64 image
+            img_data = base64.b64decode(image_data.split(',')[1] if ',' in image_data else image_data)
+            nparr = np.frombuffer(img_data, np.uint8)
+            frame = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
+
+            if frame is None:
+                raise ValueError("Failed to decode image")
+
+            # Detect card
+            result = self.card_detector.detect_card(frame)
+
+            # Create visualization (optional)
+            # vis_frame = self.card_detector.create_visualization(frame, result)
+            # vis_base64 = self._encode_image_base64(vis_frame)
+
+            return {
+                "status": result.status.value,
+                "confidence": result.confidence,
+                "qualityScore": result.quality_score,
+                "warnings": result.warnings,
+                "isReady": result.status == CardDetectionStatus.CARD_READY,
+                "bbox": result.bbox if result.bbox else None,
+                # "visualization": vis_base64  # Uncomment if you want visualization
+            }
+        except Exception as e:
+            self._log(f"Card detection error: {e}")
+            raise
+
+    def _encode_image_base64(self, image: np.ndarray) -> str:
+        """Encode image as base64 JPEG."""
+        _, buffer = cv2.imencode('.jpg', image, [cv2.IMWRITE_JPEG_QUALITY, 85])
+        return base64.b64encode(buffer).decode('utf-8')
+
     def handle_request(self, request: dict):
         """Handle a JSON-RPC request."""
         request_id = request.get("id", 0)
@@ -128,6 +181,8 @@ class IdentificationService:
                 result = self.initialize(**params)
             elif method == "identify":
                 result = self.identify_card(**params)
+            elif method == "detect_card":
+                result = self.detect_card_in_frame(**params)
             elif method == "status":
                 result = self.get_status()
             else:

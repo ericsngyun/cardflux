@@ -207,23 +207,47 @@ ipcMain.handle('sync:data', async (_event, game: string) => {
     // Run TCGPlayer scraper for the specified game
     const scraperPath = path.join(rootDir, 'services/ingest/bin/tcgplayer-scraper-onepiece.ts');
 
-    console.log('[Sync] Running scraper:', scraperPath);
+    console.log('[Sync] Root dir:', rootDir);
+    console.log('[Sync] Scraper path:', scraperPath);
+    console.log('[Sync] Working directory:', process.cwd());
+
+    // Verify scraper file exists
+    if (!fs.existsSync(scraperPath)) {
+      throw new Error(`Scraper script not found: ${scraperPath}`);
+    }
 
     return new Promise((resolve, reject) => {
-      const scraper = spawn('pnpm', ['tsx', scraperPath], {
+      // Use shell to properly resolve pnpm in PATH
+      // On Windows, this uses cmd.exe which has access to PATH
+      const command = process.platform === 'win32'
+        ? `pnpm tsx "${scraperPath}"`
+        : `pnpm tsx ${scraperPath}`;
+
+      console.log('[Sync] Running command:', command);
+
+      const scraper = spawn(command, [], {
         cwd: rootDir,
         stdio: 'pipe',
+        shell: true, // Use shell to resolve pnpm in PATH
+        env: {
+          ...process.env,
+          FORCE_COLOR: '0', // Disable colors in output for easier parsing
+        },
       });
 
       let output = '';
+      let errorOutput = '';
+
       scraper.stdout?.on('data', (data: Buffer) => {
         const text = data.toString();
         output += text;
-        console.log('[Scraper]', text);
+        console.log('[Scraper]', text.trim());
       });
 
       scraper.stderr?.on('data', (data: Buffer) => {
-        console.error('[Scraper Error]', data.toString());
+        const text = data.toString();
+        errorOutput += text;
+        console.error('[Scraper Error]', text.trim());
       });
 
       scraper.on('close', (code: number) => {
@@ -231,28 +255,38 @@ ipcMain.handle('sync:data', async (_event, game: string) => {
           console.log('[Sync] Sync completed successfully');
 
           // Parse output to get stats
-          const updatedMatch = output.match(/(\d+)\s+cards?\s+updated/i);
+          // Look for patterns like "Scraped 4813 cards" or "Updated 4813 cards"
+          const scrapedMatch = output.match(/(?:scraped|updated|processed)\s+(\d+)\s+cards?/i);
           const newMatch = output.match(/(\d+)\s+new\s+cards?/i);
+
+          const cardCount = scrapedMatch ? parseInt(scrapedMatch[1]) : 0;
 
           resolve({
             success: true,
-            updatedCards: updatedMatch ? parseInt(updatedMatch[1]) : 0,
+            updatedCards: cardCount,
             newCards: newMatch ? parseInt(newMatch[1]) : 0,
           });
         } else {
-          reject(new Error(`Scraper exited with code ${code}`));
+          console.error('[Sync] Scraper failed with code:', code);
+          console.error('[Sync] Error output:', errorOutput);
+          reject(new Error(`Scraper exited with code ${code}. Check console for details.`));
         }
       });
 
       scraper.on('error', (error: Error) => {
+        console.error('[Sync] Spawn error:', error);
         reject(error);
       });
 
       // Timeout after 5 minutes
-      setTimeout(() => {
+      const timeout = setTimeout(() => {
+        console.warn('[Sync] Timeout reached, killing scraper');
         scraper.kill();
-        reject(new Error('Sync timeout'));
+        reject(new Error('Sync timeout - operation took longer than 5 minutes'));
       }, 5 * 60 * 1000);
+
+      // Clear timeout when process closes
+      scraper.on('close', () => clearTimeout(timeout));
     });
   } catch (error: any) {
     console.error('[Sync] Sync failed:', error);
