@@ -18,12 +18,20 @@ export const CameraView: React.FC<CameraViewProps> = React.memo(({ onCapture, is
 
   const startCamera = async () => {
     try {
+      // Request highest quality camera for accurate card identification
       const stream = await navigator.mediaDevices.getUserMedia({
         video: {
-          width: { ideal: 1280 },
-          height: { ideal: 720 },
+          width: { ideal: 1920, min: 1280 },  // Increased from 1280
+          height: { ideal: 1080, min: 720 },   // Increased from 720
           facingMode: 'environment',
-        },
+          // Advanced constraints for better quality
+          frameRate: { ideal: 30, min: 15 },
+          aspectRatio: { ideal: 16/9 },
+          // Request auto-focus and exposure for card details
+          focusMode: 'continuous',
+          exposureMode: 'continuous',
+          whiteBalanceMode: 'continuous',
+        } as MediaTrackConstraints,
       });
 
       if (videoRef.current) {
@@ -55,17 +63,28 @@ export const CameraView: React.FC<CameraViewProps> = React.memo(({ onCapture, is
     const video = videoRef.current;
     const canvas = canvasRef.current;
 
-    // Set canvas size to match video
+    // Set canvas size to match video (capture at full resolution)
     canvas.width = video.videoWidth;
     canvas.height = video.videoHeight;
 
-    // Draw video frame to canvas
-    const ctx = canvas.getContext('2d');
+    // Draw video frame to canvas with high-quality rendering
+    const ctx = canvas.getContext('2d', {
+      alpha: false,
+      desynchronized: false,
+      willReadFrequently: false,
+    });
+
     if (ctx) {
+      // Use high-quality image smoothing
+      ctx.imageSmoothingEnabled = true;
+      ctx.imageSmoothingQuality = 'high';
+
+      // Draw the frame
       ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
 
-      // Convert canvas to base64 data URL
-      const imageData = canvas.toDataURL('image/jpeg', 0.95);
+      // Convert to JPEG with high quality (98% for card details)
+      // JPEG chosen over PNG for faster transmission (card photos compress well)
+      const imageData = canvas.toDataURL('image/jpeg', 0.98);
 
       // Send to main process to save
       const captureResult = await window.camera.capture(imageData);

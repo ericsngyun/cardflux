@@ -178,10 +178,12 @@ export class PythonIdentificationBridge extends EventEmitter {
       throw new Error('Service not initialized');
     }
 
+    // Increased default from 30 to 50 for better accuracy with preprocessing fixes
     return this.sendRequest('identify', {
       image_path: imagePath,
-      top_k: options.topK || 30,
+      top_k: options.topK || 50,
       tcg_hint: options.tcgHint || null,
+      use_geometric: true,  // Explicitly enable geometric verification
     });
   }
 
