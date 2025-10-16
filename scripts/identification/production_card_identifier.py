@@ -34,6 +34,7 @@ try:
     # Import our custom modules
     from universal_card_extractor import UniversalCardExtractor, TCG
     from foil_detector import FoilDetector
+    from variant_classifier import VariantClassifier
 except ImportError as e:
     print(f"ERROR: Missing dependency: {e}")
     print("\nPlease install required packages:")
@@ -70,26 +71,30 @@ class ProductionCardIdentifier:
     - Robust error handling
     """
 
-    def __init__(self, game: str = DEFAULT_GAME, verbose: bool = True):
+    def __init__(self, game: str = DEFAULT_GAME, verbose: bool = True, enable_variant_classifier: bool = True):
         """
         Initialize production identifier.
 
         Args:
             game: Game to identify (default: one-piece)
             verbose: Print status messages
+            enable_variant_classifier: Enable variant classification (default: True)
         """
         self.game = game
         self.verbose = verbose
+        self.enable_variant_classifier = enable_variant_classifier
 
         if self.verbose:
             print("="*70)
             print("PRODUCTION CARD IDENTIFICATION SYSTEM")
             print("="*70)
             print(f"Initializing for game: {game}")
+            if enable_variant_classifier:
+                print(f"Variant classification: ENABLED")
 
         # Load DINOv2 model
         if self.verbose:
-            print("\n[1/5] Loading DINOv2 vision model...")
+            print("\n[1/6] Loading DINOv2 vision model...")
         start = time.time()
 
         self.device = "cuda" if torch.cuda.is_available() else "cpu"
@@ -102,7 +107,7 @@ class ProductionCardIdentifier:
 
         # Load FAISS index
         if self.verbose:
-            print(f"\n[2/5] Loading FAISS index for {game}...")
+            print(f"\n[2/6] Loading FAISS index for {game}...")
         start = time.time()
 
         index_file = FAISS_DIR / f"{game}-dinov2" / "index.faiss"
@@ -124,7 +129,7 @@ class ProductionCardIdentifier:
 
         # Load metadata
         if self.verbose:
-            print(f"\n[3/5] Loading card metadata...")
+            print(f"\n[3/6] Loading card metadata...")
         start = time.time()
 
         metadata_file = ARTIFACTS_DIR / "embeddings" / f"{game}-dinov2" / "metadata.jsonl"
@@ -141,7 +146,7 @@ class ProductionCardIdentifier:
 
         # Initialize ORB detector with increased features for better matching
         if self.verbose:
-            print(f"\n[4/5] Initializing geometric matcher (ORB)...")
+            print(f"\n[4/6] Initializing geometric matcher (ORB)...")
         # Increased from 500 to 1000 features for more robust matching
         # Higher nfeatures = more keypoints = better matching on complex card art
         self.orb = cv2.ORB_create(
@@ -158,7 +163,7 @@ class ProductionCardIdentifier:
 
         # Initialize universal extractors
         if self.verbose:
-            print(f"\n[5/5] Initializing universal extractors...")
+            print(f"\n[5/6] Initializing universal extractors...")
         start = time.time()
 
         self.card_extractor = UniversalCardExtractor(ocr_backend='easy')
@@ -166,6 +171,20 @@ class ProductionCardIdentifier:
 
         if self.verbose:
             print(f"  [OK] Extractors ready ({time.time()-start:.1f}s)")
+
+        # Initialize variant classifier (if enabled)
+        self.variant_classifier = None
+        if self.enable_variant_classifier:
+            if self.verbose:
+                print(f"\n[6/6] Initializing variant classifier...")
+            start = time.time()
+
+            self.variant_classifier = VariantClassifier(verbose=False)
+
+            if self.verbose:
+                print(f"  [OK] Variant classifier ready ({time.time()-start:.1f}s)")
+
+        if self.verbose:
             print("\n" + "="*70)
             print("SYSTEM READY")
             print("="*70 + "\n")
@@ -482,8 +501,70 @@ class ProductionCardIdentifier:
         for idx, candidate in enumerate(candidates):
             candidate['rank'] = idx + 1
 
-        # Determine confidence with improved logic
+        # Stage 6: Variant classification (if enabled and multiple variants detected)
+        stage6_time = 0
         best = candidates[0]
+
+        if self.variant_classifier and card_num_result:
+            # Check if we have multiple candidates with same card number (variants)
+            base_card_number = best['number']
+            same_number_candidates = [c for c in candidates[:10] if c['number'] == base_card_number]
+
+            if len(same_number_candidates) >= 2:
+                # Multiple variants detected - run variant classifier
+                if self.verbose:
+                    print(f"\n[Stage 6] Variant classification ({len(same_number_candidates)} variants detected)...")
+                stage6_start = time.time()
+
+                # Prepare metadata for variant candidates
+                variant_metadata = []
+                for c in same_number_candidates:
+                    # Add full metadata
+                    full_meta = self.metadata.get(c['card_id'], {})
+                    full_meta['id'] = c['card_id']
+                    full_meta['card_id'] = c['card_id']
+                    variant_metadata.append(full_meta)
+
+                # Classify variants
+                variant_results = self.variant_classifier.classify_variant(
+                    query_image_path=image_path,
+                    base_card_number=base_card_number,
+                    variant_candidates=variant_metadata,
+                    query_foil_detected=foil_result.is_foil,
+                    query_foil_type=foil_result.foil_type.value if foil_result.is_foil else None
+                )
+
+                # Re-rank candidates based on variant classification
+                variant_scores = {vc.card_id: vc.final_score for vc in variant_results}
+
+                for candidate in candidates:
+                    if candidate['card_id'] in variant_scores:
+                        # Blend original score with variant score (70% original, 30% variant)
+                        variant_boost = variant_scores[candidate['card_id']] * 0.30
+                        candidate['variant_score'] = variant_scores[candidate['card_id']]
+                        candidate['final_score'] = min(
+                            candidate['final_score'] * 0.70 + variant_boost,
+                            1.0
+                        )
+
+                # Re-sort with variant scores
+                candidates.sort(key=lambda x: x['final_score'], reverse=True)
+
+                # Re-rank
+                for idx, candidate in enumerate(candidates):
+                    candidate['rank'] = idx + 1
+
+                # Update best match
+                best = candidates[0]
+
+                stage6_time = time.time() - stage6_start
+                if self.verbose:
+                    print(f"  [OK] Variant classified: {best['name']}")
+                    print(f"  Variant type: {variant_results[0].variant_type.value}")
+                    print(f"  Variant confidence: {variant_results[0].final_score:.3f}")
+                    print(f"  Processing time: {stage6_time*1000:.0f}ms")
+
+        # Determine confidence with improved logic
         confidence = "LOW"
         margin = 0.0
 
@@ -530,6 +611,7 @@ class ProductionCardIdentifier:
             'feature_extraction_ms': int(stage0_time * 1000),
             'visual_search_ms': int(stage1_time * 1000),
             'geometric_verify_ms': int(stage3_time * 1000) if use_geometric else 0,
+            'variant_classify_ms': int(stage6_time * 1000),
             'total_ms': int(total_time * 1000),
         }
 
@@ -706,8 +788,8 @@ class ProductionCardIdentifier:
             print(f"\nPrices: Not available")
         print(f"\nConfidence: {result['confidence']}")
         print(f"  Final Score: {scores['final']:.4f}")
-        print(f"  Visual:      {scores['visual']:.4f} (weight: {WEIGHT_VISUAL})")
-        print(f"  Geometric:   {scores['geometric']:.4f} (weight: {WEIGHT_GEOMETRIC})")
+        print(f"  Visual:      {scores['visual']:.4f}")
+        print(f"  Geometric:   {scores['geometric']:.4f}")
         if scores.get('card_number_boost', 0) > 0:
             print(f"  Card# Boost: +{scores['card_number_boost']:.4f}")
         if scores.get('foil_boost', 0) > 0:
@@ -728,6 +810,8 @@ class ProductionCardIdentifier:
         print(f"  - Feature extraction: {timing['feature_extraction_ms']}ms")
         print(f"  - Visual search: {timing['visual_search_ms']}ms")
         print(f"  - Geometric verify: {timing['geometric_verify_ms']}ms")
+        if timing.get('variant_classify_ms', 0) > 0:
+            print(f"  - Variant classify: {timing['variant_classify_ms']}ms")
 
         print(f"\nTop 3 Matches:")
         for i, match in enumerate(result['matches'][:3], 1):
