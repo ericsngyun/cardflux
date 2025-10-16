@@ -371,6 +371,7 @@ export const CameraView: React.FC<CameraViewProps> = React.memo(({ onCapture, is
                     <div className="corner corner-tr" />
                     <div className="corner corner-bl" />
                     <div className="corner corner-br" />
+                    <div className="guide-hint">Place card anywhere in frame</div>
                   </div>
                 )}
                 {getDetectionHint()}

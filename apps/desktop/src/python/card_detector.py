@@ -68,16 +68,16 @@ class CardDetector:
     ASPECT_RATIO_TOLERANCE = 0.15  # 15% tolerance
 
     # Minimum/maximum card size (as fraction of frame)
-    MIN_CARD_AREA = 0.05  # 5% of frame
+    MIN_CARD_AREA = 0.02  # 2% of frame (allow farther distances)
     MAX_CARD_AREA = 0.85  # 85% of frame
-    OPTIMAL_CARD_AREA = 0.30  # 30% of frame
+    OPTIMAL_CARD_AREA = 0.25  # 25% of frame (more flexible optimal range)
 
-    # Edge detection thresholds
-    CANNY_LOW = 50
-    CANNY_HIGH = 150
+    # Edge detection thresholds (lower = more sensitive, better for farther cards)
+    CANNY_LOW = 30
+    CANNY_HIGH = 120
 
     # Quality thresholds
-    MIN_SHARPNESS = 50  # Laplacian variance
+    MIN_SHARPNESS = 30  # Laplacian variance (lower threshold for farther cards)
     MIN_BRIGHTNESS = 50
     MAX_BRIGHTNESS = 220
     MAX_GLARE_THRESHOLD = 240  # Pixel values above this are glare
@@ -218,8 +218,9 @@ class CardDetector:
             warnings.append("Poor lighting conditions")
 
         # If all checks passed and card is good size, mark as READY
+        # Allow wider range: from 3% to 68% of frame (farther to closer)
         if (status == CardDetectionStatus.CARD_DETECTED and
-            self.MIN_CARD_AREA * 1.5 < area_ratio < self.MAX_CARD_AREA * 0.8):
+            0.03 < area_ratio < self.MAX_CARD_AREA * 0.8):
             status = CardDetectionStatus.CARD_READY
 
         # Calculate confidence score
