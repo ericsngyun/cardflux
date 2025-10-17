@@ -1,7 +1,8 @@
 import { spawn, ChildProcess } from 'child_process';
 import { EventEmitter } from 'events';
-import * as path from 'path';
 import * as fs from 'fs';
+import { logger } from '../core/logger';
+import { ResourceManager } from '../core/resource-manager';
 
 interface IdentifyResult {
   success: boolean;
@@ -54,9 +55,12 @@ export class PythonIdentificationBridge extends EventEmitter {
   private pendingRequests = new Map<number, { resolve: Function; reject: Function }>();
   private initialized = false;
   private buffer = '';
+  private resourceManager: ResourceManager;
 
   constructor() {
     super();
+    this.resourceManager = ResourceManager.getInstance();
+    logger.info('PythonBridge', 'Instance created');
   }
 
   /**
@@ -64,31 +68,40 @@ export class PythonIdentificationBridge extends EventEmitter {
    */
   async start(game: string = 'one-piece'): Promise<void> {
     if (this.process) {
+      logger.warn('PythonBridge', 'Service already running');
       throw new Error('Service already running');
     }
 
+    logger.info('PythonBridge', 'Starting Python service', { game });
+
     return new Promise((resolve, reject) => {
       try {
-        // Find Python executable
-        const pythonCmd = process.platform === 'win32' ? 'python' : 'python3';
-
-        // Path to the service script
-        const scriptPath = path.join(__dirname, '../python/identification_service.py');
+        // Get bundled Python paths from ResourceManager
+        const paths = this.resourceManager.getPaths();
+        const pythonExecutable = paths.pythonExecutable;
+        const scriptPath = this.resourceManager.getServiceScriptPath();
 
         // Verify script exists
         if (!fs.existsSync(scriptPath)) {
-          throw new Error(`Python service script not found: ${scriptPath}`);
+          const error = new Error(`Python service script not found: ${scriptPath}`);
+          logger.error('PythonBridge', 'Script not found', error);
+          throw error;
         }
 
-        console.log('[PythonBridge] Starting Python service:', scriptPath);
+        logger.info('PythonBridge', 'Python executable', { pythonExecutable });
+        logger.info('PythonBridge', 'Service script', { scriptPath });
 
-        // Spawn Python process
-        this.process = spawn(pythonCmd, [scriptPath], {
+        // Get Python environment (includes PYTHONPATH, PYTHONHOME, etc.)
+        const pythonEnv = this.resourceManager.getPythonEnvironment();
+
+        // Spawn Python process with bundled runtime
+        this.process = spawn(pythonExecutable, [scriptPath], {
           stdio: ['pipe', 'pipe', 'pipe'],
-          env: {
-            ...process.env,
-            PYTHONUNBUFFERED: '1', // Disable output buffering
-          },
+          env: pythonEnv,
+        });
+
+        logger.debug('PythonBridge', 'Python process spawned', {
+          pid: this.process.pid,
         });
 
         // Handle stdout (JSON-RPC responses)
@@ -96,34 +109,38 @@ export class PythonIdentificationBridge extends EventEmitter {
           this.handleStdout(data);
         });
 
-        // Handle stderr (logs)
+        // Handle stderr (logs from Python)
         this.process.stderr?.on('data', (data) => {
-          console.log('[Python]', data.toString().trim());
+          const message = data.toString().trim();
+          logger.debug('Python', message);
         });
 
         // Handle process exit
         this.process.on('exit', (code) => {
-          console.log(`[PythonBridge] Process exited with code ${code}`);
+          logger.warn('PythonBridge', `Process exited with code ${code}`);
           this.cleanup();
           this.emit('exit', code);
         });
 
         // Handle errors
         this.process.on('error', (error) => {
-          console.error('[PythonBridge] Process error:', error);
+          logger.error('PythonBridge', 'Process spawn error', error);
           this.cleanup();
           reject(error);
         });
 
         // Initialize the service
-        console.log('[PythonBridge] Initializing service...');
+        logger.info('PythonBridge', 'Initializing service');
         this.initialize(game)
           .then(() => {
-            console.log('[PythonBridge] Service ready');
+            logger.info('PythonBridge', 'Service ready');
             this.initialized = true;
             resolve();
           })
-          .catch(reject);
+          .catch((error) => {
+            logger.error('PythonBridge', 'Initialization failed', error);
+            reject(error);
+          });
       } catch (error) {
         reject(error);
       }
@@ -145,15 +162,17 @@ export class PythonIdentificationBridge extends EventEmitter {
       }
 
       this.process.once('exit', () => {
+        logger.info('PythonBridge', 'Process stopped gracefully');
         resolve();
       });
 
+      logger.info('PythonBridge', 'Sending SIGTERM to Python process');
       this.process.kill('SIGTERM');
 
       // Force kill after 5 seconds
       setTimeout(() => {
         if (this.process && !this.process.killed) {
-          console.warn('[PythonBridge] Force killing process');
+          logger.warn('PythonBridge', 'Force killing process with SIGKILL');
           this.process.kill('SIGKILL');
         }
       }, 5000);
@@ -181,8 +200,12 @@ export class PythonIdentificationBridge extends EventEmitter {
     } = {}
   ): Promise<IdentifyResult> {
     if (!this.initialized) {
-      throw new Error('Service not initialized');
+      const error = new Error('Service not initialized');
+      logger.error('PythonBridge', 'Identify called before initialization', error);
+      throw error;
     }
+
+    logger.debug('PythonBridge', 'Identifying card', { imagePath, options });
 
     // Increased default from 30 to 50 for better accuracy with preprocessing fixes
     return this.sendRequest('identify', {
@@ -279,7 +302,7 @@ export class PythonIdentificationBridge extends EventEmitter {
           const response: JSONRPCResponse = JSON.parse(line);
           this.handleResponse(response);
         } catch (error) {
-          console.error('[PythonBridge] Failed to parse response:', line);
+          logger.error('PythonBridge', 'Failed to parse JSON response', error as Error, { line });
         }
       }
     }
@@ -293,15 +316,17 @@ export class PythonIdentificationBridge extends EventEmitter {
 
     const pending = this.pendingRequests.get(id);
     if (!pending) {
-      console.warn('[PythonBridge] Received response for unknown request:', id);
+      logger.warn('PythonBridge', 'Received response for unknown request', { id });
       return;
     }
 
     this.pendingRequests.delete(id);
 
     if (error) {
+      logger.error('PythonBridge', 'JSON-RPC error response', undefined, { id, error });
       pending.reject(new Error(error.message));
     } else {
+      logger.debug('PythonBridge', 'JSON-RPC success response', { id });
       pending.resolve(result);
     }
   }

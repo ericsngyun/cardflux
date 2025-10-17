@@ -1,0 +1,40 @@
+# CardFlux Desktop Python Dependencies
+# Pinned versions for reproducible builds
+# Generated: 2025-01-17
+
+# Core ML/AI
+torch==2.1.2
+torchvision==0.16.2
+transformers==4.36.2
+faiss-cpu==1.7.4
+
+# Computer Vision
+opencv-python==4.9.0.80
+pillow==10.2.0
+
+# Numerical Computing
+numpy==1.26.3
+
+# OCR (optional, for card number extraction)
+easyocr==1.7.0
+
+# Utilities
+tqdm==4.66.1
+
+# Additional dependencies (pulled in by above)
+# Listed for transparency
+# - safetensors
+# - huggingface-hub
+# - tokenizers
+# - regex
+# - requests
+# - urllib3
+# - certifi
+# - charset-normalizer
+# - idna
+# - filelock
+# - fsspec
+# - sympy
+# - networkx
+# - jinja2
+# - MarkupSafe

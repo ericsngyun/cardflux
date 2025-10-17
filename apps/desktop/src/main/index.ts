@@ -3,9 +3,14 @@ import * as path from 'path';
 import * as fs from 'fs';
 import { setupIpcHandlers } from './ipc/handlers';
 import { PythonIdentificationBridge } from './identifier/python-bridge';
+import { logger } from './core/logger';
+import { ResourceManager } from './core/resource-manager';
+import { DataManager } from './core/data-manager';
 
 let mainWindow: BrowserWindow | null = null;
 let identificationService: PythonIdentificationBridge | null = null;
+let resourceManager: ResourceManager | null = null;
+let dataManager: DataManager | null = null;
 
 /**
  * Request camera permissions on macOS
@@ -72,23 +77,61 @@ app.commandLine.appendSwitch('disable-frame-rate-limit'); // No FPS throttling
 
 // App lifecycle events
 app.whenReady().then(async () => {
-  // Request camera permissions
-  const hasPermission = await requestCameraPermission();
-
-  if (!hasPermission) {
-    console.error('Camera permission denied');
-    app.quit();
-    return;
-  }
-
-  createWindow();
-  setupIpcHandlers(ipcMain);
-
-  app.on('activate', () => {
-    if (BrowserWindow.getAllWindows().length === 0) {
-      createWindow();
-    }
+  logger.info('App', 'Application starting', {
+    version: app.getVersion(),
+    isPackaged: app.isPackaged,
+    platform: process.platform,
   });
+
+  try {
+    // Initialize resource manager
+    logger.info('App', 'Initializing ResourceManager');
+    resourceManager = ResourceManager.getInstance();
+    await resourceManager.initialize();
+
+    // Check if Python is available
+    const pythonAvailable = await resourceManager.checkPythonAvailable();
+    if (!pythonAvailable) {
+      logger.error('App', 'Python runtime not available', undefined);
+      // TODO: Show error dialog to user
+      app.quit();
+      return;
+    }
+
+    // Initialize data manager
+    logger.info('App', 'Initializing DataManager');
+    dataManager = DataManager.getInstance();
+    await dataManager.initialize();
+
+    // Check if game data is installed (for default game: one-piece)
+    const gameInstalled = dataManager.isGameInstalled('one-piece');
+    if (!gameInstalled) {
+      logger.warn('App', 'Game data not installed, will need to download');
+      // TODO: Show first-run wizard
+    }
+
+    // Request camera permissions
+    const hasPermission = await requestCameraPermission();
+    if (!hasPermission) {
+      logger.error('App', 'Camera permission denied');
+      app.quit();
+      return;
+    }
+
+    createWindow();
+    setupIpcHandlers(ipcMain);
+
+    app.on('activate', () => {
+      if (BrowserWindow.getAllWindows().length === 0) {
+        createWindow();
+      }
+    });
+
+    logger.info('App', 'Application ready');
+  } catch (error) {
+    logger.error('App', 'Failed to initialize application', error as Error);
+    app.quit();
+  }
 });
 
 app.on('window-all-closed', () => {
@@ -98,10 +141,15 @@ app.on('window-all-closed', () => {
 });
 
 app.on('will-quit', async () => {
+  logger.info('App', 'Application quitting, cleaning up resources');
+
   if (identificationService) {
     await identificationService.stop();
     identificationService = null;
   }
+
+  // Close logger to flush logs
+  await logger.close();
 });
 
 // Handle identification service
