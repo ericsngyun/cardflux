@@ -120,7 +120,12 @@ export class PythonIdentificationBridge extends EventEmitter {
         // Handle stderr (logs from Python)
         this.process.stderr?.on('data', (data) => {
           const message = data.toString().trim();
-          logger.debug('Python', message);
+          // Log all Python stderr output to help debug initialization issues
+          if (message.includes('Error') || message.includes('Traceback') || message.includes('Exception')) {
+            logger.error('Python', message);
+          } else {
+            logger.debug('Python', message);
+          }
         });
 
         // Handle process exit
@@ -319,7 +324,13 @@ export class PythonIdentificationBridge extends EventEmitter {
    * Handle stdout data from Python process
    */
   private handleStdout(data: Buffer): void {
-    this.buffer += data.toString();
+    const chunk = data.toString();
+    logger.debug('PythonBridge', 'Received stdout chunk', {
+      length: chunk.length,
+      preview: chunk.substring(0, 100),
+    });
+
+    this.buffer += chunk;
 
     // Process complete lines
     let newlineIndex;
@@ -328,11 +339,24 @@ export class PythonIdentificationBridge extends EventEmitter {
       this.buffer = this.buffer.slice(newlineIndex + 1);
 
       if (line) {
+        logger.debug('PythonBridge', 'Processing line from stdout', {
+          length: line.length,
+          preview: line.substring(0, 100),
+        });
+
         try {
           const response: JSONRPCResponse = JSON.parse(line);
+          logger.debug('PythonBridge', 'Parsed JSON response', {
+            id: response.id,
+            hasResult: !!response.result,
+            hasError: !!response.error,
+          });
           this.handleResponse(response);
         } catch (error) {
-          logger.error('PythonBridge', 'Failed to parse JSON response', error as Error, { line });
+          logger.error('PythonBridge', 'Failed to parse JSON response', error as Error, {
+            line: line.substring(0, 200),
+            fullLength: line.length,
+          });
         }
       }
     }
