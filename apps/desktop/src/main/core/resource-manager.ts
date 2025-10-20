@@ -127,13 +127,34 @@ export class ResourceManager {
     const pythonCmd = process.platform === 'win32' ? 'python' : 'python3';
 
     // Project root - safely navigate from app path
-    // In development, app.getAppPath() typically returns:
-    //   Windows: C:\Users\...\cardflux\apps\desktop\dist\main
-    //   macOS/Linux: /Users/.../cardflux/apps/desktop/dist/main
+    // In development, app.getAppPath() can return either:
+    //   Case 1: C:\Users\...\cardflux\apps\desktop\dist\main (when run from built files)
+    //   Case 2: C:\Users\...\cardflux\apps\desktop (when run directly with electron .)
     const appPath = app.getAppPath();
 
-    // Use path.resolve to normalize and resolve all '..' segments
-    const projectRoot = path.resolve(appPath, '..', '..', '..', '..');
+    logger.debug('ResourceManager', 'Resolving paths from app path', { appPath });
+
+    // Determine project root based on appPath structure
+    let projectRoot: string;
+
+    // Check if we're in dist/main (Case 1) or apps/desktop (Case 2)
+    if (appPath.includes(path.join('apps', 'desktop', 'dist'))) {
+      // Case 1: In dist/main, go up 4 levels
+      projectRoot = path.resolve(appPath, '..', '..', '..', '..');
+    } else if (appPath.endsWith(path.join('apps', 'desktop'))) {
+      // Case 2: In apps/desktop, go up 2 levels
+      projectRoot = path.resolve(appPath, '..', '..');
+    } else {
+      // Fallback: Try to find 'cardflux' in the path
+      const pathParts = appPath.split(path.sep);
+      const cardfluxIndex = pathParts.findIndex(part => part.toLowerCase() === 'cardflux');
+      if (cardfluxIndex === -1) {
+        throw new Error(
+          `Cannot determine project root: appPath does not contain 'cardflux': ${appPath}`
+        );
+      }
+      projectRoot = pathParts.slice(0, cardfluxIndex + 1).join(path.sep);
+    }
 
     // SECURITY: Validate the resolved path is what we expect
     // 1. Path must be absolute
