@@ -42,6 +42,9 @@ export const CameraView: React.FC<CameraViewProps> = React.memo(({ onCapture, is
   const [autoCapturCountdown, setAutoCapturCountdown] = useState<number | null>(null);
   const autoCapturTimerRef = useRef<NodeJS.Timeout | null>(null);
 
+  // Camera tips visibility
+  const [showCameraTips, setShowCameraTips] = useState(true);
+
   useEffect(() => {
     startCamera();
     return () => stopCamera();
@@ -52,14 +55,14 @@ export const CameraView: React.FC<CameraViewProps> = React.memo(({ onCapture, is
       // Request highest quality camera for accurate card identification
       const stream = await navigator.mediaDevices.getUserMedia({
         video: {
-          width: { ideal: 1920, min: 1280 },  // Increased from 1280
-          height: { ideal: 1080, min: 720 },   // Increased from 720
+          width: { ideal: 1920, min: 1280 },
+          height: { ideal: 1080, min: 720 },
           facingMode: 'environment',
-          // Advanced constraints for better quality
           frameRate: { ideal: 30, min: 15 },
           aspectRatio: { ideal: 16/9 },
-          // Request auto-focus and exposure for card details
+          // Advanced focus settings for card scanning
           focusMode: 'continuous',
+          focusDistance: { ideal: 0.3 }, // 30cm - ideal for card scanning
           exposureMode: 'continuous',
           whiteBalanceMode: 'continuous',
         } as MediaTrackConstraints,
@@ -67,6 +70,48 @@ export const CameraView: React.FC<CameraViewProps> = React.memo(({ onCapture, is
 
       if (videoRef.current) {
         videoRef.current.srcObject = stream;
+
+        // Try to apply advanced focus settings after stream is active
+        try {
+          const videoTrack = stream.getVideoTracks()[0];
+          const capabilities = videoTrack.getCapabilities() as any; // Extended capabilities not in TS types
+
+          // Log available capabilities for debugging
+          console.log('[Camera] Capabilities:', {
+            focusMode: capabilities.focusMode,
+            focusDistance: capabilities.focusDistance,
+            zoom: capabilities.zoom,
+          });
+
+          // Apply best available focus settings
+          const constraints: any = {};
+
+          if (capabilities.focusMode?.includes('continuous')) {
+            constraints.focusMode = 'continuous';
+          } else if (capabilities.focusMode?.includes('single-shot')) {
+            constraints.focusMode = 'single-shot';
+          }
+
+          // Set focus distance for close-up card scanning (20-40cm range)
+          if (capabilities.focusDistance) {
+            constraints.focusDistance = 0.3; // 30cm
+          }
+
+          // Apply zoom if available (helps with focus on some webcams)
+          if (capabilities.zoom && capabilities.zoom.min !== undefined && capabilities.zoom.max !== undefined) {
+            // Slight zoom (1.2x) can help force focus on closer objects
+            constraints.zoom = Math.min(1.2, capabilities.zoom.max);
+          }
+
+          if (Object.keys(constraints).length > 0) {
+            await videoTrack.applyConstraints({ advanced: [constraints] });
+            console.log('[Camera] Applied advanced focus constraints:', constraints);
+          }
+        } catch (constraintError) {
+          console.warn('[Camera] Could not apply advanced constraints:', constraintError);
+          // Continue anyway - basic stream is still usable
+        }
+
         setIsCameraActive(true);
         setError(null);
       }
@@ -485,7 +530,7 @@ export const CameraView: React.FC<CameraViewProps> = React.memo(({ onCapture, is
         hintClass = 'camera-hint hint-error';
         break;
       case 'too_blurry':
-        hintText = 'Hold steady - Image is blurry';
+        hintText = 'Hold steady - Image is blurry (Try 20-40cm from camera)';
         hintClass = 'camera-hint hint-error';
         break;
       case 'glare_detected':
@@ -607,6 +652,30 @@ export const CameraView: React.FC<CameraViewProps> = React.memo(({ onCapture, is
           </label>
         </div>
       </div>
+
+      {/* Camera Tips Banner */}
+      {showCameraTips && isCameraActive && (
+        <div className="camera-tips-banner">
+          <div className="tips-header">
+            <span className="tips-icon">💡</span>
+            <strong>Camera Focus Tips</strong>
+            <button
+              className="tips-close"
+              onClick={() => setShowCameraTips(false)}
+              aria-label="Close tips"
+            >
+              ×
+            </button>
+          </div>
+          <ul className="tips-list">
+            <li><strong>Distance:</strong> Hold card 20-40cm (8-16 inches) from camera</li>
+            <li><strong>Lighting:</strong> Use bright, even lighting (avoid glare and shadows)</li>
+            <li><strong>Stability:</strong> Keep camera and card steady for best focus</li>
+            <li><strong>Position:</strong> Hold card flat and parallel to camera lens</li>
+            <li><strong>If blurry:</strong> Try moving card slowly in/out until sharp, then hold still</li>
+          </ul>
+        </div>
+      )}
     </div>
   );
 });
