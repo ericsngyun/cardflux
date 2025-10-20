@@ -49,10 +49,18 @@ interface JSONRPCResponse {
   };
 }
 
+interface PendingRequest {
+  resolve: Function;
+  reject: Function;
+  timer: NodeJS.Timeout;
+  method: string;
+  timestamp: number;
+}
+
 export class PythonIdentificationBridge extends EventEmitter {
   private process: ChildProcess | null = null;
   private requestId = 0;
-  private pendingRequests = new Map<number, { resolve: Function; reject: Function }>();
+  private pendingRequests = new Map<number, PendingRequest>();
   private initialized = false;
   private buffer = '';
   private resourceManager: ResourceManager;
@@ -260,6 +268,13 @@ export class PythonIdentificationBridge extends EventEmitter {
     return new Promise((resolve, reject) => {
       const id = ++this.requestId;
 
+      // Check for request ID collision (should never happen, but be safe)
+      if (this.pendingRequests.has(id)) {
+        logger.error('PythonBridge', 'Request ID collision detected!', undefined, { id });
+        reject(new Error(`Request ID collision: ${id}`));
+        return;
+      }
+
       const request: JSONRPCRequest = {
         jsonrpc: '2.0',
         id,
@@ -267,21 +282,36 @@ export class PythonIdentificationBridge extends EventEmitter {
         params,
       };
 
-      // Store the promise
-      this.pendingRequests.set(id, { resolve, reject });
+      // Set timeout (30 seconds for identification, 60 for initialization)
+      const timeout = method === 'initialize' ? 60000 : 30000;
+      const timer = setTimeout(() => {
+        const pending = this.pendingRequests.get(id);
+        if (pending) {
+          this.pendingRequests.delete(id);
+          const elapsed = Date.now() - pending.timestamp;
+          logger.error('PythonBridge', `Request timeout after ${elapsed}ms`, undefined, {
+            id,
+            method,
+            timeout,
+          });
+          reject(new Error(`Request timeout: ${method} (${elapsed}ms > ${timeout}ms)`));
+        }
+      }, timeout);
+
+      // Store the promise with timer reference
+      this.pendingRequests.set(id, {
+        resolve,
+        reject,
+        timer,
+        method,
+        timestamp: Date.now(),
+      });
 
       // Send request
       const requestJson = JSON.stringify(request) + '\n';
       this.process!.stdin!.write(requestJson);
 
-      // Set timeout (30 seconds for identification, 60 for initialization)
-      const timeout = method === 'initialize' ? 60000 : 30000;
-      setTimeout(() => {
-        if (this.pendingRequests.has(id)) {
-          this.pendingRequests.delete(id);
-          reject(new Error(`Request timeout: ${method}`));
-        }
-      }, timeout);
+      logger.debug('PythonBridge', 'Request sent', { id, method, timeout });
     });
   }
 
@@ -316,17 +346,37 @@ export class PythonIdentificationBridge extends EventEmitter {
 
     const pending = this.pendingRequests.get(id);
     if (!pending) {
-      logger.warn('PythonBridge', 'Received response for unknown request', { id });
+      // Response for unknown request - either timed out or already processed
+      logger.warn('PythonBridge', 'Received response for unknown request (may have timed out)', {
+        id,
+        hasError: !!error,
+      });
       return;
     }
 
+    // Clear the timeout timer to prevent memory leak
+    clearTimeout(pending.timer);
+
+    // Calculate response time
+    const elapsed = Date.now() - pending.timestamp;
+
+    // Remove from pending
     this.pendingRequests.delete(id);
 
     if (error) {
-      logger.error('PythonBridge', 'JSON-RPC error response', undefined, { id, error });
+      logger.error('PythonBridge', 'JSON-RPC error response', undefined, {
+        id,
+        method: pending.method,
+        elapsed: `${elapsed}ms`,
+        error,
+      });
       pending.reject(new Error(error.message));
     } else {
-      logger.debug('PythonBridge', 'JSON-RPC success response', { id });
+      logger.debug('PythonBridge', 'JSON-RPC success response', {
+        id,
+        method: pending.method,
+        elapsed: `${elapsed}ms`,
+      });
       pending.resolve(result);
     }
   }
@@ -339,11 +389,19 @@ export class PythonIdentificationBridge extends EventEmitter {
     this.initialized = false;
     this.buffer = '';
 
-    // Reject all pending requests
-    this.pendingRequests.forEach(({ reject }) => {
-      reject(new Error('Service terminated'));
+    // Reject all pending requests and clear their timers
+    this.pendingRequests.forEach((pending, id) => {
+      clearTimeout(pending.timer);
+      pending.reject(new Error('Service terminated'));
+      logger.debug('PythonBridge', 'Cleaned up pending request', {
+        id,
+        method: pending.method,
+        age: `${Date.now() - pending.timestamp}ms`,
+      });
     });
     this.pendingRequests.clear();
+
+    logger.info('PythonBridge', 'Cleanup complete');
   }
 
   /**
@@ -358,5 +416,24 @@ export class PythonIdentificationBridge extends EventEmitter {
    */
   isInitialized(): boolean {
     return this.initialized;
+  }
+
+  /**
+   * Get pending requests count (for debugging/monitoring)
+   */
+  getPendingRequestsCount(): number {
+    return this.pendingRequests.size;
+  }
+
+  /**
+   * Get pending requests info (for debugging)
+   */
+  getPendingRequestsInfo(): Array<{ id: number; method: string; age: number }> {
+    const now = Date.now();
+    return Array.from(this.pendingRequests.entries()).map(([id, pending]) => ({
+      id,
+      method: pending.method,
+      age: now - pending.timestamp,
+    }));
   }
 }
