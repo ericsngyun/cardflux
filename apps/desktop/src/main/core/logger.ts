@@ -32,13 +32,15 @@ class Logger {
   private logLevel: LogLevel = LogLevel.INFO;
   private logFilePath: string | null = null;
   private writeStream: fs.WriteStream | null = null;
-  private readonly MAX_LOG_FILES = 7; // Keep last 7 days
-  // Reserved for future log rotation by size
-  // private readonly MAX_LOG_SIZE = 10 * 1024 * 1024; // 10 MB per file
+  private readonly MAX_LOG_FILES = 7; // Keep last 7 files
+  private readonly MAX_LOG_SIZE = 10 * 1024 * 1024; // 10 MB per file
+  private currentLogSize = 0;
 
   constructor() {
-    // In production, enable file logging
-    if (!app.isPackaged && process.env.NODE_ENV !== 'development') {
+    // Enable file logging in production OR if explicitly enabled
+    const enableLogging = app.isPackaged || process.env.ENABLE_FILE_LOGGING === 'true';
+
+    if (enableLogging) {
       this.enableFileLogging();
     }
   }
@@ -46,23 +48,31 @@ class Logger {
   /**
    * Enable logging to file with rotation
    */
-  private enableFileLogging(): void {
+  private async enableFileLogging(): Promise<void> {
     try {
       const logDir = path.join(app.getPath('userData'), 'logs');
 
-      if (!fs.existsSync(logDir)) {
-        fs.mkdirSync(logDir, { recursive: true });
-      }
+      // Ensure log directory exists (async)
+      await fs.promises.mkdir(logDir, { recursive: true });
 
-      // Clean up old log files
-      this.rotateLogFiles(logDir);
+      // Clean up old log files (async)
+      await this.rotateLogFiles(logDir);
 
+      // Create log file with timestamp
       const timestamp = new Date().toISOString().replace(/[:.]/g, '-').split('T')[0];
       this.logFilePath = path.join(logDir, `cardflux-${timestamp}.log`);
 
+      // Check existing file size if it exists
+      try {
+        const stats = await fs.promises.stat(this.logFilePath);
+        this.currentLogSize = stats.size;
+      } catch {
+        this.currentLogSize = 0; // File doesn't exist yet
+      }
+
       this.writeStream = fs.createWriteStream(this.logFilePath, { flags: 'a' });
 
-      this.info('Logger', 'File logging enabled', { path: this.logFilePath });
+      console.log(`[Logger] File logging enabled: ${this.logFilePath}`);
     } catch (error) {
       console.error('Failed to enable file logging:', error);
     }
@@ -71,28 +81,40 @@ class Logger {
   /**
    * Rotate log files - delete old logs, keep last N files
    */
-  private rotateLogFiles(logDir: string): void {
+  private async rotateLogFiles(logDir: string): Promise<void> {
     try {
-      const files = fs.readdirSync(logDir)
-        .filter(file => file.startsWith('cardflux-') && file.endsWith('.log'))
-        .map(file => ({
-          name: file,
-          path: path.join(logDir, file),
-          time: fs.statSync(path.join(logDir, file)).mtime.getTime(),
-        }))
-        .sort((a, b) => b.time - a.time); // Sort by newest first
+      const files = await fs.promises.readdir(logDir);
+      const logFiles = await Promise.all(
+        files
+          .filter(file => file.startsWith('cardflux-') && file.endsWith('.log'))
+          .map(async file => {
+            const filePath = path.join(logDir, file);
+            const stats = await fs.promises.stat(filePath);
+            return {
+              name: file,
+              path: filePath,
+              time: stats.mtime.getTime(),
+              size: stats.size,
+            };
+          })
+      );
+
+      // Sort by newest first
+      logFiles.sort((a, b) => b.time - a.time);
 
       // Delete files beyond MAX_LOG_FILES
-      if (files.length > this.MAX_LOG_FILES) {
-        const filesToDelete = files.slice(this.MAX_LOG_FILES);
-        filesToDelete.forEach(file => {
+      if (logFiles.length > this.MAX_LOG_FILES) {
+        const filesToDelete = logFiles.slice(this.MAX_LOG_FILES);
+        console.log(`[Logger] Rotating logs: keeping ${this.MAX_LOG_FILES}, deleting ${filesToDelete.length}`);
+
+        for (const file of filesToDelete) {
           try {
-            fs.unlinkSync(file.path);
-            console.log(`[Logger] Deleted old log file: ${file.name}`);
+            await fs.promises.unlink(file.path);
+            console.log(`[Logger] Deleted old log file: ${file.name} (${(file.size / 1024).toFixed(1)}KB)`);
           } catch (error) {
             console.error(`[Logger] Failed to delete ${file.name}:`, error);
           }
-        });
+        }
       }
     } catch (error) {
       console.error('[Logger] Failed to rotate log files:', error);
@@ -197,7 +219,7 @@ class Logger {
   }
 
   /**
-   * Log to file (JSON lines format)
+   * Log to file (JSON lines format) with size-based rotation
    */
   private logToFile(entry: LogEntry): void {
     if (!this.writeStream) {
@@ -213,7 +235,32 @@ class Logger {
         } : undefined,
       });
 
+      const lineSize = Buffer.byteLength(logLine + '\n', 'utf8');
+
+      // Check if we need to rotate based on size
+      if (this.currentLogSize + lineSize > this.MAX_LOG_SIZE && this.logFilePath) {
+        console.log(`[Logger] Log file size limit reached (${(this.currentLogSize / 1024 / 1024).toFixed(2)}MB), rotating...`);
+
+        // Close current stream
+        this.writeStream.end();
+
+        // Create new log file with timestamp
+        const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+        const logDir = path.dirname(this.logFilePath);
+        this.logFilePath = path.join(logDir, `cardflux-${timestamp}.log`);
+
+        // Open new stream
+        this.writeStream = fs.createWriteStream(this.logFilePath, { flags: 'a' });
+        this.currentLogSize = 0;
+
+        // Async rotate old files (don't wait)
+        this.rotateLogFiles(logDir).catch(err =>
+          console.error('[Logger] Failed to rotate old log files:', err)
+        );
+      }
+
       this.writeStream.write(logLine + '\n');
+      this.currentLogSize += lineSize;
     } catch (error) {
       console.error('Failed to write log:', error);
     }
