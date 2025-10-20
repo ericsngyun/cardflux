@@ -306,8 +306,13 @@ export class DataManager extends EventEmitter {
     url: string,
     destPath: string
   ): Promise<void> {
+    // SECURITY: Ensure HTTPS only
+    if (!url.startsWith('https://')) {
+      return Promise.reject(new Error('Only HTTPS URLs are allowed for security'));
+    }
+
     return new Promise((resolve, reject) => {
-      // Ensure destination directory exists
+      // Ensure destination directory exists (async mkdir)
       const destDir = path.dirname(destPath);
       if (!fs.existsSync(destDir)) {
         fs.mkdirSync(destDir, { recursive: true });
@@ -508,23 +513,59 @@ export class DataManager extends EventEmitter {
    */
   private async fetchJSON<T>(url: string): Promise<T> {
     return new Promise((resolve, reject) => {
+      // SECURITY: Ensure HTTPS only
+      if (!url.startsWith('https://')) {
+        reject(new Error('Only HTTPS URLs are allowed for security'));
+        return;
+      }
+
       const request = https.get(url, (response) => {
+        // Handle redirects
+        if (response.statusCode === 301 || response.statusCode === 302) {
+          const redirectUrl = response.headers.location;
+          if (redirectUrl && redirectUrl.startsWith('https://')) {
+            // Follow redirect (max 1 level to prevent loops)
+            logger.debug('DataManager', 'Following redirect', { from: url, to: redirectUrl });
+            this.fetchJSON<T>(redirectUrl).then(resolve).catch(reject);
+          } else {
+            reject(new Error(`Invalid redirect URL: ${redirectUrl}`));
+          }
+          return;
+        }
+
         if (response.statusCode !== 200) {
-          reject(new Error(`HTTP ${response.statusCode}`));
+          reject(new Error(`HTTP ${response.statusCode} fetching ${url}`));
           return;
         }
 
         let data = '';
+        let receivedBytes = 0;
+        const MAX_JSON_SIZE = 10 * 1024 * 1024; // 10 MB max for JSON
 
         response.on('data', (chunk) => {
+          receivedBytes += chunk.length;
+
+          // Prevent memory exhaustion from huge JSON files
+          if (receivedBytes > MAX_JSON_SIZE) {
+            request.destroy();
+            reject(new Error(`JSON response too large (>10MB)`));
+            return;
+          }
+
           data += chunk;
         });
 
         response.on('end', () => {
           try {
-            resolve(JSON.parse(data));
+            const parsed = JSON.parse(data);
+            logger.debug('DataManager', 'JSON fetched successfully', {
+              url,
+              size: receivedBytes,
+            });
+            resolve(parsed);
           } catch (error) {
-            reject(error);
+            logger.error('DataManager', 'JSON parse error', error as Error, { url });
+            reject(new Error(`Invalid JSON from ${url}: ${(error as Error).message}`));
           }
         });
       });
@@ -532,10 +573,14 @@ export class DataManager extends EventEmitter {
       // Set timeout (10 seconds for manifest)
       request.setTimeout(10000, () => {
         request.destroy();
-        reject(new Error('Request timeout fetching JSON'));
+        logger.error('DataManager', 'Request timeout fetching JSON', undefined, { url });
+        reject(new Error(`Request timeout fetching JSON from ${url} (10s)`));
       });
 
-      request.on('error', reject);
+      request.on('error', (error) => {
+        logger.error('DataManager', 'Request error fetching JSON', error, { url });
+        reject(error);
+      });
     });
   }
 }
