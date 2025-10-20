@@ -14,6 +14,13 @@ interface CardDetectionResult {
   bbox: [number, number, number, number] | null;
 }
 
+interface SmoothedBBox {
+  x: number;
+  y: number;
+  w: number;
+  h: number;
+}
+
 export const CameraView: React.FC<CameraViewProps> = React.memo(({ onCapture, isIdentifying }) => {
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -22,6 +29,18 @@ export const CameraView: React.FC<CameraViewProps> = React.memo(({ onCapture, is
   const [error, setError] = useState<string | null>(null);
   const [detectionResult, setDetectionResult] = useState<CardDetectionResult | null>(null);
   const detectionIntervalRef = useRef<NodeJS.Timeout | null>(null);
+
+  // Smoothing and stabilization
+  const smoothedBBoxRef = useRef<SmoothedBBox | null>(null);
+  const statusHistoryRef = useRef<string[]>([]);
+  const stableStatusRef = useRef<string>('no_card');
+  const readyTimerRef = useRef<number>(0);
+  const animationFrameRef = useRef<number | null>(null);
+
+  // Auto-capture settings
+  const [autoCapture, setAutoCapture] = useState(true);
+  const [autoCapturCountdown, setAutoCapturCountdown] = useState<number | null>(null);
+  const autoCapturTimerRef = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
     startCamera();
@@ -71,6 +90,67 @@ export const CameraView: React.FC<CameraViewProps> = React.memo(({ onCapture, is
       clearInterval(detectionIntervalRef.current);
       detectionIntervalRef.current = null;
     }
+
+    // Stop animation frame
+    if (animationFrameRef.current) {
+      cancelAnimationFrame(animationFrameRef.current);
+      animationFrameRef.current = null;
+    }
+
+    // Clear auto-capture timer
+    if (autoCapturTimerRef.current) {
+      clearTimeout(autoCapturTimerRef.current);
+      autoCapturTimerRef.current = null;
+    }
+  };
+
+  /**
+   * Smooth bounding box using exponential moving average
+   * Reduces jitter and flickering
+   */
+  const smoothBBox = (newBBox: [number, number, number, number]): SmoothedBBox => {
+    const [x, y, w, h] = newBBox;
+    const alpha = 0.3; // Smoothing factor (lower = smoother, higher = more responsive)
+
+    if (!smoothedBBoxRef.current) {
+      smoothedBBoxRef.current = { x, y, w, h };
+      return smoothedBBoxRef.current;
+    }
+
+    // Exponential moving average
+    smoothedBBoxRef.current = {
+      x: smoothedBBoxRef.current.x * (1 - alpha) + x * alpha,
+      y: smoothedBBoxRef.current.y * (1 - alpha) + y * alpha,
+      w: smoothedBBoxRef.current.w * (1 - alpha) + w * alpha,
+      h: smoothedBBoxRef.current.h * (1 - alpha) + h * alpha,
+    };
+
+    return smoothedBBoxRef.current;
+  };
+
+  /**
+   * Debounce status changes - require N consecutive same statuses
+   * Prevents flickering between states
+   */
+  const debounceStatus = (status: string): string => {
+    const REQUIRED_CONSECUTIVE = 3; // Must see same status 3 times
+    const MAX_HISTORY = 5;
+
+    // Add to history
+    statusHistoryRef.current.push(status);
+    if (statusHistoryRef.current.length > MAX_HISTORY) {
+      statusHistoryRef.current.shift();
+    }
+
+    // Check if last N statuses are the same
+    const recentStatuses = statusHistoryRef.current.slice(-REQUIRED_CONSECUTIVE);
+    if (recentStatuses.length === REQUIRED_CONSECUTIVE &&
+        recentStatuses.every(s => s === status)) {
+      // All recent statuses match - update stable status
+      stableStatusRef.current = status;
+    }
+
+    return stableStatusRef.current;
   };
 
   const detectCardInFrame = async () => {
@@ -99,12 +179,101 @@ export const CameraView: React.FC<CameraViewProps> = React.memo(({ onCapture, is
       const result = await window.identifier.detectCard(imageData);
 
       if (result.success && result.result) {
-        setDetectionResult(result.result);
-        drawDetectionOverlay(result.result);
+        const rawResult = result.result;
+
+        // Apply status debouncing to prevent flickering
+        const stableStatus = debounceStatus(rawResult.status);
+
+        // Create stabilized result
+        const stabilizedResult = {
+          ...rawResult,
+          status: stableStatus,
+          // Smooth bbox if present
+          bbox: rawResult.bbox ? smoothBBox(rawResult.bbox) : null,
+        };
+
+        setDetectionResult(stabilizedResult as CardDetectionResult);
+
+        // Handle auto-capture logic
+        handleAutoCapture(stabilizedResult.status, stabilizedResult.isReady);
+
+        // Request animation frame for smooth overlay drawing
+        if (animationFrameRef.current) {
+          cancelAnimationFrame(animationFrameRef.current);
+        }
+
+        animationFrameRef.current = requestAnimationFrame(() => {
+          drawDetectionOverlay(stabilizedResult as CardDetectionResult);
+        });
       }
     } catch (error) {
       console.error('Detection error:', error);
     }
+  };
+
+  /**
+   * Handle auto-capture logic when card is ready
+   */
+  const handleAutoCapture = (status: string, isReady: boolean) => {
+    if (!autoCapture || isIdentifying) {
+      // Reset countdown if auto-capture disabled or already identifying
+      setAutoCapturCountdown(null);
+      if (autoCapturTimerRef.current) {
+        clearTimeout(autoCapturTimerRef.current);
+        autoCapturTimerRef.current = null;
+      }
+      readyTimerRef.current = 0;
+      return;
+    }
+
+    if (status === 'card_ready' && isReady) {
+      // Card is ready - start/continue countdown
+      if (readyTimerRef.current === 0) {
+        // Just became ready - start countdown
+        readyTimerRef.current = Date.now();
+        startAutoCapturCountdown();
+      }
+    } else {
+      // Card not ready anymore - reset
+      if (autoCapturTimerRef.current) {
+        clearTimeout(autoCapturTimerRef.current);
+        autoCapturTimerRef.current = null;
+      }
+      setAutoCapturCountdown(null);
+      readyTimerRef.current = 0;
+    }
+  };
+
+  /**
+   * Start auto-capture countdown timer
+   */
+  const startAutoCapturCountdown = () => {
+    const READY_DURATION = 2000; // 2 seconds
+    const UPDATE_INTERVAL = 100; // Update countdown every 100ms
+
+    const updateCountdown = () => {
+      if (!autoCapture || isIdentifying) {
+        setAutoCapturCountdown(null);
+        return;
+      }
+
+      const elapsed = Date.now() - readyTimerRef.current;
+      const remaining = Math.max(0, READY_DURATION - elapsed);
+
+      if (remaining > 0) {
+        // Update countdown display
+        setAutoCapturCountdown(Math.ceil(remaining / 1000));
+
+        // Schedule next update
+        autoCapturTimerRef.current = setTimeout(updateCountdown, UPDATE_INTERVAL) as any;
+      } else {
+        // Countdown complete - trigger capture
+        setAutoCapturCountdown(null);
+        handleCapture();
+      }
+    };
+
+    updateCountdown();
   };
 
   const drawDetectionOverlay = (result: CardDetectionResult) => {
@@ -119,12 +288,14 @@ export const CameraView: React.FC<CameraViewProps> = React.memo(({ onCapture, is
     canvas.width = video.clientWidth;
     canvas.height = video.clientHeight;
 
-    // Clear previous overlay
+    // Clear previous overlay with slight fade for smoother transitions
+    ctx.fillStyle = 'rgba(0, 0, 0, 0.05)';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
     ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-    // Draw bounding box if card detected
-    if (result.bbox) {
-      const [x, y, w, h] = result.bbox;
+    // Draw bounding box if card detected (using smoothed bbox)
+    if (result.bbox && smoothedBBoxRef.current) {
+      const { x, y, w, h } = smoothedBBoxRef.current;
 
       // Scale bbox to display size
       const scaleX = canvas.width / video.videoWidth;
@@ -185,16 +356,23 @@ export const CameraView: React.FC<CameraViewProps> = React.memo(({ onCapture, is
   // Start/stop live detection when camera state changes
   useEffect(() => {
     if (isCameraActive && !isIdentifying) {
-      // Start detection interval (every 200ms for smooth feedback)
+      // Start detection interval (every 300ms for stable, smooth feedback)
+      // Increased from 200ms to reduce CPU usage and improve stability
       detectionIntervalRef.current = setInterval(() => {
         detectCardInFrame();
-      }, 200);
+      }, 300);
     } else {
       // Stop detection interval
       if (detectionIntervalRef.current) {
         clearInterval(detectionIntervalRef.current);
         detectionIntervalRef.current = null;
       }
+
+      // Reset smoothing state when not detecting
+      smoothedBBoxRef.current = null;
+      statusHistoryRef.current = [];
+      stableStatusRef.current = 'no_card';
+      setAutoCapturCountdown(null);
     }
 
     return () => {
@@ -291,8 +469,16 @@ export const CameraView: React.FC<CameraViewProps> = React.memo(({ onCapture, is
         hintClass = 'camera-hint hint-warning';
         break;
       case 'card_ready':
-        hintText = '✓ Card ready - Press SPACE to capture';
-        hintClass = 'camera-hint hint-success';
+        if (autoCapture && autoCapturCountdown !== null) {
+          hintText = `✓ Auto-capturing in ${autoCapturCountdown}...`;
+          hintClass = 'camera-hint hint-success hint-countdown';
+        } else if (autoCapture) {
+          hintText = '✓ Card ready - Hold steady...';
+          hintClass = 'camera-hint hint-success';
+        } else {
+          hintText = '✓ Card ready - Press SPACE to capture';
+          hintClass = 'camera-hint hint-success';
+        }
         break;
       case 'poor_lighting':
         hintText = 'Improve lighting conditions';
@@ -389,23 +575,37 @@ export const CameraView: React.FC<CameraViewProps> = React.memo(({ onCapture, is
       </div>
 
       <div className="camera-controls">
-        <button
-          className="btn btn-primary btn-lg btn-capture"
-          onClick={handleCapture}
-          disabled={!isCameraActive || isIdentifying}
-        >
-          {isIdentifying ? (
-            <>
-              <span className="spinner-sm" />
-              Identifying...
-            </>
-          ) : (
-            <>
-              📸 Capture Card
-              <span className="keyboard-hint">SPACE</span>
-            </>
-          )}
-        </button>
+        <div className="control-row">
+          <button
+            className="btn btn-primary btn-lg btn-capture"
+            onClick={handleCapture}
+            disabled={!isCameraActive || isIdentifying}
+          >
+            {isIdentifying ? (
+              <>
+                <span className="spinner-sm" />
+                Identifying...
+              </>
+            ) : (
+              <>
+                📸 Capture Card
+                <span className="keyboard-hint">SPACE</span>
+              </>
+            )}
+          </button>
+
+          <label className="auto-capture-toggle">
+            <input
+              type="checkbox"
+              checked={autoCapture}
+              onChange={(e) => setAutoCapture(e.target.checked)}
+              disabled={isIdentifying}
+            />
+            <span className="toggle-label">
+              Auto-capture {autoCapture ? '(2s)' : '(manual)'}
+            </span>
+          </label>
+        </div>
       </div>
     </div>
   );
