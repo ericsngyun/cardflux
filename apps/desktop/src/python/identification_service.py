@@ -7,6 +7,7 @@ import sys
 import json
 import os
 import base64
+import traceback
 from pathlib import Path
 import cv2
 import numpy as np
@@ -31,18 +32,30 @@ class IdentificationService:
         """Log to stderr (stdout is reserved for JSON-RPC)."""
         print(f"[PY] {message}", file=sys.stderr, flush=True)
 
-    def _respond(self, request_id: int, result=None, error=None):
-        """Send JSON-RPC response."""
+    def _respond(self, request_id: int, result=None, error=None, error_code=-32000, error_data=None):
+        """
+        Send JSON-RPC response.
+
+        Args:
+            request_id: Request ID to respond to
+            result: Result data (if success)
+            error: Error message (if error)
+            error_code: JSON-RPC error code (default -32000 = server error)
+            error_data: Additional error data (traceback, error type, etc.)
+        """
         response = {
             "jsonrpc": "2.0",
             "id": request_id
         }
 
         if error:
-            response["error"] = {
-                "code": -32000,
+            error_obj = {
+                "code": error_code,
                 "message": str(error)
             }
+            if error_data:
+                error_obj["data"] = error_data
+            response["error"] = error_obj
         else:
             response["result"] = result
 
@@ -175,6 +188,16 @@ class IdentificationService:
         method = request.get("method")
         params = request.get("params", {})
 
+        # Validate JSON-RPC version
+        if request.get("jsonrpc") != "2.0":
+            self._respond(
+                request_id,
+                error="Invalid JSON-RPC version",
+                error_code=-32600,  # Invalid Request
+                error_data={"expected": "2.0", "got": request.get("jsonrpc")}
+            )
+            return
+
         try:
             # Route to appropriate method
             if method == "initialize":
@@ -190,8 +213,56 @@ class IdentificationService:
 
             self._respond(request_id, result=result)
 
+        except TypeError as e:
+            # Invalid parameters
+            tb = traceback.format_exc()
+            self._log(f"Invalid parameters for {method}: {e}\n{tb}")
+            self._respond(
+                request_id,
+                error=f"Invalid parameters for method '{method}': {e}",
+                error_code=-32602,  # Invalid params
+                error_data={"type": "TypeError", "traceback": tb}
+            )
+        except ValueError as e:
+            # Application-level validation error
+            tb = traceback.format_exc()
+            self._log(f"Validation error in {method}: {e}\n{tb}")
+            self._respond(
+                request_id,
+                error=str(e),
+                error_code=-32001,  # Application error
+                error_data={"type": "ValueError", "traceback": tb}
+            )
+        except FileNotFoundError as e:
+            # File/resource not found
+            tb = traceback.format_exc()
+            self._log(f"File not found in {method}: {e}\n{tb}")
+            self._respond(
+                request_id,
+                error=f"File not found: {e}",
+                error_code=-32002,  # File not found
+                error_data={"type": "FileNotFoundError", "traceback": tb}
+            )
+        except RuntimeError as e:
+            # Runtime/state error (e.g., service not initialized)
+            tb = traceback.format_exc()
+            self._log(f"Runtime error in {method}: {e}\n{tb}")
+            self._respond(
+                request_id,
+                error=str(e),
+                error_code=-32003,  # Runtime error
+                error_data={"type": "RuntimeError", "traceback": tb}
+            )
         except Exception as e:
-            self._respond(request_id, error=str(e))
+            # Generic error - preserve stack trace
+            tb = traceback.format_exc()
+            self._log(f"Unexpected error in {method}: {e}\n{tb}")
+            self._respond(
+                request_id,
+                error=f"{type(e).__name__}: {e}",
+                error_code=-32000,  # Server error
+                error_data={"type": type(e).__name__, "traceback": tb}
+            )
 
     def run(self):
         """Main service loop - read requests from stdin."""
@@ -207,9 +278,40 @@ class IdentificationService:
                 request = json.loads(line)
                 self.handle_request(request)
             except json.JSONDecodeError as e:
-                self._log(f"Invalid JSON: {e}")
+                # JSON parse error - send error response with request ID if available
+                self._log(f"Invalid JSON: {e}\nInput: {line[:100]}...")
+                try:
+                    # Try to extract request ID from malformed JSON
+                    # Look for "id": <number> pattern
+                    import re
+                    match = re.search(r'"id"\s*:\s*(\d+)', line)
+                    request_id = int(match.group(1)) if match else 0
+                except:
+                    request_id = 0
+
+                self._respond(
+                    request_id,
+                    error="Invalid JSON",
+                    error_code=-32700,  # Parse error
+                    error_data={"type": "JSONDecodeError", "message": str(e)}
+                )
             except Exception as e:
-                self._log(f"Error handling request: {e}")
+                # Unexpected error in main loop - try to respond with error
+                tb = traceback.format_exc()
+                self._log(f"Fatal error in main loop: {e}\n{tb}")
+
+                # Try to extract request ID if we have a request object
+                try:
+                    request_id = request.get("id", 0) if 'request' in locals() else 0
+                except:
+                    request_id = 0
+
+                self._respond(
+                    request_id,
+                    error=f"Fatal service error: {e}",
+                    error_code=-32000,  # Server error
+                    error_data={"type": type(e).__name__, "traceback": tb}
+                )
 
 if __name__ == "__main__":
     service = IdentificationService()
