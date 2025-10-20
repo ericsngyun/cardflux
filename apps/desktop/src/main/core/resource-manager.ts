@@ -274,16 +274,42 @@ export class ResourceManager {
       return path.join(paths.scripts, 'identification_service.py');
     } else {
       // In development, use the actual source file
-      // app.getAppPath() = .../apps/desktop/dist/main
-      // We want: .../apps/desktop/src/python/identification_service.py
+      // app.getAppPath() can be either:
+      //   Case 1: .../apps/desktop/dist/main → go up 2 to apps/desktop
+      //   Case 2: .../apps/desktop → already there
       const appPath = app.getAppPath();
-      const servicePath = path.resolve(appPath, '..', '..', 'src', 'python', 'identification_service.py');
+
+      let desktopRoot: string;
+      if (appPath.includes(path.join('apps', 'desktop', 'dist'))) {
+        // Case 1: In dist/main, go up 2 levels to apps/desktop
+        desktopRoot = path.resolve(appPath, '..', '..');
+      } else if (appPath.endsWith(path.join('apps', 'desktop'))) {
+        // Case 2: Already in apps/desktop
+        desktopRoot = appPath;
+      } else {
+        // Fallback: Find 'desktop' after 'apps' in path
+        const pathParts = appPath.split(path.sep);
+        const appsIndex = pathParts.findIndex(part => part.toLowerCase() === 'apps');
+        if (appsIndex !== -1 && appsIndex + 1 < pathParts.length) {
+          desktopRoot = pathParts.slice(0, appsIndex + 2).join(path.sep);
+        } else {
+          throw new Error(`Cannot determine desktop root from appPath: ${appPath}`);
+        }
+      }
+
+      const servicePath = path.join(desktopRoot, 'src', 'python', 'identification_service.py');
 
       // SECURITY: Validate path is within expected bounds
       const normalizedServicePath = path.normalize(servicePath).toLowerCase();
       if (!normalizedServicePath.includes('cardflux') || !normalizedServicePath.includes('identification_service.py')) {
         throw new Error(`Invalid service script path: ${servicePath}`);
       }
+
+      logger.debug('ResourceManager', 'Service script path resolved', {
+        appPath,
+        desktopRoot,
+        servicePath,
+      });
 
       return servicePath;
     }
