@@ -126,18 +126,57 @@ export class ResourceManager {
     // Find Python executable on system
     const pythonCmd = process.platform === 'win32' ? 'python' : 'python3';
 
-    // Project root - use path.resolve to prevent path traversal
-    // In development, app.getAppPath() returns the dist/main directory
+    // Project root - safely navigate from app path
+    // In development, app.getAppPath() typically returns:
+    //   Windows: C:\Users\...\cardflux\apps\desktop\dist\main
+    //   macOS/Linux: /Users/.../cardflux/apps/desktop/dist/main
     const appPath = app.getAppPath();
+
+    // Use path.resolve to normalize and resolve all '..' segments
     const projectRoot = path.resolve(appPath, '..', '..', '..', '..');
 
-    // Validate that we're still within expected bounds
-    if (!projectRoot.includes('cardflux')) {
-      throw new Error(`Invalid project root path: ${projectRoot}`);
+    // SECURITY: Validate the resolved path is what we expect
+    // 1. Path must be absolute
+    if (!path.isAbsolute(projectRoot)) {
+      throw new Error(`Invalid project root (not absolute): ${projectRoot}`);
     }
 
-    const scriptsPath = path.resolve(projectRoot, 'scripts', 'identification');
-    const dataPath = path.resolve(projectRoot, 'data');
+    // 2. Path must contain 'cardflux' (project name)
+    const normalizedRoot = projectRoot.toLowerCase().replace(/\\/g, '/');
+    if (!normalizedRoot.includes('cardflux')) {
+      throw new Error(
+        `Invalid project root (does not contain 'cardflux'): ${projectRoot}`
+      );
+    }
+
+    // 3. Path must not escape outside project
+    // Ensure appPath starts with projectRoot (or vice versa for validation)
+    const normalizedAppPath = path.normalize(appPath).toLowerCase();
+    const normalizedProjectRoot = path.normalize(projectRoot).toLowerCase();
+    if (!normalizedAppPath.startsWith(normalizedProjectRoot)) {
+      throw new Error(
+        `Path traversal detected: appPath=${appPath} does not start with projectRoot=${projectRoot}`
+      );
+    }
+
+    // Build child paths using safe path.join (no '..' allowed in components)
+    const scriptsPath = path.join(projectRoot, 'scripts', 'identification');
+    const dataPath = path.join(projectRoot, 'data');
+
+    // Validate scripts path exists and is within project root
+    const normalizedScriptsPath = path.normalize(scriptsPath).toLowerCase();
+    if (!normalizedScriptsPath.startsWith(normalizedProjectRoot)) {
+      throw new Error(
+        `Path traversal detected in scripts: ${scriptsPath}`
+      );
+    }
+
+    logger.info('ResourceManager', 'Development paths resolved', {
+      appPath,
+      projectRoot,
+      scriptsPath,
+      dataPath,
+    });
 
     return {
       pythonExecutable: pythonCmd, // Use system Python
@@ -159,17 +198,23 @@ export class ResourceManager {
     const checkExists = async (filepath: string, description: string): Promise<void> => {
       try {
         await fs.promises.access(filepath, fs.constants.F_OK);
+        logger.debug('ResourceManager', `Verified: ${description}`, { path: filepath });
       } catch (error) {
-        errors.push(`${description} not found: ${filepath}`);
+        const errorMsg = `${description} not found: ${filepath}`;
+        errors.push(errorMsg);
+        logger.error('ResourceManager', `Missing: ${description}`, error as Error, {
+          path: filepath,
+          error: (error as NodeJS.ErrnoException).code,
+        });
       }
     };
 
     // In production, verify bundled Python exists
     if (this.isPackaged) {
       await checkExists(paths.pythonExecutable, 'Python executable');
-      await checkExists(paths.pythonHome, 'Python home');
-      await checkExists(paths.sitePackages, 'Site packages');
-      await checkExists(paths.scripts, 'Python scripts');
+      await checkExists(paths.pythonHome, 'Python home directory');
+      await checkExists(paths.sitePackages, 'Site packages directory');
+      await checkExists(paths.scripts, 'Python scripts directory');
     } else {
       // In development, only verify scripts exist
       await checkExists(paths.scripts, 'Scripts directory');
@@ -180,12 +225,22 @@ export class ResourceManager {
     await checkExists(servicePath, 'Identification service script');
 
     if (errors.length > 0) {
-      const error = new Error(`Resource verification failed:\n${errors.join('\n')}`);
-      logger.error('ResourceManager', 'Path verification failed', error, { errors });
+      const error = new Error(
+        `Resource verification failed (${errors.length} ${errors.length === 1 ? 'error' : 'errors'}):\n${errors.join('\n')}`
+      );
+      logger.error('ResourceManager', 'Path verification failed', error, {
+        errorCount: errors.length,
+        errors,
+        isPackaged: this.isPackaged,
+      });
       throw error;
     }
 
-    logger.info('ResourceManager', 'All resource paths verified successfully');
+    logger.info('ResourceManager', 'All resource paths verified successfully', {
+      pythonExecutable: paths.pythonExecutable,
+      scripts: paths.scripts,
+      dataDir: paths.dataDir,
+    });
   }
 
   /**
@@ -198,7 +253,18 @@ export class ResourceManager {
       return path.join(paths.scripts, 'identification_service.py');
     } else {
       // In development, use the actual source file
-      return path.join(app.getAppPath(), '..', 'python', 'identification_service.py');
+      // app.getAppPath() = .../apps/desktop/dist/main
+      // We want: .../apps/desktop/src/python/identification_service.py
+      const appPath = app.getAppPath();
+      const servicePath = path.resolve(appPath, '..', '..', 'src', 'python', 'identification_service.py');
+
+      // SECURITY: Validate path is within expected bounds
+      const normalizedServicePath = path.normalize(servicePath).toLowerCase();
+      if (!normalizedServicePath.includes('cardflux') || !normalizedServicePath.includes('identification_service.py')) {
+        throw new Error(`Invalid service script path: ${servicePath}`);
+      }
+
+      return servicePath;
     }
   }
 
@@ -262,9 +328,29 @@ export class ResourceManager {
       const proc = spawn(pythonExecutable, ['--version'], {
         stdio: 'pipe',
         env: this.getPythonEnvironment(),
+        timeout: 5000, // 5 second timeout for version check
       });
 
       let output = '';
+      let resolved = false;
+
+      const cleanup = (result: boolean) => {
+        if (resolved) return;
+        resolved = true;
+
+        // Kill process if still running
+        if (proc && !proc.killed) {
+          proc.kill('SIGTERM');
+        }
+
+        resolve(result);
+      };
+
+      // Timeout handler
+      const timeoutId = setTimeout(() => {
+        logger.error('ResourceManager', 'Python version check timed out after 5s');
+        cleanup(false);
+      }, 5000);
 
       proc.stdout?.on('data', (data: Buffer) => {
         output += data.toString();
@@ -275,23 +361,26 @@ export class ResourceManager {
       });
 
       proc.on('close', (code: number) => {
+        clearTimeout(timeoutId);
+
         if (code === 0) {
           logger.info('ResourceManager', 'Python version check passed', {
             version: output.trim(),
           });
-          resolve(true);
+          cleanup(true);
         } else {
           logger.error('ResourceManager', 'Python version check failed', undefined, {
             code,
-            output,
+            output: output.trim(),
           });
-          resolve(false);
+          cleanup(false);
         }
       });
 
       proc.on('error', (error: Error) => {
+        clearTimeout(timeoutId);
         logger.error('ResourceManager', 'Failed to spawn Python', error);
-        resolve(false);
+        cleanup(false);
       });
     });
   }
