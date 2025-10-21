@@ -19,14 +19,17 @@ sys.path.insert(0, str(scripts_dir))
 
 from production_card_identifier import ProductionCardIdentifier
 from card_detector import StabilizedCardDetector, CardDetectionStatus
+from identifier_version_manager import IdentifierVersionManager
 
 class IdentificationService:
-    """JSON-RPC service for card identification."""
+    """JSON-RPC service for card identification with version management."""
 
     def __init__(self):
-        self.identifier = None
+        self.version_manager = None
         self.card_detector = None
         self.initialized = False
+        self.current_version = "v2"  # Default to V2 with V1 fallback
+        self.enable_fallback = True
 
     def _log(self, message: str):
         """Log to stderr (stdout is reserved for JSON-RPC)."""
@@ -61,41 +64,73 @@ class IdentificationService:
 
         print(json.dumps(response), flush=True)
 
-    def initialize(self, game: str = "one-piece"):
-        """Initialize the identification system."""
+    def initialize(self, game: str = "one-piece", version: str = "v2", enable_fallback: bool = True):
+        """Initialize the identification system with version management."""
         try:
-            self._log(f"Initializing identifier for game: {game}")
-            self.identifier = ProductionCardIdentifier(game=game, verbose=False)
+            self._log(f"Initializing identifier for game: {game} (version: {version}, fallback: {enable_fallback})")
+
+            # Initialize version manager
+            self.version_manager = IdentifierVersionManager(
+                default_version=version,
+                enable_fallback=enable_fallback
+            )
+            self.current_version = version
+            self.enable_fallback = enable_fallback
+
+            # Pre-load the default identifier
+            self.version_manager.get_identifier(version)
 
             # Initialize stabilized card detector with temporal smoothing
             self._log("Initializing stabilized card detector with temporal smoothing...")
             self.card_detector = StabilizedCardDetector(frame_width=1920, frame_height=1080, history_size=10)
 
             self.initialized = True
-            self._log("Identifier and card detector ready")
-            return {"status": "ready", "game": game}
+            self._log(f"Identifier and card detector ready (version: {version})")
+            return {
+                "status": "ready",
+                "game": game,
+                "version": version,
+                "fallback_enabled": enable_fallback
+            }
         except Exception as e:
             self._log(f"Initialization error: {e}")
             raise
 
     def identify_card(self, image_path: str, top_k: int = 20, tcg_hint: str = None,
-                     use_geometric: bool = True, skip_ocr: bool = False, skip_foil: bool = False):
-        """Identify a card from an image."""
+                     use_geometric: bool = True, skip_ocr: bool = False, skip_foil: bool = False,
+                     version: str = None, enable_fallback: bool = None):
+        """Identify a card from an image with version management."""
         if not self.initialized:
             raise RuntimeError("Service not initialized. Call 'initialize' first.")
 
         try:
-            self._log(f"Identifying card: {image_path} (k={top_k}, geometric={use_geometric})")
+            # Use defaults if not specified
+            if version is None:
+                version = self.current_version
+            if enable_fallback is None:
+                enable_fallback = self.enable_fallback
 
-            # Run identification with optimized settings
-            result = self.identifier.identify(
+            self._log(f"Identifying card: {image_path} (version: {version}, k={top_k}, geometric={use_geometric}, fallback: {enable_fallback})")
+
+            # Run identification with version manager
+            result = self.version_manager.identify(
                 image_path,
+                version=version,
+                fallback_on_low_confidence=enable_fallback,
                 top_k=top_k,
                 use_geometric=use_geometric,
-                tcg_hint=None  # Skip OCR for speed - visual matching is sufficient
+                tcg_hint=tcg_hint
             )
 
-            self._log(f"Identified: {result['best_match']['name']} ({result['confidence']})")
+            actual_version = result.get('version', version)
+            fallback_used = result.get('fallback_used', False)
+
+            log_msg = f"Identified: {result['best_match']['name']} ({result['confidence']})"
+            if fallback_used:
+                log_msg += f" [FALLBACK: v2→v1]"
+            log_msg += f" [version: {actual_version}]"
+
+            self._log(log_msg)
 
             # Return simplified result for UI
             return {
@@ -126,17 +161,83 @@ class IdentificationService:
                         "rarity": m['rarity'],
                     }
                     for m in result['matches'][:5]
-                ]
+                ],
+                "version": actual_version,
+                "fallbackUsed": fallback_used,
             }
         except Exception as e:
             self._log(f"Identification error: {e}")
+            raise
+
+    def identify_card_multi_frame(self, image_paths: list, top_k: int = 50,
+                                   use_geometric: bool = True, tcg_hint: str = None):
+        """Identify a card using multiple frames with fusion (V2 feature)."""
+        if not self.initialized:
+            raise RuntimeError("Service not initialized. Call 'initialize' first.")
+
+        try:
+            self._log(f"Multi-frame identification: {len(image_paths)} frames")
+
+            # Multi-frame fusion is a V2 feature
+            result = self.version_manager.identify_multi_frame(
+                image_paths,
+                version="v2",
+                top_k=top_k,
+                use_geometric=use_geometric,
+                tcg_hint=tcg_hint
+            )
+
+            self._log(f"Multi-frame result: {result['best_match']['name']} ({result['confidence']}, {result.get('fusion_votes', 0):.1f} votes)")
+
+            # Return simplified result
+            return {
+                "success": True,
+                "card": {
+                    "name": result['best_match']['name'],
+                    "productId": result['best_match']['product_id'],
+                    "number": result['best_match']['number'],
+                    "set": result['best_match']['set'],
+                    "rarity": result['best_match']['rarity'],
+                    "imageUrl": result['best_match']['imageUrl'],
+                    "url": result['best_match']['url'],
+                    "prices": result['best_match']['prices'],
+                },
+                "confidence": result['confidence'],
+                "scores": result['scores'],
+                "features": {
+                    "foil": result['foil_detected'],
+                    "foilType": result.get('foil_type'),
+                    "cardNumber": result.get('card_number_extracted'),
+                },
+                "timing": result['timing'],
+                "topMatches": [
+                    {
+                        "name": m['name'],
+                        "score": m['final_score'],
+                        "number": m['number'],
+                        "rarity": m['rarity'],
+                    }
+                    for m in result['matches'][:5]
+                ],
+                "version": "v2",
+                "multiFrame": {
+                    "numFrames": result['multi_frame']['num_frames'],
+                    "fusionVotes": result.get('fusion_votes', 0),
+                    "agreementRate": result.get('fusion_agreement_rate', 0),
+                    "confidenceBoost": result.get('fusion_confidence_boost', False),
+                }
+            }
+        except Exception as e:
+            self._log(f"Multi-frame identification error: {e}")
             raise
 
     def get_status(self):
         """Get service status."""
         return {
             "initialized": self.initialized,
-            "ready": self.initialized and self.identifier is not None
+            "ready": self.initialized and self.version_manager is not None,
+            "version": self.current_version if self.initialized else None,
+            "fallback_enabled": self.enable_fallback if self.initialized else None,
         }
 
     def detect_card_in_frame(self, image_data: str):
@@ -204,10 +305,18 @@ class IdentificationService:
                 result = self.initialize(**params)
             elif method == "identify":
                 result = self.identify_card(**params)
+            elif method == "identify_multi_frame":
+                result = self.identify_card_multi_frame(**params)
             elif method == "detect_card":
                 result = self.detect_card_in_frame(**params)
             elif method == "status":
                 result = self.get_status()
+            elif method == "get_metrics":
+                # Get version manager metrics
+                if self.version_manager:
+                    result = self.version_manager.get_metrics()
+                else:
+                    result = {}
             else:
                 raise ValueError(f"Unknown method: {method}")
 
