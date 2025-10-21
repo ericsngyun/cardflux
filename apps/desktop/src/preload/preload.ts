@@ -22,6 +22,7 @@ export interface CameraAPI {
 export interface IdentifierAPI {
   initialize: (game?: string) => Promise<{ success: boolean; game?: string; error?: string }>;
   identify: (imagePath: string, options?: any) => Promise<{ success: boolean; result?: any; error?: string }>;
+  identifyMultiFrame: (imagePaths: string[], options?: any) => Promise<{ success: boolean; result?: any; error?: string }>;
   detectCard: (imageData: string) => Promise<{ success: boolean; result?: any; error?: string }>;
   getStatus: () => Promise<{ initialized: boolean; ready: boolean; running: boolean }>;
   stop: () => Promise<{ success: boolean }>;
@@ -67,6 +68,7 @@ contextBridge.exposeInMainWorld('camera', {
 contextBridge.exposeInMainWorld('identifier', {
   initialize: (game?: string) => ipcRenderer.invoke('identifier:initialize', game),
   identify: (imagePath: string, options?: any) => ipcRenderer.invoke('identifier:identify', imagePath, options),
+  identifyMultiFrame: (imagePaths: string[], options?: any) => ipcRenderer.invoke('identifier:identify-multi-frame', imagePaths, options),
   detectCard: (imageData: string) => ipcRenderer.invoke('identifier:detect-card', imageData),
   getStatus: () => ipcRenderer.invoke('identifier:status'),
   stop: () => ipcRenderer.invoke('identifier:stop'),

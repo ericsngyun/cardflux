@@ -16,6 +16,8 @@ const DEFAULT_SETTINGS: IdentificationSettings = {
   useFoilDetection: false,
   topK: 20,
   useGeometric: true,
+  multiFrameEnabled: false,  // Off by default (can enable in settings)
+  multiFrameCount: 3,         // 3 frames when enabled
 };
 
 // LocalStorage keys
@@ -51,6 +53,7 @@ const App: React.FC = () => {
     lowConfidence: 0,
     sessionStart: Date.now(),
   });
+  const [capturedFrames, setCapturedFrames] = useState<string[]>([]);  // For multi-frame fusion
   const [settings, setSettings] = useState<IdentificationSettings>(() => {
     // Load settings from localStorage
     try {
@@ -110,7 +113,96 @@ const App: React.FC = () => {
       setShowCaptureFlash(true);
       setTimeout(() => setShowCaptureFlash(false), 150);
 
-      // Optimistic UI update - immediate feedback
+      // Multi-frame fusion logic
+      if (settings.multiFrameEnabled) {
+        const newFrames = [...capturedFrames, imagePath];
+        setCapturedFrames(newFrames);
+
+        // Show progress notification
+        const remaining = settings.multiFrameCount - newFrames.length;
+        if (remaining > 0) {
+          showNotification('warning', `Frame ${newFrames.length}/${settings.multiFrameCount} captured - ${remaining} more...`);
+          return; // Wait for more frames
+        }
+
+        // All frames captured - run multi-frame identification
+        console.log('[App] Multi-frame identification:', newFrames.length, 'frames');
+        setIsIdentifying(true);
+        setCapturedFrames([]); // Reset for next card
+
+        try {
+          const result = await window.identifier.identifyMultiFrame(newFrames, {
+            topK: settings.topK,
+            useGeometric: settings.useGeometric,
+            tcgHint: settings.tcgGame,
+          });
+
+          if (!result.success) {
+            throw new Error(result.error || 'Multi-frame identification failed');
+          }
+
+          const { card, confidence, multiFrame } = result.result;
+          
+          // Show fusion info
+          if (multiFrame) {
+            console.log('[App] Multi-frame fusion:', multiFrame);
+          }
+
+          const price = card.prices?.normal?.market || card.prices?.foil?.market || 0;
+
+          // Update scan statistics
+          setScanStats((prev) => ({
+            ...prev,
+            totalScans: prev.totalScans + 1,
+            highConfidence: prev.highConfidence + (confidence === 'HIGH' ? 1 : 0),
+            moderateConfidence: prev.moderateConfidence + (confidence === 'MODERATE' ? 1 : 0),
+            lowConfidence: prev.lowConfidence + (confidence === 'LOW' ? 1 : 0),
+          }));
+
+          // Accept HIGH and MODERATE confidence
+          if (confidence === 'HIGH' || confidence === 'MODERATE') {
+            const stackItem: CardStackItem = {
+              id: `${card.productId}-${Date.now()}`,
+              name: card.name,
+              number: card.number,
+              rarity: card.rarity,
+              set: card.set,
+              price: price,
+              confidence: confidence,
+              timestamp: Date.now(),
+              productId: card.productId,
+            };
+
+            setCards((prev) => [stackItem, ...prev]);
+
+            const emoji = multiFrame?.confidenceBoost ? '⚡' : confidence === 'HIGH' ? '✓' : '~';
+            const suffix = multiFrame ? ` (${multiFrame.fusionVotes.toFixed(1)} votes)` : '';
+            showNotification(
+              confidence === 'HIGH' ? 'success' : 'warning',
+              `${emoji} ${card.name} - $${price.toFixed(2)} (${confidence})${suffix}`
+            );
+
+            playSuccessSound();
+          } else {
+            showNotification(
+              'error',
+              `Low confidence: Found "${card.name}" but not confident. Try: better lighting, center card, reduce glare.`
+            );
+          }
+
+          console.log('[App] Multi-frame complete:', card.name, confidence);
+        } catch (error: any) {
+          console.error('[App] Multi-frame identification error:', error);
+          showNotification('error', `Multi-frame identification failed: ${error.message}`);
+          setCapturedFrames([]); // Reset on error
+        } finally {
+          setIsIdentifying(false);
+        }
+
+        return; // Exit after multi-frame processing
+      }
+
+      // Single-frame identification (original logic)
       setIsIdentifying(true);
 
       try {
