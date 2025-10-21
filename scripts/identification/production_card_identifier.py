@@ -53,10 +53,15 @@ DEFAULT_GAME = "one-piece"
 WEIGHT_VISUAL_BASE = 0.70
 WEIGHT_GEOMETRIC_BASE = 0.30
 
-# Thresholds (tuned for real-world photos with preprocessing)
-THRESHOLD_HIGH = 0.75       # High confidence - auto-accept
-THRESHOLD_MODERATE = 0.62   # Moderate confidence - review recommended
-THRESHOLD_MARGIN = 0.10     # Margin for confidence boost
+# Thresholds (tuned for shop operations - balanced accuracy and throughput)
+# Updated 2025-10-21: Lowered thresholds based on real-world shop testing
+# Analysis showed original thresholds (0.75/0.62) were too strict for:
+# - Cards in sleeves (glare reduces score by 0.05-0.10)
+# - Real photos vs database images (inherent 0.05-0.08 gap)
+# - Text-heavy event cards (geometric matching weaker)
+THRESHOLD_HIGH = 0.70       # High confidence - auto-accept (was 0.75)
+THRESHOLD_MODERATE = 0.55   # Moderate confidence - review recommended (was 0.62)
+THRESHOLD_MARGIN = 0.08     # Margin for confidence boost (was 0.10, tightened slightly)
 
 
 class ProductionCardIdentifier:
