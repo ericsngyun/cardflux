@@ -69,10 +69,18 @@ async function fetchImagesForOnePiece() {
       continue;
     }
 
+    // Transform URL to 800x800 (upgrade from 600x600)
+    let imageUrl = card.imageUrl;
+    if (imageUrl.includes('_in_600x600')) {
+      imageUrl = imageUrl.replace('_in_600x600', '_in_800x800');
+    } else if (imageUrl.includes('_600w')) {
+      imageUrl = imageUrl.replace('_600w', '_in_800x800');
+    }
+
     // Use productId as the card ID (TCGPlayer data format)
     const cardId = card.id || card.productId?.toString() || 'unknown';
 
-    const ext = path.extname(new URL(card.imageUrl).pathname) || '.jpg';
+    const ext = path.extname(new URL(imageUrl).pathname) || '.jpg';
     const imagePath = path.join(gameImagesDir, `${cardId}${ext}`);
 
     if (fs.existsSync(imagePath)) {
@@ -80,8 +88,8 @@ async function fetchImagesForOnePiece() {
       continue;
     }
 
-    try {
-      await downloadImage(card.imageUrl, imagePath);
+    try:
+      await downloadImage(imageUrl, imagePath);
       downloaded++;
 
       if (downloaded % 50 === 0) {
