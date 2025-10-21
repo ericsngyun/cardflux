@@ -166,6 +166,21 @@ class ProductionCardIdentifier:
         if self.verbose:
             print(f"  [OK] ORB initialized (1000 features)")
 
+        # Load pre-computed keypoints if available (for geometric optimization)
+        KEYPOINTS_DIR = Path(__file__).parent.parent.parent / "artifacts" / "keypoints"
+        keypoints_path = KEYPOINTS_DIR / game / "orb_keypoints.npz"
+        if keypoints_path.exists():
+            if self.verbose:
+                print(f"\n  Loading pre-computed keypoints...")
+            self.precomputed_keypoints = np.load(keypoints_path, allow_pickle=True)
+            if self.verbose:
+                file_size_mb = keypoints_path.stat().st_size / 1024 / 1024
+                print(f"  [OK] Loaded {len(self.precomputed_keypoints.files)} card keypoints ({file_size_mb:.1f} MB)")
+        else:
+            self.precomputed_keypoints = None
+            if self.verbose:
+                print(f"\n  [INFO] Pre-computed keypoints not found (will compute on-the-fly)")
+
         # Initialize universal extractors
         if self.verbose:
             print(f"\n[5/6] Initializing universal extractors...")
@@ -467,20 +482,22 @@ class ProductionCardIdentifier:
             foil_boost = candidate['foil_match'] * 0.05  # 5% boost
 
             # Adaptive weighting based on geometric quality
-            # If geometric worked well (score > 0.15), trust it more
-            # If geometric failed (score ≈ 0), rely heavily on visual
+            # Updated 2025-10-21: Shifted to visual-heavy based on shop testing
+            # Analysis showed geometric is unreliable on real photos (fails 28%, weak 43%)
+            # Visual is consistent (never fails) and works well on shop conditions
+            # See: VISUAL_VS_GEOMETRIC_ANALYSIS.md for detailed analysis
             if geom > 0.15:
-                # Geometric successful - balanced approach
-                weight_visual = 0.60
-                weight_geometric = 0.40
+                # Geometric successful - but still favor visual for shop photos
+                weight_visual = 0.75  # Was 0.60 (+15% visual)
+                weight_geometric = 0.25  # Was 0.40
             elif geom > 0.05:
-                # Geometric weak - mostly visual
-                weight_visual = 0.75
-                weight_geometric = 0.25
+                # Geometric weak - heavily favor visual
+                weight_visual = 0.85  # Was 0.75 (+10% visual)
+                weight_geometric = 0.15  # Was 0.25
             else:
                 # Geometric failed - almost pure visual
-                weight_visual = 0.90
-                weight_geometric = 0.10
+                weight_visual = 0.95  # Was 0.90 (+5% visual)
+                weight_geometric = 0.05  # Was 0.10
 
             # Base score with dynamic weights
             final_score = (
@@ -691,13 +708,33 @@ class ProductionCardIdentifier:
             img1 = clahe.apply(img1)
             img2 = clahe.apply(img2)
 
-            # Detect features
+            # Detect features for query image (always on-the-fly)
             kp1, des1 = self.orb.detectAndCompute(img1, None)
-            kp2, des2 = self.orb.detectAndCompute(img2, None)
 
-            # Require minimum keypoints (lowered from 10 to 8 for robustness)
-            if des1 is None or des2 is None or len(des1) < 8 or len(des2) < 8:
+            if des1 is None or len(des1) < 8:
                 return 0.0
+
+            # Get candidate (reference) features - use pre-computed if available
+            candidate_id = Path(candidate_path).stem
+
+            if hasattr(self, 'precomputed_keypoints') and self.precomputed_keypoints is not None and candidate_id in self.precomputed_keypoints:
+                # FAST PATH: Use pre-computed descriptors
+                ref_data = self.precomputed_keypoints[candidate_id].item()
+                des2 = ref_data.get('descriptors')
+
+                if des2 is None or len(des2) < 8:
+                    return 0.0
+
+                # Use pre-computed num_keypoints for scoring
+                num_kp2 = ref_data.get('num_keypoints', len(des2))
+            else:
+                # FALLBACK: Compute on-the-fly (for cards without pre-computed keypoints)
+                kp2, des2 = self.orb.detectAndCompute(img2, None)
+
+                if des2 is None or len(des2) < 8:
+                    return 0.0
+
+                num_kp2 = len(kp2)
 
             # Match using BFMatcher with Hamming distance
             bf = cv2.BFMatcher(cv2.NORM_HAMMING, crossCheck=False)
@@ -717,8 +754,8 @@ class ProductionCardIdentifier:
                 return 0.0
 
             # Calculate match quality with improved scoring
-            num_keypoints_max = max(len(kp1), len(kp2))
-            num_keypoints_min = min(len(kp1), len(kp2))
+            num_keypoints_max = max(len(kp1), num_kp2)
+            num_keypoints_min = min(len(kp1), num_kp2)
 
             # Match ratio based on max keypoints (how many of the features matched)
             match_ratio = len(good_matches) / num_keypoints_max
