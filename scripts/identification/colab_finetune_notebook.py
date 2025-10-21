@@ -550,19 +550,38 @@ optimizer = optim.AdamW(
     weight_decay=CONFIG['weight_decay']
 )
 
-# Learning rate scheduler (warmup + cosine decay)
-total_steps = len(train_loader) * CONFIG['num_epochs']
-warmup_steps = len(train_loader) * CONFIG['warmup_epochs']
+# Learning rate scheduler (epoch-based warmup + cosine decay)
+# FIXED 2025-10-21: Changed from step-based to epoch-based for stability
+def get_lr_multiplier(epoch):
+    """
+    Get LR multiplier for given epoch.
+    
+    Warmup: Linear ramp from 0 to 1 over first 2 epochs
+    Decay: Cosine decay from 1 to 0 over remaining epochs
+    """
+    warmup_epochs = CONFIG['warmup_epochs']
+    total_epochs = CONFIG['num_epochs']
+    
+    if epoch <= warmup_epochs:
+        # Linear warmup: 0 → 1 over first 2 epochs
+        return epoch / warmup_epochs
+    else:
+        # Cosine decay after warmup: 1 → 0
+        progress = (epoch - warmup_epochs) / (total_epochs - warmup_epochs)
+        return max(0.0, 0.5 * (1.0 + np.cos(np.pi * progress)))
 
-def lr_lambda(current_step):
-    if current_step < warmup_steps:
-        return float(current_step) / float(max(1, warmup_steps))
-    progress = float(current_step - warmup_steps) / float(max(1, total_steps - warmup_steps))
-    return max(0.0, 0.5 * (1.0 + np.cos(np.pi * progress)))
-
-scheduler = optim.lr_scheduler.LambdaLR(optimizer, lr_lambda)
+scheduler = optim.lr_scheduler.LambdaLR(optimizer, get_lr_multiplier)
 
 print("✅ Optimizer and scheduler ready")
+print(f"   Base LR: {CONFIG['learning_rate']:.2e}")
+print(f"   Warmup: {CONFIG['warmup_epochs']} epochs")
+print()
+print("Expected LR schedule:")
+print(f"   Epoch 1: {CONFIG['learning_rate'] * get_lr_multiplier(1):.2e}")
+print(f"   Epoch 2: {CONFIG['learning_rate'] * get_lr_multiplier(2):.2e}")
+print(f"   Epoch 5: {CONFIG['learning_rate'] * get_lr_multiplier(5):.2e}")
+print(f"   Epoch 10: {CONFIG['learning_rate'] * get_lr_multiplier(10):.2e}")
+print(f"   Epoch 15: {CONFIG['learning_rate'] * get_lr_multiplier(15):.2e}")
 
 
 # ============================================================================
@@ -576,6 +595,8 @@ def train_epoch(model, dataloader, optimizer, criterion, device, epoch, total_ep
     model.train()
     total_loss = 0
 
+    # Get current learning rate to display
+    current_lr = optimizer.param_groups[0]['lr']
     progress_bar = tqdm(dataloader, desc=f"Epoch {epoch}/{total_epochs}")
 
     for batch_idx, batch in enumerate(progress_bar):
@@ -595,7 +616,12 @@ def train_epoch(model, dataloader, optimizer, criterion, device, epoch, total_ep
 
         total_loss += loss.item()
         avg_loss = total_loss / (batch_idx + 1)
-        progress_bar.set_postfix({'loss': f'{avg_loss:.4f}'})
+        
+        # Show loss and current LR in progress bar
+        progress_bar.set_postfix({
+            'loss': f'{avg_loss:.4f}',
+            'lr': f'{current_lr:.2e}'
+        })
 
     return total_loss / len(dataloader)
 
@@ -646,6 +672,9 @@ for epoch in range(1, CONFIG['num_epochs'] + 1):
     print(f"\nEpoch {epoch}/{CONFIG['num_epochs']}")
     print("-" * 80)
 
+    # Get LR BEFORE training (for display)
+    current_lr = optimizer.param_groups[0]['lr']
+    
     # Train
     train_loss = train_epoch(
         model, train_loader, optimizer, criterion,
@@ -655,11 +684,13 @@ for epoch in range(1, CONFIG['num_epochs'] + 1):
     # Validate
     val_loss = validate(model, val_loader, criterion, device)
 
-    # Learning rate step
-    current_lr = optimizer.param_groups[0]['lr']
+    # Step scheduler AFTER epoch completes
     scheduler.step()
+    
+    # Get LR AFTER stepping (for next epoch preview)
+    next_lr = optimizer.param_groups[0]['lr']
 
-    # Track metrics
+    # Track metrics (use current epoch's LR)
     training_history['train_loss'].append(train_loss)
     training_history['val_loss'].append(val_loss)
     training_history['learning_rate'].append(current_lr)
@@ -668,6 +699,8 @@ for epoch in range(1, CONFIG['num_epochs'] + 1):
     print(f"  Train Loss: {train_loss:.4f}")
     print(f"  Val Loss: {val_loss:.4f}")
     print(f"  Learning Rate: {current_lr:.6f}")
+    if epoch < CONFIG['num_epochs']:
+        print(f"  Next Epoch LR: {next_lr:.6f}")
 
     # Save best model
     if val_loss < best_val_loss:
