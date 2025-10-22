@@ -19,7 +19,8 @@
       "Bash(NODE_ENV=production pnpm run build:webpack)",
       "Bash(git push:*)",
       "Bash(pip:*)",
-      "Bash(git mv:*)"
+      "Bash(git mv:*)",
+      "Bash(pnpm typecheck:*)"
     ],
     "deny": [],
     "ask": []
