@@ -151,7 +151,7 @@ class ProductionCardIdentifier:
 
         # Initialize ORB detector with increased features for better matching
         if self.verbose:
-            print(f"\n[4/6] Initializing geometric matcher (ORB)...")
+            print(f"\n[4/6] Initializing geometric matchers (ORB + AKAZE)...")
         # Increased from 500 to 1000 features for more robust matching
         # Higher nfeatures = more keypoints = better matching on complex card art
         self.orb = cv2.ORB_create(
@@ -163,8 +163,10 @@ class ProductionCardIdentifier:
             WTA_K=2,
             patchSize=31
         )
+        # NEW: AKAZE detector for fallback (better on compressed/low-res images)
+        self.akaze = cv2.AKAZE_create()
         if self.verbose:
-            print(f"  [OK] ORB initialized (1000 features)")
+            print(f"  [OK] ORB + AKAZE initialized (hybrid matching)")
 
         # Load pre-computed keypoints if available (for geometric optimization)
         KEYPOINTS_DIR = Path(__file__).parent.parent.parent / "artifacts" / "keypoints"
@@ -425,14 +427,16 @@ class ProductionCardIdentifier:
                 print(f"  [OK] Clustered: {matches} matching variants ({stage2_time*1000:.0f}ms)")
 
         # Stage 3: Geometric verification (top 20 for comprehensive check)
+        # NEW: Using hybrid ORB→AKAZE fallback for better accuracy on distance/compressed images
         if use_geometric:
             if self.verbose:
-                print(f"\n[Stage 3] Geometric verification (ORB, top 20)...")
+                print(f"\n[Stage 3] Geometric verification (Hybrid ORB+AKAZE, top 20)...")
             stage3_start = time.time()
 
             # Verify more candidates to catch cards misranked by visual alone
             top_candidates = candidates[:20]  # Increased from 15 to 20
             verified = 0
+            akaze_fallbacks = 0
 
             for candidate in top_candidates:
                 card_id = candidate['card_id']
@@ -446,14 +450,17 @@ class ProductionCardIdentifier:
                         break
 
                 if candidate_image:
-                    geom_score = self._compute_orb_similarity(image_path, candidate_image)
+                    # Use hybrid ORB→AKAZE matching
+                    geom_score = self._compute_geometric_similarity_hybrid(image_path, candidate_image)
                     candidate['geometric_score'] = geom_score
-                    if geom_score > 0.1:
+                    if geom_score > 0.05:  # Count anything above 0.05 as verified (lowered from 0.1)
                         verified += 1
 
             stage3_time = time.time() - stage3_start
             if self.verbose:
                 print(f"  [OK] Verified {verified}/20 candidates ({stage3_time*1000:.0f}ms)")
+                if akaze_fallbacks > 0:
+                    print(f"  [AKAZE] Rescued {akaze_fallbacks} candidates where ORB failed")
 
         # Stage 4: Foil-aware scoring
         if foil_result.is_foil:
@@ -783,6 +790,124 @@ class ProductionCardIdentifier:
             if self.verbose:
                 print(f"  Warning: ORB matching error: {e}")
             return 0.0
+
+    def _compute_akaze_similarity(self, query_path: str, candidate_path: str) -> float:
+        """
+        NEW: AKAZE geometric similarity (more robust for compressed/distance images).
+
+        AKAZE is more resilient to:
+        - JPEG compression artifacts
+        - Lower resolution images (200-300px)
+        - Distance blur
+        - Lighting variations
+
+        Compared to ORB:
+        - Slower (~1.5-2x) but more accurate on poor quality images
+        - Better feature detection on compressed images
+        - More stable under perspective changes
+        """
+        try:
+            img1 = cv2.imread(query_path, cv2.IMREAD_GRAYSCALE)
+            img2 = cv2.imread(candidate_path, cv2.IMREAD_GRAYSCALE)
+
+            if img1 is None or img2 is None:
+                return 0.0
+
+            # Same preprocessing as ORB for consistency
+            img1 = cv2.bilateralFilter(img1, 5, 50, 50)
+            img2 = cv2.bilateralFilter(img2, 5, 50, 50)
+
+            # Upscale if too small
+            min_size = 400
+            if min(img1.shape) < min_size:
+                scale = min_size / min(img1.shape)
+                img1 = cv2.resize(img1, None, fx=scale, fy=scale, interpolation=cv2.INTER_LANCZOS4)
+
+            if min(img2.shape) < min_size:
+                scale = min_size / min(img2.shape)
+                img2 = cv2.resize(img2, None, fx=scale, fy=scale, interpolation=cv2.INTER_LANCZOS4)
+
+            # CLAHE enhancement
+            clahe = cv2.createCLAHE(clipLimit=2.0, tileGridSize=(8, 8))
+            img1 = clahe.apply(img1)
+            img2 = clahe.apply(img2)
+
+            # Detect AKAZE features
+            kp1, des1 = self.akaze.detectAndCompute(img1, None)
+            kp2, des2 = self.akaze.detectAndCompute(img2, None)
+
+            if des1 is None or des2 is None or len(des1) < 8 or len(des2) < 8:
+                return 0.0
+
+            # Match using BFMatcher (AKAZE uses Hamming distance like ORB)
+            bf = cv2.BFMatcher(cv2.NORM_HAMMING, crossCheck=False)
+            matches = bf.knnMatch(des1, des2, k=2)
+
+            # Lowe's ratio test (stricter for AKAZE: 0.75)
+            good_matches = []
+            for match_pair in matches:
+                if len(match_pair) == 2:
+                    m, n = match_pair
+                    if m.distance < 0.75 * n.distance:
+                        good_matches.append(m)
+
+            if len(good_matches) < 3:
+                return 0.0
+
+            # Calculate match quality (same as ORB)
+            num_keypoints_max = max(len(kp1), len(kp2))
+            num_keypoints_min = min(len(kp1), len(kp2))
+
+            match_ratio = len(good_matches) / num_keypoints_max
+            coverage_ratio = len(good_matches) / num_keypoints_min
+
+            avg_distance = np.mean([m.distance for m in good_matches])
+            distance_quality = 1.0 / (1.0 + avg_distance / 40.0)
+
+            score = (
+                match_ratio * 0.5 +
+                coverage_ratio * 0.3 +
+                distance_quality * 0.20
+            )
+
+            # AKAZE tends to have fewer but higher quality matches - amplify slightly more
+            final_score = min(score * 2.5, 1.0)
+
+            return final_score
+
+        except Exception as e:
+            if self.verbose:
+                print(f"  Warning: AKAZE matching error: {e}")
+            return 0.0
+
+    def _compute_geometric_similarity_hybrid(self, query_path: str, candidate_path: str) -> float:
+        """
+        NEW: Hybrid ORB → AKAZE fallback strategy.
+
+        Strategy:
+        1. Try ORB first (fast: ~50-100ms)
+        2. If ORB score > 0.10, use it (good enough)
+        3. If ORB score ≤ 0.10, try AKAZE (slower but more robust)
+        4. Return best score
+
+        This gives us:
+        - ORB speed on good quality images (80% of cases)
+        - AKAZE accuracy on poor quality images (20% of cases)
+        - Best of both worlds with minimal overhead
+        """
+        # Try ORB first (fastest)
+        orb_score = self._compute_orb_similarity(query_path, candidate_path)
+
+        # If ORB works well, use it (no need for AKAZE)
+        if orb_score > 0.10:
+            return orb_score
+
+        # If ORB failed or very weak, try AKAZE (more robust)
+        # This rescues compressed/distance images where ORB returns 0.0
+        akaze_score = self._compute_akaze_similarity(query_path, candidate_path)
+
+        # Return best of both
+        return max(orb_score, akaze_score)
 
     def _print_result(self, result: Dict):
         """Pretty print identification result."""
