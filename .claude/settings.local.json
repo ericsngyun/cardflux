@@ -18,7 +18,8 @@
       "Bash(pnpm --filter desktop build:dev)",
       "Bash(NODE_ENV=production pnpm run build:webpack)",
       "Bash(git push:*)",
-      "Bash(pip:*)"
+      "Bash(pip:*)",
+      "Bash(git mv:*)"
     ],
     "deny": [],
     "ask": []

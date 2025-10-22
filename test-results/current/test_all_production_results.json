@@ -1,0 +1,666 @@
+{
+  "results": [
+    {
+      "image": "Screenshot_20251021_085344_Discord.jpg",
+      "card_name": "Donquixote Doflamingo (Wanted Poster)",
+      "card_number": "ST03-009",
+      "confidence": "LOW",
+      "final_score": 0.5258138545892108,
+      "visual_score": 0.5950021743774414,
+      "geometric_score": 0.31824889522451894,
+      "quality_tier": "unknown",
+      "resolution": [
+        0,
+        0
+      ],
+      "sharpness": 1489.1147795314428,
+      "time_ms": 845,
+      "foil_detected": true,
+      "top_3_matches": [
+        {
+          "name": "Donquixote Doflamingo (Wanted Poster)",
+          "number": "ST03-009",
+          "score": 0.5258138545892108
+        },
+        {
+          "name": "Sanji - OP01-013 (Alternate Art)",
+          "number": "OP01-013",
+          "score": 0.49282736778259273
+        },
+        {
+          "name": "Monkey.D.Luffy (Wanted Poster)",
+          "number": "ST01-012",
+          "score": 0.48704715299441853
+        }
+      ]
+    },
+    {
+      "image": "Screenshot_20251021_085357_Discord.jpg",
+      "card_name": "Carrot (023) (Parallel)",
+      "card_number": "OP08-023",
+      "confidence": "MODERATE",
+      "final_score": 0.6318871855735779,
+      "visual_score": 0.6125128269195557,
+      "geometric_score": 0.0,
+      "quality_tier": "unknown",
+      "resolution": [
+        0,
+        0
+      ],
+      "sharpness": 1838.9393487382422,
+      "time_ms": 1210,
+      "foil_detected": true,
+      "top_3_matches": [
+        {
+          "name": "Carrot (023) (Parallel)",
+          "number": "OP08-023",
+          "score": 0.6318871855735779
+        },
+        {
+          "name": "Monkey.D.Garp (115) (Alternate Art)",
+          "number": "OP02-115",
+          "score": 0.6292141735553741
+        },
+        {
+          "name": "Eustass\"Captain\"Kid (Parallel)",
+          "number": "OP01-051",
+          "score": 0.628143858909607
+        }
+      ]
+    },
+    {
+      "image": "bege.png",
+      "card_name": "Capone\"Gang\"Bege",
+      "card_number": "ST02-004",
+      "confidence": "HIGH",
+      "final_score": 0.8816717898687276,
+      "visual_score": 0.8976104259490967,
+      "geometric_score": 0.8338558816276203,
+      "quality_tier": "unknown",
+      "resolution": [
+        0,
+        0
+      ],
+      "sharpness": 1941.0353781150334,
+      "time_ms": 2792,
+      "foil_detected": true,
+      "top_3_matches": [
+        {
+          "name": "Capone\"Gang\"Bege",
+          "number": "ST02-004",
+          "score": 0.8816717898687276
+        },
+        {
+          "name": "Capone\"Gang\"Bege (ST02-004) (Jolly Roger Foil)",
+          "number": "ST02-004",
+          "score": 0.8581276372677397
+        },
+        {
+          "name": "Capone\"Gang\"Bege",
+          "number": "ST02-004",
+          "score": 0.8258194971510882
+        }
+      ]
+    },
+    {
+      "image": "blackbeard-db.jpg",
+      "card_name": "Marshall.D.Teach (093) (Manga)",
+      "card_number": "OP09-093",
+      "confidence": "HIGH",
+      "final_score": 1.0,
+      "visual_score": 1.0,
+      "geometric_score": 1.0,
+      "quality_tier": "unknown",
+      "resolution": [
+        0,
+        0
+      ],
+      "sharpness": 14643.912415294619,
+      "time_ms": 977,
+      "foil_detected": true,
+      "top_3_matches": [
+        {
+          "name": "Marshall.D.Teach (093) (Manga)",
+          "number": "OP09-093",
+          "score": 1.0
+        },
+        {
+          "name": "Monkey.D.Luffy (118) (Parallel)",
+          "number": "OP10-118",
+          "score": 0.723771846294403
+        },
+        {
+          "name": "Donquixote Family (Jolly Roger Foil)",
+          "number": "OP04-036",
+          "score": 0.7223373800516129
+        }
+      ]
+    },
+    {
+      "image": "blackbeard.png",
+      "card_name": "Marshall.D.Teach (093) (Manga)",
+      "card_number": "OP09-093",
+      "confidence": "HIGH",
+      "final_score": 0.7403077056820264,
+      "visual_score": 0.7752212285995483,
+      "geometric_score": 0.4355671369294606,
+      "quality_tier": "unknown",
+      "resolution": [
+        0,
+        0
+      ],
+      "sharpness": 3884.746381638388,
+      "time_ms": 594,
+      "foil_detected": true,
+      "top_3_matches": [
+        {
+          "name": "Marshall.D.Teach (093) (Manga)",
+          "number": "OP09-093",
+          "score": 0.7403077056820264
+        },
+        {
+          "name": "Nefeltari Vivi (001) (Alternate Art)",
+          "number": "OP04-001",
+          "score": 0.7080905646085739
+        },
+        {
+          "name": "Yamato (Alternate Art)",
+          "number": "EB02-006",
+          "score": 0.6982577919960022
+        }
+      ]
+    },
+    {
+      "image": "bonneyleader.png",
+      "card_name": "Shirahoshi (Alternate Art)",
+      "card_number": "OP12-102",
+      "confidence": "MODERATE",
+      "final_score": 0.6169165793531767,
+      "visual_score": 0.6818765997886658,
+      "geometric_score": 0.22203651804670918,
+      "quality_tier": "unknown",
+      "resolution": [
+        0,
+        0
+      ],
+      "sharpness": 3105.8654669514303,
+      "time_ms": 501,
+      "foil_detected": true,
+      "top_3_matches": [
+        {
+          "name": "Shirahoshi (Alternate Art)",
+          "number": "OP12-102",
+          "score": 0.6169165793531767
+        },
+        {
+          "name": "Perona (Alternate Art)",
+          "number": "OP12-034",
+          "score": 0.6088932007551193
+        },
+        {
+          "name": "Shirahoshi (OP05-082) (Jolly Roger Foil)",
+          "number": "OP05-082",
+          "score": 0.606708574295044
+        }
+      ]
+    },
+    {
+      "image": "cropped_Screenshot_20251021_085344_Discord.jpg",
+      "card_name": "Donquixote Doflamingo (Wanted Poster)",
+      "card_number": "ST03-009",
+      "confidence": "MODERATE",
+      "final_score": 0.5611238860341095,
+      "visual_score": 0.6312463879585266,
+      "geometric_score": 0.350756380260858,
+      "quality_tier": "unknown",
+      "resolution": [
+        0,
+        0
+      ],
+      "sharpness": 1875.188092337662,
+      "time_ms": 567,
+      "foil_detected": true,
+      "top_3_matches": [
+        {
+          "name": "Donquixote Doflamingo (Wanted Poster)",
+          "number": "ST03-009",
+          "score": 0.5611238860341095
+        },
+        {
+          "name": "Jinbe - ST01-005 (Alternate Art)",
+          "number": "ST01-005",
+          "score": 0.5403981004922356
+        },
+        {
+          "name": "Monkey.D.Luffy (119) (Alternate Art)",
+          "number": "OP05-119",
+          "score": 0.5377275258302688
+        }
+      ]
+    },
+    {
+      "image": "cropped_Screenshot_20251021_085357_Discord.jpg",
+      "card_name": "Monkey.D.Luffy (003) (Parallel)",
+      "card_number": "OP01-003",
+      "confidence": "MODERATE",
+      "final_score": 0.6378963947296142,
+      "visual_score": 0.6188383102416992,
+      "geometric_score": 0.0,
+      "quality_tier": "unknown",
+      "resolution": [
+        0,
+        0
+      ],
+      "sharpness": 2325.9162816975354,
+      "time_ms": 458,
+      "foil_detected": true,
+      "top_3_matches": [
+        {
+          "name": "Monkey.D.Luffy (003) (Parallel)",
+          "number": "OP01-003",
+          "score": 0.6378963947296142
+        },
+        {
+          "name": "Vinsmoke Yonji (OP06-067) (Jolly Roger Foil)",
+          "number": "OP06-067",
+          "score": 0.6366097182035446
+        },
+        {
+          "name": "Eustass\"Captain\"Kid (Parallel)",
+          "number": "OP01-051",
+          "score": 0.6365256309509277
+        }
+      ]
+    },
+    {
+      "image": "cropped_bege.png",
+      "card_name": "Capone\"Gang\"Bege",
+      "card_number": "ST02-004",
+      "confidence": "HIGH",
+      "final_score": 0.8802725087402481,
+      "visual_score": 0.896484375,
+      "geometric_score": 0.8316369099609926,
+      "quality_tier": "unknown",
+      "resolution": [
+        0,
+        0
+      ],
+      "sharpness": 2158.5440065340736,
+      "time_ms": 810,
+      "foil_detected": true,
+      "top_3_matches": [
+        {
+          "name": "Capone\"Gang\"Bege",
+          "number": "ST02-004",
+          "score": 0.8802725087402481
+        },
+        {
+          "name": "Capone\"Gang\"Bege (ST02-004) (Full Art)",
+          "number": "ST02-004",
+          "score": 0.8689007115652545
+        },
+        {
+          "name": "Capone\"Gang\"Bege (ST02-004) (Jolly Roger Foil)",
+          "number": "ST02-004",
+          "score": 0.8587573234668369
+        }
+      ]
+    },
+    {
+      "image": "cropped_blackbeard-db.jpg",
+      "card_name": "Marshall.D.Teach (093) (Manga)",
+      "card_number": "OP09-093",
+      "confidence": "HIGH",
+      "final_score": 0.9760341972112656,
+      "visual_score": 0.9013789296150208,
+      "geometric_score": 1.0,
+      "quality_tier": "unknown",
+      "resolution": [
+        0,
+        0
+      ],
+      "sharpness": 14227.856315524501,
+      "time_ms": 966,
+      "foil_detected": true,
+      "top_3_matches": [
+        {
+          "name": "Marshall.D.Teach (093) (Manga)",
+          "number": "OP09-093",
+          "score": 0.9760341972112656
+        },
+        {
+          "name": "Donquixote Family (Jolly Roger Foil)",
+          "number": "OP04-036",
+          "score": 0.7052550971508026
+        },
+        {
+          "name": "Donquixote Family (Textured Foil)",
+          "number": "OP04-036",
+          "score": 0.6963187456130981
+        }
+      ]
+    },
+    {
+      "image": "cropped_blackbeard.png",
+      "card_name": "Marshall.D.Teach (093) (Manga)",
+      "card_number": "OP09-093",
+      "confidence": "HIGH",
+      "final_score": 0.706797002711566,
+      "visual_score": 0.7207440137863159,
+      "geometric_score": 0.46495596948731605,
+      "quality_tier": "unknown",
+      "resolution": [
+        0,
+        0
+      ],
+      "sharpness": 4131.702032018072,
+      "time_ms": 615,
+      "foil_detected": true,
+      "top_3_matches": [
+        {
+          "name": "Marshall.D.Teach (093) (Manga)",
+          "number": "OP09-093",
+          "score": 0.706797002711566
+        },
+        {
+          "name": "Yamato (Parallel)",
+          "number": "OP01-121",
+          "score": 0.6527829527854919
+        },
+        {
+          "name": "Usopp (Parallel)",
+          "number": "ST21-002",
+          "score": 0.6469034135341645
+        }
+      ]
+    },
+    {
+      "image": "cropped_bonneyleader.png",
+      "card_name": "Shirahoshi (Alternate Art)",
+      "card_number": "OP12-102",
+      "confidence": "MODERATE",
+      "final_score": 0.5816608090896853,
+      "visual_score": 0.6317019462585449,
+      "geometric_score": 0.23153739758310637,
+      "quality_tier": "unknown",
+      "resolution": [
+        0,
+        0
+      ],
+      "sharpness": 3027.094064443222,
+      "time_ms": 448,
+      "foil_detected": true,
+      "top_3_matches": [
+        {
+          "name": "Shirahoshi (Alternate Art)",
+          "number": "OP12-102",
+          "score": 0.5816608090896853
+        },
+        {
+          "name": "Shirahoshi (OP05-082) (Jolly Roger Foil)",
+          "number": "OP05-082",
+          "score": 0.5639309823513031
+        },
+        {
+          "name": "Otama (Alternate Art)",
+          "number": "PRB02-016",
+          "score": 0.5614891678094864
+        }
+      ]
+    },
+    {
+      "image": "cropped_mihawk.png",
+      "card_name": "Dracule Mihawk (OP01-070) (Alternate Art)",
+      "card_number": "OP01-070",
+      "confidence": "HIGH",
+      "final_score": 0.7048167087218261,
+      "visual_score": 0.7498079538345337,
+      "geometric_score": 0.36984297338370326,
+      "quality_tier": "unknown",
+      "resolution": [
+        0,
+        0
+      ],
+      "sharpness": 2695.715483949918,
+      "time_ms": 494,
+      "foil_detected": true,
+      "top_3_matches": [
+        {
+          "name": "Dracule Mihawk (OP01-070) (Alternate Art)",
+          "number": "OP01-070",
+          "score": 0.7048167087218261
+        },
+        {
+          "name": "Hannyabal (Alternate Art)",
+          "number": "EB01-021",
+          "score": 0.6935994148254395
+        },
+        {
+          "name": "Izo (Parallel)",
+          "number": "ST22-002",
+          "score": 0.6928125619888306
+        }
+      ]
+    },
+    {
+      "image": "cropped_sanji.jpg",
+      "card_name": "Black Maria (Parallel)",
+      "card_number": "OP08-074",
+      "confidence": "MODERATE",
+      "final_score": 0.5756352484226227,
+      "visual_score": 0.5533002614974976,
+      "geometric_score": 0.0,
+      "quality_tier": "unknown",
+      "resolution": [
+        0,
+        0
+      ],
+      "sharpness": 1580.7287608773065,
+      "time_ms": 473,
+      "foil_detected": true,
+      "top_3_matches": [
+        {
+          "name": "Black Maria (Parallel)",
+          "number": "OP08-074",
+          "score": 0.5756352484226227
+        },
+        {
+          "name": "Sabo (Alternate Art) (Manga)",
+          "number": "OP04-083",
+          "score": 0.5693377077579499
+        },
+        {
+          "name": "Eustass\"Captain\"Kid (099) (Parallel)",
+          "number": "OP10-099",
+          "score": 0.5666605055332185
+        }
+      ]
+    },
+    {
+      "image": "cropped_yellow_event.png",
+      "card_name": "You're the One Who Should Disappear",
+      "card_number": "OP06-115",
+      "confidence": "MODERATE",
+      "final_score": 0.6927629458439009,
+      "visual_score": 0.7195114493370056,
+      "geometric_score": 0.6125174353645866,
+      "quality_tier": "unknown",
+      "resolution": [
+        0,
+        0
+      ],
+      "sharpness": 4351.928990629351,
+      "time_ms": 649,
+      "foil_detected": true,
+      "top_3_matches": [
+        {
+          "name": "You're the One Who Should Disappear",
+          "number": "OP06-115",
+          "score": 0.6927629458439009
+        },
+        {
+          "name": "You're the One Who Should Disappear (Reprint)",
+          "number": "OP06-115",
+          "score": 0.6671453017898843
+        },
+        {
+          "name": "You're the One Who Should Disappear (Alternate Art)",
+          "number": "OP06-115",
+          "score": 0.616271248459816
+        }
+      ]
+    },
+    {
+      "image": "detected_bege.png",
+      "card_name": "Capone\"Gang\"Bege",
+      "card_number": "ST02-004",
+      "confidence": "HIGH",
+      "final_score": 0.8567649733029966,
+      "visual_score": 0.8975785970687866,
+      "geometric_score": 0.7343241020056267,
+      "quality_tier": "unknown",
+      "resolution": [
+        0,
+        0
+      ],
+      "sharpness": 2093.165836342718,
+      "time_ms": 801,
+      "foil_detected": true,
+      "top_3_matches": [
+        {
+          "name": "Capone\"Gang\"Bege",
+          "number": "ST02-004",
+          "score": 0.8567649733029966
+        },
+        {
+          "name": "Capone\"Gang\"Bege (ST02-004) (Jolly Roger Foil)",
+          "number": "ST02-004",
+          "score": 0.8369232856233346
+        },
+        {
+          "name": "Capone\"Gang\"Bege (ST02-004) (Full Art)",
+          "number": "ST02-004",
+          "score": 0.8109014042858017
+        }
+      ]
+    },
+    {
+      "image": "mihawk.png",
+      "card_name": "Dracule Mihawk (OP01-070) (Alternate Art)",
+      "card_number": "OP01-070",
+      "confidence": "HIGH",
+      "final_score": 0.719084858095417,
+      "visual_score": 0.7537956237792969,
+      "geometric_score": 0.41495256104377704,
+      "quality_tier": "unknown",
+      "resolution": [
+        0,
+        0
+      ],
+      "sharpness": 2630.8235953165695,
+      "time_ms": 401,
+      "foil_detected": true,
+      "top_3_matches": [
+        {
+          "name": "Dracule Mihawk (OP01-070) (Alternate Art)",
+          "number": "OP01-070",
+          "score": 0.719084858095417
+        },
+        {
+          "name": "Izo (OP03-003) (Full Art)",
+          "number": "OP03-003",
+          "score": 0.6875818818807602
+        },
+        {
+          "name": "Tsuru (Jolly Roger Foil)",
+          "number": "OP02-106",
+          "score": 0.6846919983625412
+        }
+      ]
+    },
+    {
+      "image": "sanji.jpg",
+      "card_name": "Come On!! We'll Fight You!! (Manga)",
+      "card_number": "OP09-020",
+      "confidence": "LOW",
+      "final_score": 0.5442291975021363,
+      "visual_score": 0.5202412605285645,
+      "geometric_score": 0.0,
+      "quality_tier": "unknown",
+      "resolution": [
+        0,
+        0
+      ],
+      "sharpness": 1252.7542754471328,
+      "time_ms": 489,
+      "foil_detected": true,
+      "top_3_matches": [
+        {
+          "name": "Come On!! We'll Fight You!! (Manga)",
+          "number": "OP09-020",
+          "score": 0.5442291975021363
+        },
+        {
+          "name": "Shirahoshi (Alternate Art)",
+          "number": "OP12-102",
+          "score": 0.54324931204319
+        },
+        {
+          "name": "Monkey.D.Luffy (118) (Parallel)",
+          "number": "OP10-118",
+          "score": 0.5386174917221069
+        }
+      ]
+    },
+    {
+      "image": "yellow_event.png",
+      "card_name": "You're the One Who Should Disappear",
+      "card_number": "OP06-115",
+      "confidence": "MODERATE",
+      "final_score": 0.6752373683296359,
+      "visual_score": 0.7279988527297974,
+      "geometric_score": 0.5169529151291514,
+      "quality_tier": "unknown",
+      "resolution": [
+        0,
+        0
+      ],
+      "sharpness": 3977.2151087733046,
+      "time_ms": 694,
+      "foil_detected": true,
+      "top_3_matches": [
+        {
+          "name": "You're the One Who Should Disappear",
+          "number": "OP06-115",
+          "score": 0.6752373683296359
+        },
+        {
+          "name": "You're the One Who Should Disappear (Reprint)",
+          "number": "OP06-115",
+          "score": 0.6200158715780475
+        },
+        {
+          "name": "Come On!! We'll Fight You!! (Manga)",
+          "number": "OP09-020",
+          "score": 0.5983193278312683
+        }
+      ]
+    }
+  ],
+  "statistics": {
+    "total_images": 19,
+    "successful": 19,
+    "high_confidence": 9,
+    "moderate_confidence": 8,
+    "low_confidence": 2,
+    "avg_final_score": 0.710995432305355,
+    "avg_visual_score": 0.7307816430142051,
+    "avg_geometric_score": 0.438799214528812,
+    "avg_time_ms": 778.1052631578947,
+    "quality_distribution": {
+      "high": 0,
+      "medium": 0,
+      "low": 0
+    }
+  }
+}

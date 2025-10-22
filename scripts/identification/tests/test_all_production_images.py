@@ -12,19 +12,22 @@ import warnings
 
 warnings.filterwarnings('ignore')
 
-# Add parent to path
-sys.path.insert(0, str(Path(__file__).parent))
+# Add core directory to path
+sys.path.insert(0, str(Path(__file__).parent.parent / "core"))
 
 from production_card_identifier import ProductionCardIdentifier
 
 
-def test_all_images(test_dir: str = "test-images/one-piece") -> Dict:
+def test_all_images(test_dir: str = None) -> Dict:
     """
     Test all images in the test directory.
 
     Returns:
         Complete test results with statistics
     """
+    if test_dir is None:
+        # Default to project root test-images/one-piece
+        test_dir = Path(__file__).parent.parent.parent.parent / "test-images" / "one-piece"
     test_path = Path(test_dir)
 
     if not test_path.exists():

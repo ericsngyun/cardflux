@@ -43,9 +43,9 @@ except ImportError as e:
     sys.exit(1)
 
 # Configuration
-ARTIFACTS_DIR = Path(__file__).parent.parent.parent / "artifacts" / "metadata"
-FAISS_DIR = Path(__file__).parent.parent.parent / "artifacts" / "faiss"
-IMAGES_DIR = Path(__file__).parent.parent.parent / "data" / "images"
+ARTIFACTS_DIR = Path(__file__).parent.parent.parent.parent / "artifacts" / "metadata"
+FAISS_DIR = Path(__file__).parent.parent.parent.parent / "artifacts" / "faiss"
+IMAGES_DIR = Path(__file__).parent.parent.parent.parent / "data" / "images"
 
 MODEL_NAME = "facebook/dinov2-small"
 DEFAULT_GAME = "one-piece"
