@@ -544,3 +544,4 @@ Would you like me to:
 **Conclusion**: Visual-heavy is better for shops (geometric too unreliable)  
 **Quick win available**: 3-line change = +100% HIGH rate
 
+

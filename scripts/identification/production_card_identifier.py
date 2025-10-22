@@ -35,6 +35,7 @@ try:
     from universal_card_extractor import UniversalCardExtractor, TCG
     from foil_detector import FoilDetector
     from variant_classifier import VariantClassifier
+    from polished_card_detector import PolishedCardDetector
 except ImportError as e:
     print(f"ERROR: Missing dependency: {e}")
     print("\nPlease install required packages:")
@@ -185,20 +186,21 @@ class ProductionCardIdentifier:
 
         # Initialize universal extractors
         if self.verbose:
-            print(f"\n[5/6] Initializing universal extractors...")
+            print(f"\n[5/7] Initializing universal extractors...")
         start = time.time()
 
         self.card_extractor = UniversalCardExtractor(ocr_backend='easy')
         self.foil_detector = FoilDetector()
+        self.card_detector = PolishedCardDetector(verbose=False)
 
         if self.verbose:
-            print(f"  [OK] Extractors ready ({time.time()-start:.1f}s)")
+            print(f"  [OK] Extractors ready (including card detector) ({time.time()-start:.1f}s)")
 
         # Initialize variant classifier (if enabled)
         self.variant_classifier = None
         if self.enable_variant_classifier:
             if self.verbose:
-                print(f"\n[6/6] Initializing variant classifier...")
+                print(f"\n[6/7] Initializing variant classifier...")
             start = time.time()
 
             self.variant_classifier = VariantClassifier(verbose=False)

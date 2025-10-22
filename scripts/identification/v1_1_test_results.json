@@ -1,0 +1,163 @@
+[
+  {
+    "image": "bege.png",
+    "v1": {
+      "card": "Capone\"Gang\"Bege",
+      "number": "ST02-004",
+      "conf": "HIGH",
+      "score": 0.8721086082205062,
+      "time": 2086.3893032073975,
+      "geom_time": 959
+    },
+    "v1_1": {
+      "card": "Capone\"Gang\"Bege (ST02-004) (Jolly Roger Foil)",
+      "number": "ST02-004",
+      "conf": "HIGH",
+      "score": 0.8196001708507539,
+      "time": 636.9826793670654,
+      "geom_time": 8.310794830322266,
+      "skipped": 20
+    },
+    "same_card": true,
+    "time_improvement_pct": 69.46961535951921,
+    "geom_improvement_pct": 99.13338948588924
+  },
+  {
+    "image": "blackbeard-db.jpg",
+    "v1": {
+      "card": "Marshall.D.Teach (093) (Manga)",
+      "number": "OP09-093",
+      "conf": "HIGH",
+      "score": 1.0,
+      "time": 1140.4547691345215,
+      "geom_time": 447
+    },
+    "v1_1": {
+      "card": "Marshall.D.Teach (093) (Manga)",
+      "number": "OP09-093",
+      "conf": "HIGH",
+      "score": 0.9500000000000001,
+      "time": 599.9245643615723,
+      "geom_time": 8.830785751342773,
+      "skipped": 20
+    },
+    "same_card": true,
+    "time_improvement_pct": 47.39602300783499,
+    "geom_improvement_pct": 98.0244327178204
+  },
+  {
+    "image": "blackbeard.png",
+    "v1": {
+      "card": "Marshall.D.Teach (093) (Manga)",
+      "number": "OP09-093",
+      "conf": "MODERATE",
+      "score": 0.6893595919315132,
+      "time": 571.6824531555176,
+      "geom_time": 318
+    },
+    "v1_1": {
+      "card": "Marshall.D.Teach (093) (Manga)",
+      "number": "OP09-093",
+      "conf": "LOW",
+      "score": 0.7476991057395935,
+      "time": 223.03223609924316,
+      "geom_time": 9.497404098510742,
+      "skipped": 20
+    },
+    "same_card": true,
+    "time_improvement_pct": 60.98669202313778,
+    "geom_improvement_pct": 97.01339493757524
+  },
+  {
+    "image": "Screenshot_20251021_085328_Discord.jpg",
+    "v1": {
+      "card": "Come On!! We'll Fight You!! (Manga)",
+      "number": "OP09-020",
+      "conf": "LOW",
+      "score": 0.518217134475708,
+      "time": 578.6721706390381,
+      "geom_time": 326
+    },
+    "v1_1": {
+      "card": "Come On!! We'll Fight You!! (Manga)",
+      "number": "OP09-020",
+      "conf": "LOW",
+      "score": 0.518217134475708,
+      "time": 209.4285488128662,
+      "geom_time": 6.332159042358398,
+      "skipped": 20
+    },
+    "same_card": true,
+    "time_improvement_pct": 63.80877473655067,
+    "geom_improvement_pct": 98.05761992565694
+  },
+  {
+    "image": "Screenshot_20251021_085344_Discord.jpg",
+    "v1": {
+      "card": "Donquixote Doflamingo (Wanted Poster)",
+      "number": "ST03-009",
+      "conf": "LOW",
+      "score": 0.48430086271627243,
+      "time": 446.19297981262207,
+      "geom_time": 279
+    },
+    "v1_1": {
+      "card": "Donquixote Doflamingo (Wanted Poster)",
+      "number": "ST03-009",
+      "conf": "LOW",
+      "score": 0.5355019569396973,
+      "time": 182.45244026184082,
+      "geom_time": 6.740570068359375,
+      "skipped": 20
+    },
+    "same_card": true,
+    "time_improvement_pct": 59.109074208549536,
+    "geom_improvement_pct": 97.58402506510416
+  },
+  {
+    "image": "Screenshot_20251021_085357_Discord.jpg",
+    "v1": {
+      "card": "Carrot (023) (Parallel)",
+      "number": "OP08-023",
+      "conf": "MODERATE",
+      "score": 0.6012615442276001,
+      "time": 480.17168045043945,
+      "geom_time": 306
+    },
+    "v1_1": {
+      "card": "Carrot (023) (Parallel)",
+      "number": "OP08-023",
+      "conf": "LOW",
+      "score": 0.6012615442276001,
+      "time": 177.6871681213379,
+      "geom_time": 6.084918975830078,
+      "skipped": 20
+    },
+    "same_card": true,
+    "time_improvement_pct": 62.9950754374658,
+    "geom_improvement_pct": 98.01146438698363
+  },
+  {
+    "image": "yellow_event.png",
+    "v1": {
+      "card": "You're the One Who Should Disappear",
+      "number": "OP06-115",
+      "conf": "MODERATE",
+      "score": 0.5714781630817891,
+      "time": 2792.1650409698486,
+      "geom_time": 354
+    },
+    "v1_1": {
+      "card": "You're the One Who Should Disappear",
+      "number": "OP06-115",
+      "conf": "LOW",
+      "score": 0.6551989674568176,
+      "time": 2220.292329788208,
+      "geom_time": 4.772424697875977,
+      "skipped": 19
+    },
+    "same_card": true,
+    "time_improvement_pct": 20.481336267393516,
+    "geom_improvement_pct": 98.65185742997853
+  }
+]

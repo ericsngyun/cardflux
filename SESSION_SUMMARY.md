@@ -257,3 +257,4 @@ _Time invested: 3 hours_
 _Value delivered: +35% accuracy improvement (with 800x800: +50-60%)_  
 _Next session: Complete 800x800 upgrade (10 min) or start Week 2_
 
+

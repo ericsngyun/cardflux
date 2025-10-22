@@ -1,0 +1,99 @@
+Using a slow image processor as `use_fast` is unset and a slow processor was saved with this model. `use_fast=True` will be the default behavior in v4.52, even if the model was saved with a slow processor. This will result in minor differences in outputs. You'll still be able to use a slow processor with `use_fast=False`.
+====================================================================================================
+V1 BASELINE vs V2.1 ENHANCED COMPARISON
+====================================================================================================
+
+Test Images: 6
+Directory: C:\Users\rayno\eric\cardflux\test-images\one-piece
+
+[INIT] Loading V1 baseline...
+[OK] V1 loaded
+
+[INIT] Loading V2.1 enhanced...
+  [OK] ORB initialized (2000 features, 12 levels, HARRIS scoring)
+[OK] V2.1 loaded
+
+[1/6] Testing: bege.png
+----------------------------------------------------------------------------------------------------
+  [V1 BASELINE] Capone"Gang"Bege                         | HIGH     | 0.8721 | 1752ms
+  [V2.1 ENHANCED] Capone"Gang"Bege                         | HIGH     | 0.8708 | 987ms
+  [MATCH] Same card identified
+
+[2/6] Testing: blackbeard.png
+----------------------------------------------------------------------------------------------------
+  [V1 BASELINE] Marshall.D.Teach (093) (Manga)           | MODERATE | 0.6894 | 708ms
+  [V2.1 ENHANCED] ERROR: 'charmap' codec can't encode character '\u2192' in position 79: character maps to <undefined>
+  [DIFF] V1: OP09-093 vs V2.1: N/A
+
+[3/6] Testing: Screenshot_20251021_085328_Discord.jpg
+----------------------------------------------------------------------------------------------------
+  [V1 BASELINE] Come On!! We'll Fight You!! (Manga)      | LOW      | 0.5182 | 670ms
+  [V2.1 ENHANCED] Come On!! We'll Fight You!! (Manga)      | LOW      | 0.5193 | 595ms
+  [MATCH] Same card identified
+  [IMPROVEMENT] Score: +0.0011
+
+[4/6] Testing: Screenshot_20251021_085344_Discord.jpg
+----------------------------------------------------------------------------------------------------
+  [V1 BASELINE] Donquixote Doflamingo (Wanted Poster)    | LOW      | 0.4843 | 597ms
+  [V2.1 ENHANCED] Donquixote Doflamingo (Wanted Poster)    | LOW      | 0.4836 | 520ms
+  [MATCH] Same card identified
+
+[5/6] Testing: Screenshot_20251021_085357_Discord.jpg
+----------------------------------------------------------------------------------------------------
+  [V1 BASELINE] Carrot (023) (Parallel)                  | LOW      | 0.6013 | 611ms
+  [V2.1 ENHANCED] Carrot (023) (Parallel)                  | LOW      | 0.6045 | 557ms
+  [MATCH] Same card identified
+  [IMPROVEMENT] Score: +0.0033
+
+[6/6] Testing: yellow_event.png
+----------------------------------------------------------------------------------------------------
+  [V1 BASELINE] You're the One Who Should Disappear      | MODERATE | 0.5715 | 2865ms
+  [V2.1 ENHANCED] Come On!! We'll Fight You!! (Manga)      | LOW      | 0.5730 | 2792ms
+  [DIFF] V1: OP06-115 vs V2.1: OP09-020
+  [IMPROVEMENT] Score: +0.0015
+
+====================================================================================================
+SUMMARY
+====================================================================================================
+
++--------------------------------+-----------+------------+----------+-------------+--------------+------------+---------+
+| Image                          | V1 Conf   |   V1 Score |   V1 Geo | V2.1 Conf   |   V2.1 Score |   V2.1 Geo | Match   |
++================================+===========+============+==========+=============+==============+============+=========+
+| bege.png                       | HIGH      |      0.872 |    0.834 | HIGH        |        0.871 |      0.834 | [OK]    |
++--------------------------------+-----------+------------+----------+-------------+--------------+------------+---------+
+| blackbeard.png                 | MODERATE  |      0.689 |    0.436 | ERROR       |        0     |      0     | [DIFF]  |
++--------------------------------+-----------+------------+----------+-------------+--------------+------------+---------+
+| Screenshot_20251021_085328_Dis | LOW       |      0.518 |    0     | LOW         |        0.519 |      0     | [OK]    |
++--------------------------------+-----------+------------+----------+-------------+--------------+------------+---------+
+| Screenshot_20251021_085344_Dis | LOW       |      0.484 |    0.318 | LOW         |        0.484 |      0.318 | [OK]    |
++--------------------------------+-----------+------------+----------+-------------+--------------+------------+---------+
+| Screenshot_20251021_085357_Dis | LOW       |      0.601 |    0     | LOW         |        0.605 |      0     | [OK]    |
++--------------------------------+-----------+------------+----------+-------------+--------------+------------+---------+
+| yellow_event.png               | MODERATE  |      0.571 |    0.517 | LOW         |        0.573 |      0     | [DIFF]  |
++--------------------------------+-----------+------------+----------+-------------+--------------+------------+---------+
+
+STATISTICS
+----------------------------------------------------------------------------------------------------
+Total Images: 6
+Same Card: 4/6 (66.7%)
+
+V1 Baseline:
+  HIGH Confidence: 1/6 (16.7%)
+  Avg Score: 0.6228
+  Avg Geometric: 0.3508
+
+V2.1 Enhanced:
+  HIGH Confidence: 1/6 (16.7%)
+  Avg Score: 0.5085
+  Avg Geometric: 0.1920
+
+VERDICT
+----------------------------------------------------------------------------------------------------
+[-] V1 has better geometric matching (0.3508 vs 0.1920)
+[-] V1 has higher average score (0.6228 vs 0.5085)
+
+[WINNER] V1 Baseline (no improvements)
+
+====================================================================================================
+[OK] Results saved to: v2_1_test_results.json
+

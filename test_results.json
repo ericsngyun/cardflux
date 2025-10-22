@@ -1,13 +1,13 @@
 {
-  "test_date": "2025-10-08 16:44:09",
-  "init_time_ms": 1835.655689239502,
-  "avg_time_ms": 360.33785343170166,
-  "min_time_ms": 153,
-  "max_time_ms": 953,
+  "test_date": "2025-10-22 08:37:25",
+  "init_time_ms": 1227.4119853973389,
+  "avg_time_ms": 605.898175920759,
+  "min_time_ms": 347,
+  "max_time_ms": 909,
   "confidence_distribution": {
-    "high": 2,
+    "high": 3,
     "moderate": 0,
-    "low": 2
+    "low": 4
   },
   "tests": [
     {
@@ -18,9 +18,9 @@
       "visual_score": 0.8935943841934204,
       "geometric_score": 1.0,
       "final_score": 0.9255160689353943,
-      "time_ms": 953,
-      "visual_ms": 305.1,
-      "geometric_ms": 647.9
+      "time_ms": 909,
+      "visual_ms": 134.2,
+      "geometric_ms": 774.5
     },
     {
       "image": "blackbeard-db.jpg",
@@ -30,33 +30,69 @@
       "visual_score": 1.0,
       "geometric_score": 1.0,
       "final_score": 1.0,
-      "time_ms": 177,
-      "visual_ms": 71.8,
-      "geometric_ms": 105.1
+      "time_ms": 649,
+      "visual_ms": 78.2,
+      "geometric_ms": 571.2
     },
     {
       "image": "blackbeard.png",
-      "card": "Usopp",
-      "number": "ST21-002",
+      "card": "Monkey.D.Luffy (ST16-005)",
+      "number": "ST16-005",
       "confidence": "LOW",
-      "visual_score": 0.6984958648681641,
+      "visual_score": 0.6766606569290161,
       "geometric_score": 0.0,
-      "final_score": 0.6984958648681641,
-      "time_ms": 153,
-      "visual_ms": 84.0,
-      "geometric_ms": 69.7
+      "final_score": 0.6766606569290161,
+      "time_ms": 456,
+      "visual_ms": 72.4,
+      "geometric_ms": 384.3
+    },
+    {
+      "image": "Screenshot_20251021_085328_Discord.jpg",
+      "card": "Marshall.D.Teach (093) (English Version 2nd Anniversary Set)",
+      "number": "OP09-093",
+      "confidence": "LOW",
+      "visual_score": 0.5213572382926941,
+      "geometric_score": 0.0,
+      "final_score": 0.5213572382926941,
+      "time_ms": 347,
+      "visual_ms": 78.2,
+      "geometric_ms": 269.5
+    },
+    {
+      "image": "Screenshot_20251021_085344_Discord.jpg",
+      "card": "Sanji - OP01-013 (Alternate Art)",
+      "number": "OP01-013",
+      "confidence": "LOW",
+      "visual_score": 0.46262967586517334,
+      "geometric_score": 0.0,
+      "final_score": 0.46262967586517334,
+      "time_ms": 579,
+      "visual_ms": 112.0,
+      "geometric_ms": 467.1
+    },
+    {
+      "image": "Screenshot_20251021_085357_Discord.jpg",
+      "card": "Trafalgar Law (Beginners Deck Party [ST-23] - [ST-28] Participation Pack)",
+      "number": "OP09-069",
+      "confidence": "LOW",
+      "visual_score": 0.6133531928062439,
+      "geometric_score": 0.0,
+      "final_score": 0.6133531928062439,
+      "time_ms": 562,
+      "visual_ms": 96.0,
+      "geometric_ms": 465.9
     },
     {
       "image": "yellow_event.png",
-      "card": "Barrier!!",
-      "number": "OP04-095",
-      "confidence": "LOW",
-      "visual_score": 0.6124482154846191,
-      "geometric_score": 0.0,
-      "final_score": 0.6124482154846191,
-      "time_ms": 157,
-      "visual_ms": 73.4,
-      "geometric_ms": 83.8
+      "card": "You're the One Who Should Disappear",
+      "number": "OP06-115",
+      "confidence": "HIGH",
+      "visual_score": 0.7259652018547058,
+      "geometric_score": 0.252,
+      "final_score": 0.5837756412982941,
+      "time_ms": 736,
+      "visual_ms": 120.2,
+      "geometric_ms": 616.0
     }
   ]
 }
