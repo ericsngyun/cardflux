@@ -413,6 +413,24 @@ const App: React.FC = () => {
     showNotification('warning', 'Card rejected - scan again with better positioning');
   }, [pendingReview]);
 
+  // Keyboard shortcuts for review modal (Enter=Accept, Esc=Reject)
+  useEffect(() => {
+    if (!pendingReview) return;
+
+    const handleKeyPress = (e: KeyboardEvent) => {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        handleAcceptReview();
+      } else if (e.key === 'Escape') {
+        e.preventDefault();
+        handleRejectReview();
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyPress);
+    return () => window.removeEventListener('keydown', handleKeyPress);
+  }, [pendingReview, handleAcceptReview, handleRejectReview]);
+
   const showNotification = (
     type: 'success' | 'error' | 'warning',
     message: string
@@ -691,10 +709,17 @@ const App: React.FC = () => {
 
       {/* Review Modal for MODERATE/LOW confidence */}
       {pendingReview && (
-        <div className="review-modal-overlay" onClick={handleRejectReview}>
-          <div className="review-modal" onClick={(e) => e.stopPropagation()}>
+        <div className="review-modal-overlay" onClick={handleRejectReview} role="presentation">
+          <div
+            className="review-modal"
+            onClick={(e) => e.stopPropagation()}
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="review-title"
+            aria-describedby="review-description"
+          >
             <div className="review-header">
-              <h2>🔍 Manual Review Required</h2>
+              <h2 id="review-title">🔍 Manual Review Required</h2>
               <span className={`confidence-badge confidence-${pendingReview.confidence.toLowerCase()}`}>
                 {pendingReview.confidence}
               </span>
@@ -711,11 +736,14 @@ const App: React.FC = () => {
                 </div>
               </div>
 
-              <div className="review-message">
+              <div className="review-message" id="review-description">
                 <p>
                   {pendingReview.confidence === 'LOW'
                     ? '⚠️ This identification has LOW confidence. Please verify the card matches before adding.'
                     : '~ This identification has MODERATE confidence. Please verify before adding.'}
+                </p>
+                <p className="review-hint">
+                  <kbd>Enter</kbd> to accept • <kbd>Esc</kbd> to reject
                 </p>
               </div>
             </div>
@@ -724,12 +752,15 @@ const App: React.FC = () => {
               <button
                 className="btn btn-reject"
                 onClick={handleRejectReview}
+                aria-label="Reject and rescan card"
               >
                 ✕ Reject & Rescan
               </button>
               <button
                 className="btn btn-accept"
                 onClick={handleAcceptReview}
+                aria-label="Accept and add card to stack"
+                autoFocus
               >
                 ✓ Accept & Add
               </button>

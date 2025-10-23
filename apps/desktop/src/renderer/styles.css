@@ -10,7 +10,7 @@
   --bg-elevated: #282828;
 
   --text-primary: #ffffff;
-  --text-secondary: #a3a3a3;
+  --text-secondary: #b0b0b0; /* Improved from #a3a3a3 for better contrast (WCAG AA) */
   --text-tertiary: #737373;
 
   --border-primary: #282828;
@@ -1853,6 +1853,23 @@ kbd {
   font-size: 0.875rem;
   color: var(--text-secondary);
   line-height: 1.5;
+}
+
+.review-hint {
+  margin-top: var(--spacing-sm);
+  font-size: 0.75rem;
+  color: var(--text-tertiary);
+  text-align: center;
+}
+
+.review-hint kbd {
+  background: var(--bg-elevated);
+  padding: 2px 6px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border-primary);
+  font-family: monospace;
+  font-size: 0.75rem;
+  color: var(--text-secondary);
 }
 
 .review-actions {
