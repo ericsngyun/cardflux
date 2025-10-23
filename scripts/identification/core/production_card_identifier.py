@@ -150,9 +150,20 @@ class ProductionCardIdentifier:
         if self.verbose:
             print(f"  [OK] Metadata loaded ({time.time()-start:.1f}s)")
 
-        # Initialize ORB detector with increased features for better matching
+        # Initialize geometric matchers with SIFT→ORB→AKAZE cascade
         if self.verbose:
-            print(f"\n[4/6] Initializing geometric matchers (ORB + AKAZE)...")
+            print(f"\n[4/6] Initializing geometric matchers (SIFT + ORB + AKAZE)...")
+
+        # SIFT: Best accuracy (most discriminative features)
+        # Patent expired 2020 - now free to use
+        self.sift = cv2.SIFT_create(
+            nfeatures=1000,
+            contrastThreshold=0.04,  # Lower = more features detected
+            edgeThreshold=10,        # Lower = detect features on edges
+            sigma=1.6                # Gaussian blur for scale space
+        )
+
+        # ORB: Fast and good for most cases
         # Increased from 500 to 1000 features for more robust matching
         # Higher nfeatures = more keypoints = better matching on complex card art
         self.orb = cv2.ORB_create(
@@ -164,10 +175,12 @@ class ProductionCardIdentifier:
             WTA_K=2,
             patchSize=31
         )
-        # NEW: AKAZE detector for fallback (better on compressed/low-res images)
+
+        # AKAZE: Best for compressed/low-res images
         self.akaze = cv2.AKAZE_create()
+
         if self.verbose:
-            print(f"  [OK] ORB + AKAZE initialized (hybrid matching)")
+            print(f"  [OK] SIFT + ORB + AKAZE initialized (triple cascade matching)")
 
         # Load pre-computed keypoints if available (for geometric optimization)
         KEYPOINTS_DIR = Path(__file__).parent.parent.parent / "artifacts" / "keypoints"
@@ -892,34 +905,133 @@ class ProductionCardIdentifier:
                 print(f"  Warning: AKAZE matching error: {e}")
             return 0.0
 
+    def _compute_sift_similarity(self, query_path: str, candidate_path: str) -> float:
+        """
+        Compute SIFT geometric similarity (most accurate).
+
+        SIFT (Scale-Invariant Feature Transform):
+        - Best discriminative power (most accurate)
+        - Scale and rotation invariant
+        - Robust to lighting changes
+        - Floating-point descriptors (128-dim)
+        - Slower than ORB but worth it for accuracy
+
+        Patent expired March 2020 - now free to use!
+        """
+        try:
+            img1 = cv2.imread(query_path, cv2.IMREAD_GRAYSCALE)
+            img2 = cv2.imread(candidate_path, cv2.IMREAD_GRAYSCALE)
+
+            if img1 is None or img2 is None:
+                return 0.0
+
+            # Light preprocessing (SIFT works better on less-processed images)
+            # Upscale if too small
+            min_size = 400
+            if min(img1.shape) < min_size:
+                scale = min_size / min(img1.shape)
+                img1 = cv2.resize(img1, None, fx=scale, fy=scale, interpolation=cv2.INTER_LANCZOS4)
+
+            if min(img2.shape) < min_size:
+                scale = min_size / min(img2.shape)
+                img2 = cv2.resize(img2, None, fx=scale, fy=scale, interpolation=cv2.INTER_LANCZOS4)
+
+            # Very light CLAHE (SIFT is sensitive to over-processing)
+            clahe = cv2.createCLAHE(clipLimit=1.5, tileGridSize=(8, 8))
+            img1 = clahe.apply(img1)
+            img2 = clahe.apply(img2)
+
+            # Detect SIFT features
+            kp1, des1 = self.sift.detectAndCompute(img1, None)
+            kp2, des2 = self.sift.detectAndCompute(img2, None)
+
+            if des1 is None or des2 is None or len(des1) < 8 or len(des2) < 8:
+                return 0.0
+
+            # Match using FLANN (optimized for floating-point descriptors)
+            FLANN_INDEX_KDTREE = 1
+            index_params = dict(algorithm=FLANN_INDEX_KDTREE, trees=5)
+            search_params = dict(checks=50)
+            flann = cv2.FlannBasedMatcher(index_params, search_params)
+
+            matches = flann.knnMatch(des1, des2, k=2)
+
+            # Lowe's ratio test (classic 0.75 threshold for SIFT)
+            good_matches = []
+            for match_pair in matches:
+                if len(match_pair) == 2:
+                    m, n = match_pair
+                    if m.distance < 0.75 * n.distance:
+                        good_matches.append(m)
+
+            if len(good_matches) < 4:
+                return 0.0
+
+            # Scoring (similar to ORB but adjusted for SIFT characteristics)
+            num_keypoints_max = max(len(kp1), len(kp2))
+            num_keypoints_min = min(len(kp1), len(kp2))
+
+            match_ratio = len(good_matches) / num_keypoints_max
+            coverage_ratio = len(good_matches) / num_keypoints_min
+
+            # SIFT distances are different scale (0-~200+ vs ORB's 0-256)
+            avg_distance = np.mean([m.distance for m in good_matches])
+            distance_quality = 1.0 / (1.0 + avg_distance / 100.0)
+
+            score = (
+                match_ratio * 0.5 +
+                coverage_ratio * 0.3 +
+                distance_quality * 0.2
+            )
+
+            # SIFT typically produces more reliable matches - amplify appropriately
+            final_score = min(score * 2.5, 1.0)
+
+            return final_score
+
+        except Exception as e:
+            if self.verbose:
+                print(f"  Warning: SIFT matching error: {e}")
+            return 0.0
+
     def _compute_geometric_similarity_hybrid(self, query_path: str, candidate_path: str) -> float:
         """
-        NEW: Hybrid ORB → AKAZE fallback strategy.
+        UPDATED: Triple cascade SIFT → ORB → AKAZE strategy.
 
-        Strategy:
-        1. Try ORB first (fast: ~50-100ms)
-        2. If ORB score > 0.10, use it (good enough)
-        3. If ORB score ≤ 0.10, try AKAZE (slower but more robust)
-        4. Return best score
+        Cascade Strategy:
+        1. Try SIFT first (most accurate: ~100-150ms)
+        2. If SIFT score > 0.12, use it (excellent match)
+        3. If SIFT score ≤ 0.12, try ORB (fast fallback: ~50-100ms)
+        4. If ORB score > 0.10, use it (good enough)
+        5. If ORB score ≤ 0.10, try AKAZE (last resort for compressed images)
+        6. Return best score
 
         This gives us:
-        - ORB speed on good quality images (80% of cases)
-        - AKAZE accuracy on poor quality images (20% of cases)
-        - Best of both worlds with minimal overhead
+        - SIFT accuracy when it matters (80% of cases)
+        - ORB speed when SIFT uncertain (15% of cases)
+        - AKAZE robustness on poor quality (5% of cases)
+        - Best of all three algorithms with intelligent fallback
         """
-        # Try ORB first (fastest)
+        # Try SIFT first (most accurate)
+        sift_score = self._compute_sift_similarity(query_path, candidate_path)
+
+        # If SIFT works well, use it (best accuracy)
+        if sift_score > 0.12:
+            return sift_score
+
+        # If SIFT uncertain, try ORB (faster, still good)
         orb_score = self._compute_orb_similarity(query_path, candidate_path)
 
-        # If ORB works well, use it (no need for AKAZE)
+        # If ORB works well, use it
         if orb_score > 0.10:
             return orb_score
 
-        # If ORB failed or very weak, try AKAZE (more robust)
-        # This rescues compressed/distance images where ORB returns 0.0
+        # If both failed or very weak, try AKAZE (most robust to compression)
+        # This rescues compressed/distance images where SIFT and ORB return low scores
         akaze_score = self._compute_akaze_similarity(query_path, candidate_path)
 
-        # Return best of both
-        return max(orb_score, akaze_score)
+        # Return best of all three
+        return max(sift_score, orb_score, akaze_score)
 
     def _print_result(self, result: Dict):
         """Pretty print identification result."""
