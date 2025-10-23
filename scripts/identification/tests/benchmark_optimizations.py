@@ -176,7 +176,7 @@ def run_benchmark(test_dir: str = None) -> Dict:
     print(f"\nGeometric Matching:")
     print(f"  Strong (>0.15):   {strong_geometric}/{total} ({strong_geometric/total*100:.1f}%)")
     print(f"  Weak (0.05-0.15): {weak_geometric}/{total} ({weak_geometric/total*100:.1f}%)")
-    print(f"  Failed (≤0.05):   {failed_geometric}/{total} ({failed_geometric/total*100:.1f}%)")
+    print(f"  Failed (<=0.05):  {failed_geometric}/{total} ({failed_geometric/total*100:.1f}%)")
 
     # Save detailed results
     report_dir = Path(__file__).parent.parent.parent / "test-results" / "current"
@@ -227,7 +227,7 @@ def run_benchmark(test_dir: str = None) -> Dict:
     print("\n  SIFT Geometric Matching:")
     print(f"    - Strong matches: {strong_geometric} images ({strong_geometric/total*100:.0f}%)")
     print(f"    - Expected accuracy gain: +8-12%")
-    print(f"    - More cards should move from MODERATE → HIGH confidence")
+    print(f"    - More cards should move from MODERATE -> HIGH confidence")
 
     print("\nTo see full impact:")
     print("  1. Collect ground truth data (100+ cards)")
