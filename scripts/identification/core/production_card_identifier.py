@@ -428,6 +428,16 @@ class ProductionCardIdentifier:
             if self.verbose:
                 print(f"  [OK] Clustered: {matches} matching variants ({stage2_time*1000:.0f}ms)")
 
+            # NEW: OCR Hard Filter - If OCR confidence is high, narrow down to matching cards only
+            # This dramatically speeds up identification when card number is read successfully
+            # Expected impact: -300-400ms on 60-70% of identifications
+            if card_num_result.confidence > 0.80 and matches >= 3:
+                # Filter to only matching cards
+                candidates = [c for c in candidates if c['card_number_match'] > 0]
+                if self.verbose:
+                    print(f"  [OCR FILTER] High confidence OCR ({card_num_result.confidence:.2f}) - narrowed to {len(candidates)} matching variants")
+                    print(f"               Skipping {top_k - len(candidates)} non-matching candidates")
+
         # Stage 3: Geometric verification (top 20 for comprehensive check)
         # NEW: Using hybrid ORB→AKAZE fallback for better accuracy on distance/compressed images
         if use_geometric:

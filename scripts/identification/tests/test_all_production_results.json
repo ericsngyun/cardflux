@@ -14,7 +14,7 @@
         0
       ],
       "sharpness": 1489.1147795314428,
-      "time_ms": 1536,
+      "time_ms": 1506,
       "foil_detected": true,
       "top_3_matches": [
         {
@@ -48,7 +48,7 @@
         0
       ],
       "sharpness": 1838.9393487382422,
-      "time_ms": 775,
+      "time_ms": 583,
       "foil_detected": true,
       "top_3_matches": [
         {
@@ -82,7 +82,7 @@
         0
       ],
       "sharpness": 1941.0353781150334,
-      "time_ms": 1382,
+      "time_ms": 1014,
       "foil_detected": true,
       "top_3_matches": [
         {
@@ -116,7 +116,7 @@
         0
       ],
       "sharpness": 14643.912415294619,
-      "time_ms": 1108,
+      "time_ms": 1041,
       "foil_detected": true,
       "top_3_matches": [
         {
@@ -150,7 +150,7 @@
         0
       ],
       "sharpness": 3884.746381638388,
-      "time_ms": 671,
+      "time_ms": 624,
       "foil_detected": true,
       "top_3_matches": [
         {
@@ -184,7 +184,7 @@
         0
       ],
       "sharpness": 3105.8654669514303,
-      "time_ms": 539,
+      "time_ms": 512,
       "foil_detected": true,
       "top_3_matches": [
         {
@@ -218,7 +218,7 @@
         0
       ],
       "sharpness": 2630.8235953165695,
-      "time_ms": 552,
+      "time_ms": 515,
       "foil_detected": true,
       "top_3_matches": [
         {
@@ -252,7 +252,7 @@
         0
       ],
       "sharpness": 1252.7542754471328,
-      "time_ms": 636,
+      "time_ms": 584,
       "foil_detected": true,
       "top_3_matches": [
         {
@@ -286,7 +286,7 @@
         0
       ],
       "sharpness": 3977.2151087733046,
-      "time_ms": 847,
+      "time_ms": 810,
       "foil_detected": true,
       "top_3_matches": [
         {
@@ -316,7 +316,7 @@
     "avg_final_score": 0.7039053932215453,
     "avg_visual_score": 0.7293621102968851,
     "avg_geometric_score": 0.41573487866680414,
-    "avg_time_ms": 894.0,
+    "avg_time_ms": 798.7777777777778,
     "quality_distribution": {
       "high": 0,
       "medium": 0,
