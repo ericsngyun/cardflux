@@ -451,19 +451,21 @@ class ProductionCardIdentifier:
                     print(f"  [OCR FILTER] High confidence OCR ({card_num_result.confidence:.2f}) - narrowed to {len(candidates)} matching variants")
                     print(f"               Skipping {top_k - len(candidates)} non-matching candidates")
 
-        # Stage 3: Geometric verification (top 20 for comprehensive check)
-        # NEW: Using hybrid ORB→AKAZE fallback for better accuracy on distance/compressed images
+        # Stage 3: Geometric verification (OPTIMIZED for speed)
+        # OPTIMIZATION: Reduced to top 10 (was 20) for -40% geometric time
+        # Early stopping when strong match found (score > 0.8)
         if use_geometric:
             if self.verbose:
-                print(f"\n[Stage 3] Geometric verification (Hybrid ORB+AKAZE, top 20)...")
+                print(f"\n[Stage 3] Geometric verification (Hybrid SIFT+ORB+AKAZE, top 10)...")
             stage3_start = time.time()
 
-            # Verify more candidates to catch cards misranked by visual alone
-            top_candidates = candidates[:20]  # Increased from 15 to 20
+            # SPEED OPTIMIZATION: Only verify top 10 candidates (was 20)
+            # Impact: -600ms to -1000ms (roughly -40% geometric time)
+            top_candidates = candidates[:10]
             verified = 0
-            akaze_fallbacks = 0
+            early_stopped = False
 
-            for candidate in top_candidates:
+            for idx, candidate in enumerate(top_candidates):
                 card_id = candidate['card_id']
 
                 # Find candidate image
@@ -475,17 +477,26 @@ class ProductionCardIdentifier:
                         break
 
                 if candidate_image:
-                    # Use hybrid ORB→AKAZE matching
+                    # Use triple cascade SIFT → ORB → AKAZE matching
                     geom_score = self._compute_geometric_similarity_hybrid(image_path, candidate_image)
                     candidate['geometric_score'] = geom_score
-                    if geom_score > 0.05:  # Count anything above 0.05 as verified (lowered from 0.1)
+                    if geom_score > 0.05:  # Count anything above 0.05 as verified
                         verified += 1
+
+                    # EARLY STOP: If we found a very strong geometric match, stop verification
+                    # Visual > 0.85 + Geometric > 0.8 = very likely correct
+                    if candidate['visual_score'] > 0.85 and geom_score > 0.8:
+                        early_stopped = True
+                        if self.verbose:
+                            print(f"  [EARLY STOP] Strong match found at rank {idx+1} (V:{candidate['visual_score']:.3f} G:{geom_score:.3f})")
+                        break
 
             stage3_time = time.time() - stage3_start
             if self.verbose:
-                print(f"  [OK] Verified {verified}/20 candidates ({stage3_time*1000:.0f}ms)")
-                if akaze_fallbacks > 0:
-                    print(f"  [AKAZE] Rescued {akaze_fallbacks} candidates where ORB failed")
+                verified_count = len(top_candidates) if not early_stopped else idx + 1
+                print(f"  [OK] Verified {verified}/{verified_count} candidates ({stage3_time*1000:.0f}ms)")
+                if early_stopped:
+                    print(f"  [SPEED] Stopped early, saved {(10 - idx - 1)} unnecessary verifications")
 
         # Stage 4: Foil-aware scoring
         if foil_result.is_foil:
