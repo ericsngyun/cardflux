@@ -16,8 +16,10 @@ const DEFAULT_SETTINGS: IdentificationSettings = {
   useFoilDetection: false,
   topK: 20,
   useGeometric: true,
-  multiFrameEnabled: false,  // Off by default (can enable in settings)
-  multiFrameCount: 3,         // 3 frames when enabled
+  multiFrameEnabled: false,    // Off by default (can enable in settings)
+  multiFrameCount: 3,           // 3 frames when enabled
+  acceptLowConfidence: false,   // OFF by default (only accept HIGH+MODERATE)
+  autoAddModerate: true,        // ON by default (auto-add MODERATE)
 };
 
 // LocalStorage keys
@@ -54,6 +56,11 @@ const App: React.FC = () => {
     sessionStart: Date.now(),
   });
   const [capturedFrames, setCapturedFrames] = useState<string[]>([]);  // For multi-frame fusion
+  const [pendingReview, setPendingReview] = useState<{
+    card: any;
+    confidence: string;
+    timestamp: number;
+  } | null>(null);  // For manual review of MODERATE/LOW confidence
   const [settings, setSettings] = useState<IdentificationSettings>(() => {
     // Load settings from localStorage
     try {
@@ -232,8 +239,17 @@ const App: React.FC = () => {
           lowConfidence: prev.lowConfidence + (confidence === 'LOW' ? 1 : 0),
         }));
 
-        // Accept HIGH and MODERATE confidence (60%+ threshold)
-        if (confidence === 'HIGH' || confidence === 'MODERATE') {
+        // Confidence threshold logic based on settings
+        const shouldAutoAdd =
+          confidence === 'HIGH' ||
+          (confidence === 'MODERATE' && settings.autoAddModerate);
+
+        const shouldReview =
+          (confidence === 'MODERATE' && !settings.autoAddModerate) ||
+          (confidence === 'LOW' && settings.acceptLowConfidence);
+
+        if (shouldAutoAdd) {
+          // AUTO-ADD: HIGH or MODERATE (if autoAddModerate enabled)
           // Check for duplicates in last 30 seconds
           const now = Date.now();
           const recentDuplicate = cards.find(
@@ -269,11 +285,27 @@ const App: React.FC = () => {
           );
 
           playSuccessSound();
+        } else if (shouldReview) {
+          // MANUAL REVIEW: Show confirmation dialog
+          setPendingReview({
+            card: { ...card, price },
+            confidence,
+            timestamp: Date.now(),
+          });
+
+          showNotification(
+            'warning',
+            `${confidence} confidence: "${card.name}" - Please review and confirm`
+          );
         } else {
-          // Low confidence - show what was identified with helpful tips
+          // REJECTED: Low confidence not accepted
           showNotification(
             'error',
-            `Low confidence: Found "${card.name}" but not confident. Try: better lighting, center card, reduce glare.`
+            `${confidence} confidence: Found "${card.name}" but not confident. ${
+              confidence === 'LOW'
+                ? 'Enable "Accept LOW confidence" in Settings to review these cards.'
+                : 'Enable "Auto-add MODERATE" in Settings for faster scanning.'
+            }`
           );
         }
 
@@ -349,6 +381,37 @@ const App: React.FC = () => {
     setCards((prev) => prev.filter((card) => card.id !== id));
     showNotification('success', 'Card removed');
   }, []);
+
+  const handleAcceptReview = useCallback(() => {
+    if (!pendingReview) return;
+
+    const { card, confidence } = pendingReview;
+
+    const stackItem: CardStackItem = {
+      id: `${card.productId}-${Date.now()}`,
+      name: card.name,
+      number: card.number,
+      rarity: card.rarity,
+      set: card.set,
+      price: card.price,
+      confidence: confidence,
+      timestamp: Date.now(),
+      productId: card.productId,
+    };
+
+    setCards((prev) => [stackItem, ...prev]);
+    setPendingReview(null);
+
+    showNotification('success', `✓ Added: ${card.name} - $${card.price.toFixed(2)} (${confidence})`);
+    playSuccessSound();
+  }, [pendingReview]);
+
+  const handleRejectReview = useCallback(() => {
+    if (!pendingReview) return;
+
+    setPendingReview(null);
+    showNotification('warning', 'Card rejected - scan again with better positioning');
+  }, [pendingReview]);
 
   const showNotification = (
     type: 'success' | 'error' | 'warning',
@@ -625,6 +688,55 @@ const App: React.FC = () => {
 
       {/* Capture Flash */}
       {showCaptureFlash && <div className="capture-flash" />}
+
+      {/* Review Modal for MODERATE/LOW confidence */}
+      {pendingReview && (
+        <div className="review-modal-overlay" onClick={handleRejectReview}>
+          <div className="review-modal" onClick={(e) => e.stopPropagation()}>
+            <div className="review-header">
+              <h2>🔍 Manual Review Required</h2>
+              <span className={`confidence-badge confidence-${pendingReview.confidence.toLowerCase()}`}>
+                {pendingReview.confidence}
+              </span>
+            </div>
+
+            <div className="review-content">
+              <div className="review-card-info">
+                <h3>{pendingReview.card.name}</h3>
+                <div className="review-details">
+                  <span><strong>Number:</strong> {pendingReview.card.number}</span>
+                  <span><strong>Set:</strong> {pendingReview.card.set}</span>
+                  <span><strong>Rarity:</strong> {pendingReview.card.rarity}</span>
+                  <span><strong>Price:</strong> ${pendingReview.card.price.toFixed(2)}</span>
+                </div>
+              </div>
+
+              <div className="review-message">
+                <p>
+                  {pendingReview.confidence === 'LOW'
+                    ? '⚠️ This identification has LOW confidence. Please verify the card matches before adding.'
+                    : '~ This identification has MODERATE confidence. Please verify before adding.'}
+                </p>
+              </div>
+            </div>
+
+            <div className="review-actions">
+              <button
+                className="btn btn-reject"
+                onClick={handleRejectReview}
+              >
+                ✕ Reject & Rescan
+              </button>
+              <button
+                className="btn btn-accept"
+                onClick={handleAcceptReview}
+              >
+                ✓ Accept & Add
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Footer */}
       <footer className="app-footer">

@@ -8,6 +8,8 @@ export interface IdentificationSettings {
   useGeometric: boolean;
   multiFrameEnabled: boolean;  // New: Enable multi-frame fusion
   multiFrameCount: number;     // New: Number of frames to capture (default: 3)
+  acceptLowConfidence: boolean; // New: Accept LOW confidence cards (with review)
+  autoAddModerate: boolean;     // New: Auto-add MODERATE or require review
 }
 
 interface SettingsPanelProps {
@@ -159,6 +161,45 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = React.memo(({
                 </p>
               </div>
             )}
+          </div>
+
+          {/* Confidence Threshold Settings */}
+          <div className="setting-group">
+            <h3 className="setting-section-title">🎯 Confidence Thresholds</h3>
+
+            {/* Auto-add MODERATE */}
+            <label className="setting-toggle">
+              <input
+                type="checkbox"
+                checked={settings.autoAddModerate}
+                onChange={(e) => handleChange('autoAddModerate', e.target.checked)}
+              />
+              <span className="toggle-slider"></span>
+              <span className="toggle-label">Auto-add MODERATE confidence</span>
+            </label>
+            <p className="setting-description">
+              When ON: AUTO-add MODERATE + HIGH (recommended for fast scanning)<br/>
+              When OFF: Only AUTO-add HIGH, MODERATE requires manual review
+            </p>
+          </div>
+
+          <div className="setting-group">
+            {/* Accept LOW confidence */}
+            <label className="setting-toggle">
+              <input
+                type="checkbox"
+                checked={settings.acceptLowConfidence}
+                onChange={(e) => handleChange('acceptLowConfidence', e.target.checked)}
+              />
+              <span className="toggle-slider"></span>
+              <span className="toggle-label">Accept LOW confidence with review</span>
+            </label>
+            <p className="setting-description">
+              Show LOW confidence cards for manual review instead of rejecting.<br/>
+              {settings.acceptLowConfidence && (
+                <span className="setting-warning">⚠️ Requires manual confirmation for each LOW card</span>
+              )}
+            </p>
           </div>
 
           {/* Advanced: Top-K */}
