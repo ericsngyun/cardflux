@@ -19,10 +19,16 @@ services_dir = Path(__file__).parent.parent.parent.parent.parent / "services"
 sys.path.insert(0, str(scripts_dir))
 sys.path.insert(0, str(services_dir))
 
-from production_card_identifier import ProductionCardIdentifier
-from card_detector import StabilizedCardDetector, CardDetectionStatus
-from identifier_version_manager import IdentifierVersionManager
-from capture.capture_manager import CaptureManager
+from core.production_card_identifier import ProductionCardIdentifier
+from core.polished_card_detector import PolishedCardDetector, CardDetectionStatus
+from tools.identifier_version_manager import IdentifierVersionManager
+
+# Capture manager import (may not exist - handle gracefully)
+try:
+    from tools.capture_manager import CaptureManager
+except ImportError:
+    CaptureManager = None
+    print("[PY] Warning: CaptureManager not available (module not found)", file=sys.stderr)
 
 class IdentificationService:
     """JSON-RPC service for card identification with version management."""
@@ -86,13 +92,18 @@ class IdentificationService:
             # Pre-load the default identifier
             self.version_manager.get_identifier(version)
 
-            # Initialize stabilized card detector with temporal smoothing
-            self._log("Initializing stabilized card detector with temporal smoothing...")
-            self.card_detector = StabilizedCardDetector(frame_width=1920, frame_height=1080, history_size=10)
+            # Initialize polished card detector
+            self._log("Initializing polished card detector...")
+            self.card_detector = PolishedCardDetector(verbose=False)
 
-            # Initialize capture manager
-            self._log("Initializing capture manager...")
-            self.capture_manager = CaptureManager(game=game)
+            # Initialize capture manager (if available)
+            if CaptureManager is not None:
+                self._log("Initializing capture manager...")
+                self.capture_manager = CaptureManager(game=game)
+            else:
+                self._log("Capture manager not available (skipping)")
+                self.capture_manager = None
+                self.auto_capture = False  # Disable auto-capture if manager not available
 
             self.initialized = True
             self._log(f"Identifier, card detector, and capture manager ready (version: {version})")
