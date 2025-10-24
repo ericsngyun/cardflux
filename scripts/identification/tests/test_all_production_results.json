@@ -14,7 +14,7 @@
         0
       ],
       "sharpness": 1489.1147795314428,
-      "time_ms": 1057,
+      "time_ms": 1406,
       "foil_detected": true,
       "top_3_matches": [
         {
@@ -48,7 +48,7 @@
         0
       ],
       "sharpness": 1838.9393487382422,
-      "time_ms": 1052,
+      "time_ms": 1162,
       "foil_detected": true,
       "top_3_matches": [
         {
@@ -82,7 +82,7 @@
         0
       ],
       "sharpness": 1941.0353781150334,
-      "time_ms": 615,
+      "time_ms": 633,
       "foil_detected": true,
       "top_3_matches": [
         {
@@ -116,7 +116,7 @@
         0
       ],
       "sharpness": 14643.912415294619,
-      "time_ms": 666,
+      "time_ms": 640,
       "foil_detected": true,
       "top_3_matches": [
         {
@@ -150,7 +150,7 @@
         0
       ],
       "sharpness": 3884.746381638388,
-      "time_ms": 1029,
+      "time_ms": 1077,
       "foil_detected": true,
       "top_3_matches": [
         {
@@ -184,7 +184,7 @@
         0
       ],
       "sharpness": 3105.8654669514303,
-      "time_ms": 928,
+      "time_ms": 930,
       "foil_detected": true,
       "top_3_matches": [
         {
@@ -218,7 +218,7 @@
         0
       ],
       "sharpness": 2630.8235953165695,
-      "time_ms": 916,
+      "time_ms": 947,
       "foil_detected": true,
       "top_3_matches": [
         {
@@ -252,7 +252,7 @@
         0
       ],
       "sharpness": 7465.185375070072,
-      "time_ms": 1370,
+      "time_ms": 1297,
       "foil_detected": true,
       "top_3_matches": [
         {
@@ -286,7 +286,7 @@
         0
       ],
       "sharpness": 1252.7542754471328,
-      "time_ms": 1106,
+      "time_ms": 1005,
       "foil_detected": true,
       "top_3_matches": [
         {
@@ -320,7 +320,7 @@
         0
       ],
       "sharpness": 3977.2151087733046,
-      "time_ms": 1177,
+      "time_ms": 1122,
       "foil_detected": true,
       "top_3_matches": [
         {
@@ -350,7 +350,7 @@
     "avg_final_score": 0.6992087265683766,
     "avg_visual_score": 0.7136458158493042,
     "avg_geometric_score": 0.39765365951599907,
-    "avg_time_ms": 991.6,
+    "avg_time_ms": 1021.9,
     "quality_distribution": {
       "high": 0,
       "medium": 0,
