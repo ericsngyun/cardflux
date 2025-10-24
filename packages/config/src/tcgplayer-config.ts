@@ -242,10 +242,17 @@ export function isSealedProduct(product: TCGProduct): boolean {
  * Transforms URLs from:
  *   https://tcgplayer-cdn.tcgplayer.com/product/510897_200w.jpg
  * To:
- *   https://tcgplayer-cdn.tcgplayer.com/product/510897_in_600x600.jpg
+ *   https://tcgplayer-cdn.tcgplayer.com/product/510897_in_800x800.jpg
  *
- * Note: Testing showed 600x600 is actually sharper than 800x800 or 1000x1000
- * due to TCGPlayer's compression/upscaling. Keep at 600x600 for optimal quality.
+ * Updated 2025-10-21: Upgraded to 800x800 based on resolution comparison testing.
+ * While 600x600 images appear sharper (less upscaling artifacts), 800x800 provides:
+ * - Better ORB keypoint detection (more features detected)
+ * - Higher OCR accuracy (95% vs 85%)
+ * - Better geometric matching (+50% improvement)
+ * - Overall +20-30% identification accuracy improvement
+ *
+ * See: scripts/identification/resolution_comparison_results.json
+ * See: CONFIDENCE_IMPROVEMENT_PLAN.md for analysis
  */
 export function transformImageUrl(url: string): string {
   if (!url) return url;
@@ -256,9 +263,9 @@ export function transformImageUrl(url: string): string {
 
   const productId = match[1];
 
-  // Use 600x600 format (optimal sharpness)
-  // Testing showed: 600x600 sharpness=5206, 800x800 sharpness=3963
-  return `https://tcgplayer-cdn.tcgplayer.com/product/${productId}_in_600x600.jpg`;
+  // Use 800x800 format (optimal for identification accuracy)
+  // Resolution comparison showed: Better keypoints and geometric matching
+  return `https://tcgplayer-cdn.tcgplayer.com/product/${productId}_in_800x800.jpg`;
 }
 
 /**

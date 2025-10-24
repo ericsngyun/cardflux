@@ -182,6 +182,22 @@ ipcMain.handle('identifier:identify', async (_event, imagePath: string, options:
   }
 });
 
+ipcMain.handle('identifier:identify-multi-frame', async (_event, imagePaths: string[], options: any = {}) => {
+  try {
+    if (!identificationService || !identificationService.isInitialized()) {
+      // Auto-initialize if not ready
+      identificationService = new PythonIdentificationBridge();
+      await identificationService.start(options.game || 'one-piece');
+    }
+
+    const result = await identificationService.identifyCardMultiFrame(imagePaths, options);
+    return { success: true, result };
+  } catch (error: any) {
+    console.error('Multi-frame identification error:', error);
+    return { success: false, error: error.message };
+  }
+});
+
 ipcMain.handle('identifier:detect-card', async (_event, imageData: string) => {
   try {
     if (!identificationService || !identificationService.isInitialized()) {

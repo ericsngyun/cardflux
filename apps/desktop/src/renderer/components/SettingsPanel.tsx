@@ -6,6 +6,10 @@ export interface IdentificationSettings {
   useFoilDetection: boolean;
   topK: number;
   useGeometric: boolean;
+  multiFrameEnabled: boolean;  // New: Enable multi-frame fusion
+  multiFrameCount: number;     // New: Number of frames to capture (default: 3)
+  acceptLowConfidence: boolean; // New: Accept LOW confidence cards (with review)
+  autoAddModerate: boolean;     // New: Auto-add MODERATE or require review
 }
 
 interface SettingsPanelProps {
@@ -116,6 +120,85 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = React.memo(({
             </label>
             <p className="setting-description">
               Use feature matching for more accurate identification. Recommended for optimal results.
+            </p>
+          </div>
+
+          {/* Multi-Frame Fusion */}
+          <div className="setting-group">
+            <label className="setting-toggle">
+              <input
+                type="checkbox"
+                checked={settings.multiFrameEnabled}
+                onChange={(e) => handleChange('multiFrameEnabled', e.target.checked)}
+              />
+              <span className="toggle-slider"></span>
+              <span className="toggle-label">Multi-Frame Fusion ⚡</span>
+            </label>
+            <p className="setting-description">
+              Capture and fuse multiple frames for +15-20% accuracy. Adds ~300ms per card.
+            </p>
+            
+            {settings.multiFrameEnabled && (
+              <div className="sub-setting">
+                <label htmlFor="frame-count" className="setting-label">
+                  Frame Count: {settings.multiFrameCount}
+                </label>
+                <div className="setting-slider-container">
+                  <input
+                    id="frame-count"
+                    type="range"
+                    min="2"
+                    max="5"
+                    step="1"
+                    value={settings.multiFrameCount}
+                    onChange={(e) => handleChange('multiFrameCount', parseInt(e.target.value, 10))}
+                    className="setting-slider"
+                  />
+                  <span className="setting-value">{settings.multiFrameCount} frames</span>
+                </div>
+                <p className="setting-hint">
+                  More frames = higher accuracy but slower (3 recommended for shops)
+                </p>
+              </div>
+            )}
+          </div>
+
+          {/* Confidence Threshold Settings */}
+          <div className="setting-group">
+            <h3 className="setting-section-title">🎯 Confidence Thresholds</h3>
+
+            {/* Auto-add MODERATE */}
+            <label className="setting-toggle">
+              <input
+                type="checkbox"
+                checked={settings.autoAddModerate}
+                onChange={(e) => handleChange('autoAddModerate', e.target.checked)}
+              />
+              <span className="toggle-slider"></span>
+              <span className="toggle-label">Auto-add MODERATE confidence</span>
+            </label>
+            <p className="setting-description">
+              When ON: AUTO-add MODERATE + HIGH (recommended for fast scanning)<br/>
+              When OFF: Only AUTO-add HIGH, MODERATE requires manual review
+            </p>
+          </div>
+
+          <div className="setting-group">
+            {/* Accept LOW confidence */}
+            <label className="setting-toggle">
+              <input
+                type="checkbox"
+                checked={settings.acceptLowConfidence}
+                onChange={(e) => handleChange('acceptLowConfidence', e.target.checked)}
+              />
+              <span className="toggle-slider"></span>
+              <span className="toggle-label">Accept LOW confidence with review</span>
+            </label>
+            <p className="setting-description">
+              Show LOW confidence cards for manual review instead of rejecting.<br/>
+              {settings.acceptLowConfidence && (
+                <span className="setting-warning">⚠️ Requires manual confirmation for each LOW card</span>
+              )}
             </p>
           </div>
 

@@ -15,11 +15,20 @@ import numpy as np
 # Add scripts directory to path
 # Go up from: apps/desktop/src/python -> apps/desktop/src -> apps/desktop -> apps -> root
 scripts_dir = Path(__file__).parent.parent.parent.parent.parent / "scripts" / "identification"
+services_dir = Path(__file__).parent.parent.parent.parent.parent / "services"
 sys.path.insert(0, str(scripts_dir))
+sys.path.insert(0, str(services_dir))
 
-from production_card_identifier import ProductionCardIdentifier
-from card_detector import StabilizedCardDetector, CardDetectionStatus
-from identifier_version_manager import IdentifierVersionManager
+from core.production_card_identifier import ProductionCardIdentifier
+from core.polished_card_detector import PolishedCardDetector, CardDetectionStatus
+from tools.identifier_version_manager import IdentifierVersionManager
+
+# Capture manager import (may not exist - handle gracefully)
+try:
+    from tools.capture_manager import CaptureManager
+except ImportError:
+    CaptureManager = None
+    print("[PY] Warning: CaptureManager not available (module not found)", file=sys.stderr)
 
 class IdentificationService:
     """JSON-RPC service for card identification with version management."""
@@ -27,9 +36,11 @@ class IdentificationService:
     def __init__(self):
         self.version_manager = None
         self.card_detector = None
+        self.capture_manager = None
         self.initialized = False
         self.current_version = "v2"  # Default to V2 with V1 fallback
         self.enable_fallback = True
+        self.auto_capture = True  # Enable capture by default
 
     def _log(self, message: str):
         """Log to stderr (stdout is reserved for JSON-RPC)."""
@@ -64,10 +75,10 @@ class IdentificationService:
 
         print(json.dumps(response), flush=True)
 
-    def initialize(self, game: str = "one-piece", version: str = "v2", enable_fallback: bool = True):
-        """Initialize the identification system with version management."""
+    def initialize(self, game: str = "one-piece", version: str = "v2", enable_fallback: bool = True, auto_capture: bool = True):
+        """Initialize the identification system with version management and capture."""
         try:
-            self._log(f"Initializing identifier for game: {game} (version: {version}, fallback: {enable_fallback})")
+            self._log(f"Initializing identifier for game: {game} (version: {version}, fallback: {enable_fallback}, auto_capture: {auto_capture})")
 
             # Initialize version manager
             self.version_manager = IdentifierVersionManager(
@@ -76,21 +87,32 @@ class IdentificationService:
             )
             self.current_version = version
             self.enable_fallback = enable_fallback
+            self.auto_capture = auto_capture
 
             # Pre-load the default identifier
             self.version_manager.get_identifier(version)
 
-            # Initialize stabilized card detector with temporal smoothing
-            self._log("Initializing stabilized card detector with temporal smoothing...")
-            self.card_detector = StabilizedCardDetector(frame_width=1920, frame_height=1080, history_size=10)
+            # Initialize polished card detector
+            self._log("Initializing polished card detector...")
+            self.card_detector = PolishedCardDetector(verbose=False)
+
+            # Initialize capture manager (if available)
+            if CaptureManager is not None:
+                self._log("Initializing capture manager...")
+                self.capture_manager = CaptureManager(game=game)
+            else:
+                self._log("Capture manager not available (skipping)")
+                self.capture_manager = None
+                self.auto_capture = False  # Disable auto-capture if manager not available
 
             self.initialized = True
-            self._log(f"Identifier and card detector ready (version: {version})")
+            self._log(f"Identifier, card detector, and capture manager ready (version: {version})")
             return {
                 "status": "ready",
                 "game": game,
                 "version": version,
-                "fallback_enabled": enable_fallback
+                "fallback_enabled": enable_fallback,
+                "auto_capture": auto_capture
             }
         except Exception as e:
             self._log(f"Initialization error: {e}")
@@ -132,6 +154,21 @@ class IdentificationService:
 
             self._log(log_msg)
 
+            # AUTO-CAPTURE: Save capture if enabled
+            capture_info = None
+            if self.auto_capture and self.capture_manager:
+                try:
+                    capture_info = self.capture_manager.save_capture(
+                        image_path=image_path,
+                        identification_result=result,
+                        save_original=True,
+                        save_cropped=True,
+                        save_preprocessed=False  # Skip preprocessed to save space
+                    )
+                    self._log(f"Captured: {capture_info['capture_id']} (confidence: {result['confidence']})")
+                except Exception as e:
+                    self._log(f"Capture save failed (non-fatal): {e}")
+
             # Return simplified result for UI
             return {
                 "success": True,
@@ -164,6 +201,11 @@ class IdentificationService:
                 ],
                 "version": actual_version,
                 "fallbackUsed": fallback_used,
+                "capture": {
+                    "captureId": capture_info['capture_id'] if capture_info else None,
+                    "saved": capture_info is not None,
+                    "paths": capture_info['paths'] if capture_info else None
+                } if self.auto_capture else None,
             }
         except Exception as e:
             self._log(f"Identification error: {e}")
@@ -238,7 +280,21 @@ class IdentificationService:
             "ready": self.initialized and self.version_manager is not None,
             "version": self.current_version if self.initialized else None,
             "fallback_enabled": self.enable_fallback if self.initialized else None,
+            "auto_capture": self.auto_capture if self.initialized else None,
         }
+
+    def get_capture_stats(self):
+        """Get capture statistics."""
+        if not self.capture_manager:
+            raise RuntimeError("Capture manager not initialized")
+
+        return self.capture_manager.get_statistics()
+
+    def set_auto_capture(self, enabled: bool):
+        """Enable or disable automatic capture saving."""
+        self.auto_capture = enabled
+        self._log(f"Auto-capture {'enabled' if enabled else 'disabled'}")
+        return {"auto_capture": self.auto_capture}
 
     def detect_card_in_frame(self, image_data: str):
         """
@@ -317,6 +373,10 @@ class IdentificationService:
                     result = self.version_manager.get_metrics()
                 else:
                     result = {}
+            elif method == "get_capture_stats":
+                result = self.get_capture_stats()
+            elif method == "set_auto_capture":
+                result = self.set_auto_capture(**params)
             else:
                 raise ValueError(f"Unknown method: {method}")
 

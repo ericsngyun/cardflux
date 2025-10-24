@@ -1,13 +1,17 @@
 # CardFlux - Senior Engineer Context
 
-> **Version**: v0.2.2 | **Status**: Production-Ready (One Piece TCG) | **Updated**: 2025-10-16
+> **Version**: v0.2.2 | **Status**: Production-Ready (One Piece TCG) | **Updated**: 2025-10-22
 
 ## Mission
 AI-powered card identification for shops: Transform 3-5 min manual pricing → 3-5 sec automated scanning with 100% accuracy.
 
 ## Current Status
-**Production Ready**: One Piece TCG (4,813 cards), 100% test accuracy, 500-835ms identification, desktop app v0.2.2
-**Recent Fix (2025-10-16)**: Preprocessing mismatch bug - improved 75% → 100% accuracy
+**Production Ready**: One Piece TCG (4,813 cards), 47% HIGH confidence, 778ms avg identification, desktop app v0.2.2
+**Recent Updates (2025-10-22)**:
+- ✅ 100% card detection system (polished_card_detector.py)
+- ✅ AKAZE hybrid geometric matching for robustness
+- ✅ Comprehensive test suite (19 test images)
+- ✅ Codebase fully organized and cleaned up
 
 ## Architecture Stack
 - **Frontend**: Electron 28 + React 18 + TypeScript (monochrome UI)
@@ -18,12 +22,12 @@ AI-powered card identification for shops: Transform 3-5 min manual pricing → 3
 ## Key Components
 
 ### 1. Identification Pipeline
-`scripts/identification/production_card_identifier.py`
+`scripts/identification/core/production_card_identifier.py`
 ```
-Image → Quality Check → Preprocess → DINOv2 (70-130ms) → FAISS (0.16ms, top 50)
-→ ORB Geometric (300-665ms, top 20) → Dynamic Scoring (60/40-90/10) → Result
+Image → Card Detection → Quality Check → Preprocess → DINOv2 (70-130ms) → FAISS (0.16ms, top 50)
+→ Hybrid Geometric (ORB+AKAZE, 300-800ms, top 20) → Dynamic Scoring (60/40-90/10) → Result
 ```
-**Performance**: 500-835ms avg, 100% accuracy on test suite, 50% HIGH / 50% MODERATE confidence
+**Performance**: 778ms avg, 47% HIGH / 42% MODERATE / 11% LOW confidence (19 test images)
 
 ### 2. Desktop App
 `apps/desktop/`
@@ -59,11 +63,26 @@ apps/desktop/               # Electron app (v0.2.2)
   src/renderer/components/  # CameraView, CardStack, Settings
 packages/config/            # Shared TCG config
 services/                   # Data pipeline (ingest, embedder, indexer)
-scripts/identification/     # production_card_identifier.py, test suites
+scripts/identification/     # Organized identification system
+  core/                     # Production modules (identifier, detectors)
+  tools/                    # Utilities (precompute, version manager)
+  tests/                    # Test suites
+  experiments/              # R&D scripts (fine-tuning, analysis)
+  archive/                  # Archived versions (v1.1, v2, v3, debug)
+docs/                       # Documentation
+  guides/                   # User guides (fine-tuning, colab, testing)
+  architecture/             # Technical design docs
+  deployment/               # Production readiness docs
+  development/              # Contributing, organization
+  status/                   # Current session summaries
+  archive/                  # Historical docs (sessions, improvements, test results)
 data/curated/               # one-piece.jsonl (4,813 cards)
 data/images/                # Card images (~400 MB)
 artifacts/faiss/            # FAISS indexes (7.1 MB)
 artifacts/metadata/         # embeddings.npy (7.4 MB), reprints.json
+test-results/               # Test outputs
+  current/                  # Latest test results
+  archive/                  # Historical test data
 ```
 
 ## Critical Algorithms
@@ -99,8 +118,9 @@ final_score = visual*WEIGHT_VISUAL + geometric*WEIGHT_GEOMETRIC + boosts
 cd apps/desktop && pnpm build:dev && pnpm start
 
 # Testing
-python scripts/identification/identify_card.py <image>
-python scripts/identification/test_production_suite.py
+python scripts/identification/core/production_card_identifier.py <image>
+python scripts/identification/tests/test_all_production_images.py
+python scripts/identification/tests/test_card_detection.py
 
 # Data pipeline
 pnpm pipeline:update              # Incremental daily update
@@ -144,19 +164,25 @@ cd apps/desktop && pnpm package   # Create installer (NSIS/DMG/AppImage)
 - [ ] Fine-tuned models per game
 - [ ] Mobile/tablet app
 
-## Key Lessons (2025-10-16)
-1. **Preprocessing Consistency**: ALWAYS match embedder ↔ identifier preprocessing (vector space mismatch = 50% failures)
+## Key Lessons
+1. **Preprocessing Consistency** (2025-10-16): ALWAYS match embedder ↔ identifier preprocessing (vector space mismatch = 50% failures)
 2. **Accuracy > Speed**: +475ms for +33% accuracy is acceptable (within reason)
 3. **Dynamic > Static**: Adaptive weights (60/40-90/10) more robust than fixed 70/30
+4. **Codebase Organization** (2025-10-22): Clean structure is critical for maintainability - archive old versions, separate production from experiments
+5. **Hybrid Geometric Matching** (2025-10-22): AKAZE provides safety net when ORB fails on compressed images
 
 ## Quick Reference
 - **Config**: `packages/config/src/tcgplayer-config.ts`
-- **Identification**: `scripts/identification/production_card_identifier.py`
+- **Identification**: `scripts/identification/core/production_card_identifier.py` ⭐
+- **Card Detector**: `scripts/identification/core/polished_card_detector.py` (100% success)
+- **Test Suite**: `scripts/identification/tests/test_all_production_images.py`
 - **Desktop Main**: `apps/desktop/src/main/index.ts`
 - **Desktop UI**: `apps/desktop/src/renderer/app.tsx`
 - **Python Bridge**: `apps/desktop/src/main/identifier/python-bridge.ts`
 - **Docs**: `docs/{guides,architecture,deployment,development,status,archive}/`
+- **Status**: `docs/status/SESSION_FINAL_SUMMARY.md` (latest)
+- **Deployment**: `docs/deployment/PRODUCTION_READINESS_ASSESSMENT.md`
 
 ---
 
-**Maintained by**: Claude Code | **Last Review**: 2025-10-16 | **Next Review**: After major features/architecture changes
+**Maintained by**: Claude Code | **Last Review**: 2025-10-22 | **Next Review**: After major features/architecture changes

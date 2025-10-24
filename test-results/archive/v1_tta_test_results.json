@@ -1,0 +1,163 @@
+[
+  {
+    "image": "bege.png",
+    "v1": {
+      "card": "Capone\"Gang\"Bege",
+      "number": "ST02-004",
+      "conf": "HIGH",
+      "score": 0.8721086082205062,
+      "time": 2589.8704528808594
+    },
+    "tta": {
+      "card": "Capone\"Gang\"Bege",
+      "number": "ST02-004",
+      "conf": "HIGH",
+      "score": 0.847053106593355,
+      "time": 5314.666509628296,
+      "boost": 0.0,
+      "agreement": 1.0
+    },
+    "same_card": true,
+    "score_change": -0.0250555016271512,
+    "conf_improved": false,
+    "conf_regressed": false
+  },
+  {
+    "image": "blackbeard-db.jpg",
+    "v1": {
+      "card": "Marshall.D.Teach (093) (Manga)",
+      "number": "OP09-093",
+      "conf": "HIGH",
+      "score": 1.0,
+      "time": 1463.1354808807373
+    },
+    "tta": {
+      "card": "Marshall.D.Teach (093) (Manga)",
+      "number": "OP09-093",
+      "conf": "HIGH",
+      "score": 1.0,
+      "time": 6138.187646865845,
+      "boost": 0.0,
+      "agreement": 1.0
+    },
+    "same_card": true,
+    "score_change": 0.0,
+    "conf_improved": false,
+    "conf_regressed": false
+  },
+  {
+    "image": "blackbeard.png",
+    "v1": {
+      "card": "Marshall.D.Teach (093) (Manga)",
+      "number": "OP09-093",
+      "conf": "MODERATE",
+      "score": 0.6893595919315132,
+      "time": 852.5826930999756
+    },
+    "tta": {
+      "card": "Marshall.D.Teach (093) (Manga)",
+      "number": "OP09-093",
+      "conf": "MODERATE",
+      "score": 0.6770462204138199,
+      "time": 3764.0719413757324,
+      "boost": 0.0,
+      "agreement": 1.0
+    },
+    "same_card": true,
+    "score_change": -0.012313371517693295,
+    "conf_improved": false,
+    "conf_regressed": false
+  },
+  {
+    "image": "Screenshot_20251021_085328_Discord.jpg",
+    "v1": {
+      "card": "Come On!! We'll Fight You!! (Manga)",
+      "number": "OP09-020",
+      "conf": "LOW",
+      "score": 0.518217134475708,
+      "time": 919.5773601531982
+    },
+    "tta": {
+      "card": "Sabo (Alternate Art) (Manga)",
+      "number": "OP04-083",
+      "conf": "LOW",
+      "score": 0.4964208871126175,
+      "time": 4010.0622177124023,
+      "boost": 0.0,
+      "agreement": 0.425
+    },
+    "same_card": false,
+    "score_change": -0.02179624736309055,
+    "conf_improved": false,
+    "conf_regressed": false
+  },
+  {
+    "image": "Screenshot_20251021_085344_Discord.jpg",
+    "v1": {
+      "card": "Donquixote Doflamingo (Wanted Poster)",
+      "number": "ST03-009",
+      "conf": "LOW",
+      "score": 0.48430086271627243,
+      "time": 861.2303733825684
+    },
+    "tta": {
+      "card": "Donquixote Doflamingo (Wanted Poster)",
+      "number": "ST03-009",
+      "conf": "LOW",
+      "score": 0.4788873874318027,
+      "time": 3359.5945835113525,
+      "boost": 0.0,
+      "agreement": 1.0
+    },
+    "same_card": true,
+    "score_change": -0.0054134752844697265,
+    "conf_improved": false,
+    "conf_regressed": false
+  },
+  {
+    "image": "Screenshot_20251021_085357_Discord.jpg",
+    "v1": {
+      "card": "Carrot (023) (Parallel)",
+      "number": "OP08-023",
+      "conf": "LOW",
+      "score": 0.6012615442276001,
+      "time": 810.3749752044678
+    },
+    "tta": {
+      "card": "Eustass\"Captain\"Kid (Parallel)",
+      "number": "OP01-051",
+      "conf": "LOW",
+      "score": 0.6015868425369263,
+      "time": 4881.101608276367,
+      "boost": 0.0,
+      "agreement": 0.45
+    },
+    "same_card": false,
+    "score_change": 0.00032529830932614967,
+    "conf_improved": false,
+    "conf_regressed": false
+  },
+  {
+    "image": "yellow_event.png",
+    "v1": {
+      "card": "You're the One Who Should Disappear",
+      "number": "OP06-115",
+      "conf": "MODERATE",
+      "score": 0.5714781630817891,
+      "time": 4337.775945663452
+    },
+    "tta": {
+      "card": "You're the One Who Should Disappear",
+      "number": "OP06-115",
+      "conf": "MODERATE",
+      "score": 0.6293274225937354,
+      "time": 4985.571622848511,
+      "boost": 0.0,
+      "agreement": 1.0
+    },
+    "same_card": true,
+    "score_change": 0.057849259511946305,
+    "conf_improved": false,
+    "conf_regressed": false
+  }
+]

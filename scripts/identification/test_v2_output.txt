@@ -1,0 +1,27 @@
+Traceback (most recent call last):
+  File "C:\Users\rayno\eric\cardflux\scripts\identification\test_v2_improvements.py", line 257, in main
+    single_frame_results = test_single_frame_comparison()
+  File "C:\Users\rayno\eric\cardflux\scripts\identification\test_v2_improvements.py", line 66, in test_single_frame_comparison
+    print(f"\u26a0 Skipping {image_path} (not found)")
+    ~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Program Files\WindowsApps\PythonSoftwareFoundation.Python.3.13_3.13.2544.0_x64__qbz5n2kfra8p0\Lib\encodings\cp1252.py", line 19, in encode
+    return codecs.charmap_encode(input,self.errors,encoding_table)[0]
+           ~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+UnicodeEncodeError: 'charmap' codec can't encode character '\u26a0' in position 0: character maps to <undefined>
+================================================================================
+CardFlux V2 Identifier - Comprehensive Test Suite
+================================================================================
+
+Testing improvements:
+  [+] Adaptive preprocessing
+  [+] Adaptive quality thresholds
+  [+] Multi-frame fusion
+  [+] Automatic V1 fallback
+
+
+================================================================================
+TEST 1: SINGLE FRAME IDENTIFICATION (V1 vs V2)
+================================================================================
+[VersionManager] Initialized (default: v2, fallback: True)
+
+[ERROR] 'charmap' codec can't encode character '\u26a0' in position 0: character maps to <undefined>

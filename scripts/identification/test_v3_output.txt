@@ -1,0 +1,660 @@
+Using a slow image processor as `use_fast` is unset and a slow processor was saved with this model. `use_fast=True` will be the default behavior in v4.52, even if the model was saved with a slow processor. This will result in minor differences in outputs. You'll still be able to use a slow processor with `use_fast=False`.
+====================================================================================================
+V1 vs V2 vs V3 COMPRESSED IMAGE TEST
+====================================================================================================
+
+Test Images: 6
+  Compressed: 3
+  Regular: 3
+
+[INIT] Loading identifiers...
+[OK] All versions loaded
+
+[1/6] [COMPRESSED] Screenshot_20251021_085328_Discord.jpg
+----------------------------------------------------------------------------------------------------
+======================================================================
+PRODUCTION CARD IDENTIFICATION SYSTEM
+======================================================================
+Initializing for game: one-piece
+Variant classification: ENABLED
+
+[1/6] Loading DINOv2 vision model...
+  [OK] Model loaded on cpu (0.4s)
+
+[2/6] Loading FAISS index for one-piece...
+  [OK] Loaded 4815 cards (0.0s)
+
+[3/6] Loading card metadata...
+  [OK] Metadata loaded (0.1s)
+
+[4/6] Initializing geometric matcher (ORB)...
+  [OK] ORB initialized (1000 features)
+
+[5/6] Initializing universal extractors...
+  [OK] Extractors ready (1.7s)
+
+[6/6] Initializing variant classifier...
+  [OK] Variant classifier ready (2.1s)
+
+======================================================================
+SYSTEM READY
+======================================================================
+
+  [V2] Enhanced features enabled:
+      - Multi-frame fusion
+      - Adaptive preprocessing
+      - Adaptive quality thresholds
+  [V3] Compressed image enhancements enabled:
+      - CLAHE contrast enhancement
+      - Adaptive sharpening
+      - JPEG artifact removal
+Analyzing: Screenshot_20251021_085328_Discord.jpg
+----------------------------------------------------------------------
+[Stage 0a] Image quality check...
+  [OK] Sharpness: 1252.8, Brightness: 104.8
+
+[Stage 0b] Feature extraction...
+  [YES] Foil: etched (conf: 0.674)
+  [--] Card Number: Not detected
+
+[Stage 1] Visual retrieval (DINOv2, top 50)...
+  [OK] Found 50 candidates (83ms)
+
+[Stage 3] Geometric verification (ORB, top 20)...
+  [OK] Verified 20/20 candidates (434ms)
+
+[Stage 4] Foil-aware scoring...
+
+[Stage 5] Dynamic score fusion...
+
+======================================================================
+IDENTIFICATION RESULT
+======================================================================
+
+Best Match: Come On!! We'll Fight You!! (Manga)
+  Product ID: 653833
+  Card Number: OP09-020
+  Rarity: R
+
+Prices (TCGPlayer):
+  Market (Foil): $75.39
+  Low (Foil):    $76.00
+  Mid (Foil):    $82.99
+
+Confidence: LOW
+  Final Score: 0.5193
+  Visual:      0.5214
+  Geometric:   0.0000
+  Foil Boost:  +0.0500
+
+Features:
+  Foil: YES (etched, conf: 0.674)
+
+Performance:
+  Total: 629ms
+  - Feature extraction: 111ms
+  - Visual search: 82ms
+  - Geometric verify: 433ms
+
+Top 3 Matches:
+  1. Come On!! We'll Fight You!! (Manga)
+     Score: 0.5193 (V:0.521 G:0.000)
+  2. Shirahoshi (Alternate Art)
+     Score: 0.5173 (V:0.519 G:0.000)
+  3. Monkey.D.Luffy (118) (Parallel)
+     Score: 0.5151 (V:0.517 G:0.000)
+
+  V1: Come On!! We'll Fight You!! (Manga)      | LOW      | 0.5182 | 1650ms
+  V2: Come On!! We'll Fight You!! (Manga)      | LOW      | 0.5193 | 824ms
+  V3: Come On!! We'll Fight You!! (Manga)      | LOW      | 0.5193 | 4907ms
+
+[2/6] [COMPRESSED] Screenshot_20251021_085344_Discord.jpg
+----------------------------------------------------------------------------------------------------
+======================================================================
+PRODUCTION CARD IDENTIFICATION SYSTEM
+======================================================================
+Initializing for game: one-piece
+Variant classification: ENABLED
+
+[1/6] Loading DINOv2 vision model...
+  [OK] Model loaded on cpu (0.4s)
+
+[2/6] Loading FAISS index for one-piece...
+  [OK] Loaded 4815 cards (0.0s)
+
+[3/6] Loading card metadata...
+  [OK] Metadata loaded (0.0s)
+
+[4/6] Initializing geometric matcher (ORB)...
+  [OK] ORB initialized (1000 features)
+
+[5/6] Initializing universal extractors...
+  [OK] Extractors ready (1.5s)
+
+[6/6] Initializing variant classifier...
+  [OK] Variant classifier ready (2.1s)
+
+======================================================================
+SYSTEM READY
+======================================================================
+
+  [V2] Enhanced features enabled:
+      - Multi-frame fusion
+      - Adaptive preprocessing
+      - Adaptive quality thresholds
+  [V3] Compressed image enhancements enabled:
+      - CLAHE contrast enhancement
+      - Adaptive sharpening
+      - JPEG artifact removal
+Analyzing: Screenshot_20251021_085344_Discord.jpg
+----------------------------------------------------------------------
+[Stage 0a] Image quality check...
+  [OK] Sharpness: 1489.1, Brightness: 133.0
+  [WARN] Image too small (251x192)
+
+[Stage 0b] Feature extraction...
+  [YES] Foil: etched (conf: 0.615)
+  [--] Card Number: Not detected
+
+[Stage 1] Visual retrieval (DINOv2, top 50)...
+  [OK] Found 50 candidates (85ms)
+
+[Stage 3] Geometric verification (ORB, top 20)...
+  [OK] Verified 20/20 candidates (457ms)
+
+[Stage 4] Foil-aware scoring...
+
+[Stage 5] Dynamic score fusion...
+
+======================================================================
+IDENTIFICATION RESULT
+======================================================================
+
+Best Match: Donquixote Doflamingo (Wanted Poster)
+  Product ID: 501679
+  Card Number: ST03-009
+  Rarity: SR
+
+Prices (TCGPlayer):
+  Market (Foil): $44.26
+  Low (Foil):    $46.00
+  Mid (Foil):    $59.99
+
+Confidence: LOW
+  Final Score: 0.4836
+  Visual:      0.5938
+  Geometric:   0.3182
+
+Features:
+  Foil: YES (etched, conf: 0.615)
+
+Performance:
+  Total: 652ms
+  - Feature extraction: 107ms
+  - Visual search: 85ms
+  - Geometric verify: 456ms
+
+Top 3 Matches:
+  1. Donquixote Doflamingo (Wanted Poster)
+     Score: 0.4836 (V:0.594 G:0.318)
+  2. Jinbe - ST01-005 (Alternate Art)
+     Score: 0.4724 (V:0.469 G:0.000)
+  3. Sanji - OP01-013 (Alternate Art)
+     Score: 0.4676 (V:0.464 G:0.000)
+
+  V1: Donquixote Doflamingo (Wanted Poster)    | LOW      | 0.4843 | 571ms
+  V2: Donquixote Doflamingo (Wanted Poster)    | LOW      | 0.4836 | 628ms
+  V3: Donquixote Doflamingo (Wanted Poster)    | LOW      | 0.4836 | 4805ms
+
+[3/6] [COMPRESSED] Screenshot_20251021_085357_Discord.jpg
+----------------------------------------------------------------------------------------------------
+======================================================================
+PRODUCTION CARD IDENTIFICATION SYSTEM
+======================================================================
+Initializing for game: one-piece
+Variant classification: ENABLED
+
+[1/6] Loading DINOv2 vision model...
+  [OK] Model loaded on cpu (0.4s)
+
+[2/6] Loading FAISS index for one-piece...
+  [OK] Loaded 4815 cards (0.0s)
+
+[3/6] Loading card metadata...
+  [OK] Metadata loaded (0.1s)
+
+[4/6] Initializing geometric matcher (ORB)...
+  [OK] ORB initialized (1000 features)
+
+[5/6] Initializing universal extractors...
+  [OK] Extractors ready (1.9s)
+
+[6/6] Initializing variant classifier...
+  [OK] Variant classifier ready (2.2s)
+
+======================================================================
+SYSTEM READY
+======================================================================
+
+  [V2] Enhanced features enabled:
+      - Multi-frame fusion
+      - Adaptive preprocessing
+      - Adaptive quality thresholds
+  [V3] Compressed image enhancements enabled:
+      - CLAHE contrast enhancement
+      - Adaptive sharpening
+      - JPEG artifact removal
+Analyzing: Screenshot_20251021_085357_Discord.jpg
+----------------------------------------------------------------------
+[Stage 0a] Image quality check...
+  [OK] Sharpness: 1838.9, Brightness: 117.0
+  [WARN] Image too small (259x185)
+
+[Stage 0b] Feature extraction...
+  [YES] Foil: pattern_foil (conf: 0.710)
+  [--] Card Number: Not detected
+
+[Stage 1] Visual retrieval (DINOv2, top 50)...
+  [OK] Found 50 candidates (84ms)
+
+[Stage 3] Geometric verification (ORB, top 20)...
+  [OK] Verified 20/20 candidates (547ms)
+
+[Stage 4] Foil-aware scoring...
+
+[Stage 5] Dynamic score fusion...
+
+======================================================================
+IDENTIFICATION RESULT
+======================================================================
+
+Best Match: Carrot (023) (Parallel)
+  Product ID: 558049
+  Card Number: OP08-023
+  Rarity: SR
+
+Prices (TCGPlayer):
+  Market (Foil): $16.41
+  Low (Foil):    $15.00
+  Mid (Foil):    $19.30
+
+Confidence: LOW
+  Final Score: 0.6045
+  Visual:      0.6161
+  Geometric:   0.0000
+  Foil Boost:  +0.0500
+
+Features:
+  Foil: YES (pattern_foil, conf: 0.710)
+
+Performance:
+  Total: 740ms
+  - Feature extraction: 107ms
+  - Visual search: 83ms
+  - Geometric verify: 546ms
+
+Top 3 Matches:
+  1. Carrot (023) (Parallel)
+     Score: 0.6045 (V:0.616 G:0.000)
+  2. Monkey.D.Garp (115) (Alternate Art)
+     Score: 0.6042 (V:0.616 G:0.000)
+  3. Eustass"Captain"Kid (Parallel)
+     Score: 0.6030 (V:0.614 G:0.000)
+
+  V1: Carrot (023) (Parallel)                  | LOW      | 0.6013 | 721ms
+  V2: Carrot (023) (Parallel)                  | LOW      | 0.6045 | 637ms
+  V3: Carrot (023) (Parallel)                  | LOW      | 0.6045 | 5287ms
+
+[4/6] [REGULAR] bege.png
+----------------------------------------------------------------------------------------------------
+======================================================================
+PRODUCTION CARD IDENTIFICATION SYSTEM
+======================================================================
+Initializing for game: one-piece
+Variant classification: ENABLED
+
+[1/6] Loading DINOv2 vision model...
+  [OK] Model loaded on cpu (0.4s)
+
+[2/6] Loading FAISS index for one-piece...
+  [OK] Loaded 4815 cards (0.0s)
+
+[3/6] Loading card metadata...
+  [OK] Metadata loaded (0.1s)
+
+[4/6] Initializing geometric matcher (ORB)...
+  [OK] ORB initialized (1000 features)
+
+[5/6] Initializing universal extractors...
+  [OK] Extractors ready (1.8s)
+
+[6/6] Initializing variant classifier...
+  [OK] Variant classifier ready (2.1s)
+
+======================================================================
+SYSTEM READY
+======================================================================
+
+  [V2] Enhanced features enabled:
+      - Multi-frame fusion
+      - Adaptive preprocessing
+      - Adaptive quality thresholds
+  [V3] Compressed image enhancements enabled:
+      - CLAHE contrast enhancement
+      - Adaptive sharpening
+      - JPEG artifact removal
+Analyzing: bege.png
+----------------------------------------------------------------------
+[Stage 0a] Image quality check...
+  [OK] Sharpness: 1941.0, Brightness: 127.8
+
+[Stage 0b] Feature extraction...
+  [YES] Foil: rainbow (conf: 0.600)
+  [--] Card Number: Not detected
+
+[Stage 1] Visual retrieval (DINOv2, top 50)...
+  [OK] Found 50 candidates (80ms)
+
+[Stage 3] Geometric verification (ORB, top 20)...
+  [OK] Verified 20/20 candidates (455ms)
+
+[Stage 4] Foil-aware scoring...
+
+[Stage 5] Dynamic score fusion...
+
+======================================================================
+IDENTIFICATION RESULT
+======================================================================
+
+Best Match: Capone"Gang"Bege
+  Product ID: 288252
+  Card Number: ST02-004
+  Rarity: C
+
+Prices (TCGPlayer):
+  Market:        $0.12
+  Range:         $0.01 - $0.16
+
+Confidence: HIGH
+  Final Score: 0.8708
+  Visual:      0.8954
+  Geometric:   0.8339
+
+Features:
+  Foil: YES (rainbow, conf: 0.600)
+
+Performance:
+  Total: 996ms
+  - Feature extraction: 455ms
+  - Visual search: 80ms
+  - Geometric verify: 455ms
+
+Top 3 Matches:
+  1. Capone"Gang"Bege
+     Score: 0.8708 (V:0.895 G:0.834)
+  2. Capone"Gang"Bege (ST02-004) (Jolly Roger Foil)
+     Score: 0.8279 (V:0.852 G:0.667)
+  3. Capone"Gang"Bege
+     Score: 0.7957 (V:0.874 G:0.678)
+
+  V1: Capone"Gang"Bege                         | HIGH     | 0.8721 | 1207ms
+  V2: Capone"Gang"Bege                         | HIGH     | 0.8708 | 987ms
+  V3: Capone"Gang"Bege                         | HIGH     | 0.8708 | 5408ms
+
+[5/6] [REGULAR] blackbeard.png
+----------------------------------------------------------------------------------------------------
+======================================================================
+PRODUCTION CARD IDENTIFICATION SYSTEM
+======================================================================
+Initializing for game: one-piece
+Variant classification: ENABLED
+
+[1/6] Loading DINOv2 vision model...
+  [OK] Model loaded on cpu (0.4s)
+
+[2/6] Loading FAISS index for one-piece...
+  [OK] Loaded 4815 cards (0.0s)
+
+[3/6] Loading card metadata...
+  [OK] Metadata loaded (0.0s)
+
+[4/6] Initializing geometric matcher (ORB)...
+  [OK] ORB initialized (1000 features)
+
+[5/6] Initializing universal extractors...
+  [OK] Extractors ready (1.6s)
+
+[6/6] Initializing variant classifier...
+  [OK] Variant classifier ready (2.0s)
+
+======================================================================
+SYSTEM READY
+======================================================================
+
+  [V2] Enhanced features enabled:
+      - Multi-frame fusion
+      - Adaptive preprocessing
+      - Adaptive quality thresholds
+  [V3] Compressed image enhancements enabled:
+      - CLAHE contrast enhancement
+      - Adaptive sharpening
+      - JPEG artifact removal
+Analyzing: blackbeard.png
+----------------------------------------------------------------------
+[Stage 0a] Image quality check...
+  [OK] Sharpness: 3884.7, Brightness: 95.1
+  [WARN] Image too small (148x215)
+
+[Stage 0b] Feature extraction...
+  [YES] Foil: rainbow (conf: 0.600)
+  [OK] Card Number: 767 (magic, conf: 0.010)
+
+[Stage 1] Visual retrieval (DINOv2, top 50)...
+  [OK] Found 50 candidates (81ms)
+
+[Stage 2] Card number clustering...
+  [OK] Clustered: 0 matching variants (0ms)
+
+[Stage 3] Geometric verification (ORB, top 20)...
+  [OK] Verified 20/20 candidates (448ms)
+
+[Stage 4] Foil-aware scoring...
+
+[Stage 5] Dynamic score fusion...
+
+======================================================================
+IDENTIFICATION RESULT
+======================================================================
+
+Best Match: Marshall.D.Teach (093) (Manga)
+  Product ID: 597035
+  Card Number: OP09-093
+  Rarity: SR
+
+Prices (TCGPlayer):
+  Market (Foil): $631.64
+  Low (Foil):    $850.00
+  Mid (Foil):    $900.00
+
+Confidence: MODERATE
+  Final Score: 0.6897
+  Visual:      0.7757
+  Geometric:   0.4356
+  Foil Boost:  +0.0500
+
+Features:
+  Foil: YES (rainbow, conf: 0.600)
+  Card#: 767 (magic)
+
+Performance:
+  Total: 680ms
+  - Feature extraction: 149ms
+  - Visual search: 80ms
+  - Geometric verify: 447ms
+
+Top 3 Matches:
+  1. Marshall.D.Teach (093) (Manga)
+     Score: 0.6897 (V:0.776 G:0.436)
+  2. Yamato (Alternate Art)
+     Score: 0.6667 (V:0.685 G:0.000)
+  3. Crocodile (058) (Alternate Art)
+     Score: 0.6635 (V:0.682 G:0.000)
+
+  V1: Marshall.D.Teach (093) (Manga)           | MODERATE | 0.6894 | 657ms
+  V2: Marshall.D.Teach (093) (Manga)           | MODERATE | 0.6897 | 678ms
+  V3: Marshall.D.Teach (093) (Manga)           | MODERATE | 0.6897 | 4804ms
+
+[6/6] [REGULAR] yellow_event.png
+----------------------------------------------------------------------------------------------------
+======================================================================
+PRODUCTION CARD IDENTIFICATION SYSTEM
+======================================================================
+Initializing for game: one-piece
+Variant classification: ENABLED
+
+[1/6] Loading DINOv2 vision model...
+  [OK] Model loaded on cpu (0.4s)
+
+[2/6] Loading FAISS index for one-piece...
+  [OK] Loaded 4815 cards (0.0s)
+
+[3/6] Loading card metadata...
+  [OK] Metadata loaded (0.4s)
+
+[4/6] Initializing geometric matcher (ORB)...
+  [OK] ORB initialized (1000 features)
+
+[5/6] Initializing universal extractors...
+  [OK] Extractors ready (1.7s)
+
+[6/6] Initializing variant classifier...
+  [OK] Variant classifier ready (2.1s)
+
+======================================================================
+SYSTEM READY
+======================================================================
+
+  [V2] Enhanced features enabled:
+      - Multi-frame fusion
+      - Adaptive preprocessing
+      - Adaptive quality thresholds
+  [V3] Compressed image enhancements enabled:
+      - CLAHE contrast enhancement
+      - Adaptive sharpening
+      - JPEG artifact removal
+Analyzing: yellow_event.png
+----------------------------------------------------------------------
+[Stage 0a] Image quality check...
+  [OK] Sharpness: 3977.2, Brightness: 141.3
+
+[Stage 0b] Feature extraction...
+  [YES] Foil: rainbow (conf: 0.616)
+  [OK] Card Number: 37 (magic, conf: 0.557)
+
+[Stage 1] Visual retrieval (DINOv2, top 50)...
+  [OK] Found 50 candidates (83ms)
+
+[Stage 2] Card number clustering...
+  [OK] Clustered: 0 matching variants (0ms)
+
+[Stage 3] Geometric verification (ORB, top 20)...
+  [OK] Verified 20/20 candidates (488ms)
+
+[Stage 4] Foil-aware scoring...
+
+[Stage 5] Dynamic score fusion...
+
+[Stage 6] Variant classification (3 variants detected)...
+  [OK] Variant classified: Come On!! We'll Fight You!! (Manga)
+  Variant type: alternate_art
+  Variant confidence: 0.406
+  Processing time: 2009ms
+
+======================================================================
+IDENTIFICATION RESULT
+======================================================================
+
+Best Match: Come On!! We'll Fight You!! (Manga)
+  Product ID: 653833
+  Card Number: OP09-020
+  Rarity: R
+
+Prices (TCGPlayer):
+  Market (Foil): $75.39
+  Low (Foil):    $76.00
+  Mid (Foil):    $82.99
+
+Confidence: LOW
+  Final Score: 0.5730
+  Visual:      0.5811
+  Geometric:   0.0000
+  Foil Boost:  +0.0500
+
+Features:
+  Foil: YES (rainbow, conf: 0.616)
+  Card#: 37 (magic)
+
+Performance:
+  Total: 2884ms
+  - Feature extraction: 299ms
+  - Visual search: 82ms
+  - Geometric verify: 488ms
+  - Variant classify: 2008ms
+
+Top 3 Matches:
+  1. Come On!! We'll Fight You!! (Manga)
+     Score: 0.5730 (V:0.581 G:0.000)
+  2. You're the One Who Should Disappear
+     Score: 0.5715 (V:0.728 G:0.517)
+  3. Donquixote Family (Textured Foil)
+     Score: 0.5704 (V:0.578 G:0.000)
+
+  V1: You're the One Who Should Disappear      | MODERATE | 0.5715 | 2881ms
+  V2: Come On!! We'll Fight You!! (Manga)      | LOW      | 0.5730 | 2905ms
+  V3: Come On!! We'll Fight You!! (Manga)      | LOW      | 0.5730 | 7510ms
+
+====================================================================================================
+SUMMARY
+====================================================================================================
+
++-------------------------------+-----------+------------+-----------+------------+-----------+------------+------------+
+| Image                         | V1 Conf   |   V1 Score | V2 Conf   |   V2 Score | V3 Conf   |   V3 Score | V3 vs V1   |
++===============================+===========+============+===========+============+===========+============+============+
+| [C] Screenshot_20251021_08532 | LOW       |      0.518 | LOW       |      0.519 | LOW       |      0.519 | +0.2%      |
++-------------------------------+-----------+------------+-----------+------------+-----------+------------+------------+
+| [C] Screenshot_20251021_08534 | LOW       |      0.484 | LOW       |      0.484 | LOW       |      0.484 | -0.2%      |
++-------------------------------+-----------+------------+-----------+------------+-----------+------------+------------+
+| [C] Screenshot_20251021_08535 | LOW       |      0.601 | LOW       |      0.605 | LOW       |      0.605 | +0.5%      |
++-------------------------------+-----------+------------+-----------+------------+-----------+------------+------------+
+| [R] bege.png                  | HIGH      |      0.872 | HIGH      |      0.871 | HIGH      |      0.871 | -0.2%      |
++-------------------------------+-----------+------------+-----------+------------+-----------+------------+------------+
+| [R] blackbeard.png            | MODERATE  |      0.689 | MODERATE  |      0.69  | MODERATE  |      0.69  | +0.0%      |
++-------------------------------+-----------+------------+-----------+------------+-----------+------------+------------+
+| [R] yellow_event.png          | MODERATE  |      0.571 | LOW       |      0.573 | LOW       |      0.573 | +0.3%      |
++-------------------------------+-----------+------------+-----------+------------+-----------+------------+------------+
+
+STATISTICS BY CATEGORY
+----------------------------------------------------------------------------------------------------
+
+COMPRESSED Images (3):
+  V1: 0.5346 avg score, 0/3 HIGH conf, 981ms avg
+  V2: 0.5358 avg score, 0/3 HIGH conf, 696ms avg
+  V3: 0.5358 avg score, 0/3 HIGH conf, 5000ms avg
+  V3 Improvement: +0.2% vs V1
+
+REGULAR Images (3):
+  V1: 0.7110 avg score, 1/3 HIGH conf, 1582ms avg
+  V2: 0.7111 avg score, 1/3 HIGH conf, 1523ms avg
+  V3: 0.7111 avg score, 1/3 HIGH conf, 5907ms avg
+  V3 Improvement: +0.0% vs V1
+
+VERDICT
+----------------------------------------------------------------------------------------------------
+[~] V3 slightly improves compressed images: +0.2%
+[OK] V3 does not regress on regular images: +0.0%
+
+[RECOMMENDATION] Consider V3 - small improvements, acceptable trade-offs
+
+====================================================================================================
+[OK] Results saved to: v3_test_results.json
+

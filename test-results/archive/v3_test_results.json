@@ -1,0 +1,164 @@
+[
+  {
+    "image": "Screenshot_20251021_085328_Discord.jpg",
+    "category": "COMPRESSED",
+    "v1": {
+      "card": "Come On!! We'll Fight You!! (Manga)",
+      "number": "OP09-020",
+      "conf": "LOW",
+      "score": 0.518217134475708,
+      "time": 1649.550199508667
+    },
+    "v2": {
+      "card": "Come On!! We'll Fight You!! (Manga)",
+      "number": "OP09-020",
+      "conf": "LOW",
+      "score": 0.5192682385444641,
+      "time": 824.0938186645508
+    },
+    "v3": {
+      "card": "Come On!! We'll Fight You!! (Manga)",
+      "number": "OP09-020",
+      "conf": "LOW",
+      "score": 0.5192682385444641,
+      "time": 4907.40442276001
+    },
+    "v3_vs_v1_improvement": 0.2028308210649011,
+    "v3_vs_v2_improvement": 0.0
+  },
+  {
+    "image": "Screenshot_20251021_085344_Discord.jpg",
+    "category": "COMPRESSED",
+    "v1": {
+      "card": "Donquixote Doflamingo (Wanted Poster)",
+      "number": "ST03-009",
+      "conf": "LOW",
+      "score": 0.48430086271627243,
+      "time": 571.4960098266602
+    },
+    "v2": {
+      "card": "Donquixote Doflamingo (Wanted Poster)",
+      "number": "ST03-009",
+      "conf": "LOW",
+      "score": 0.4835536350475102,
+      "time": 627.5613307952881
+    },
+    "v3": {
+      "card": "Donquixote Doflamingo (Wanted Poster)",
+      "number": "ST03-009",
+      "conf": "LOW",
+      "score": 0.4835536350475102,
+      "time": 4805.100202560425
+    },
+    "v3_vs_v1_improvement": -0.1542899726775817,
+    "v3_vs_v2_improvement": 0.0
+  },
+  {
+    "image": "Screenshot_20251021_085357_Discord.jpg",
+    "category": "COMPRESSED",
+    "v1": {
+      "card": "Carrot (023) (Parallel)",
+      "number": "OP08-023",
+      "conf": "LOW",
+      "score": 0.6012615442276001,
+      "time": 720.7820415496826
+    },
+    "v2": {
+      "card": "Carrot (023) (Parallel)",
+      "number": "OP08-023",
+      "conf": "LOW",
+      "score": 0.6045257389545441,
+      "time": 636.5818977355957
+    },
+    "v3": {
+      "card": "Carrot (023) (Parallel)",
+      "number": "OP08-023",
+      "conf": "LOW",
+      "score": 0.6045257389545441,
+      "time": 5286.738157272339
+    },
+    "v3_vs_v1_improvement": 0.542890986174284,
+    "v3_vs_v2_improvement": 0.0
+  },
+  {
+    "image": "bege.png",
+    "category": "REGULAR",
+    "v1": {
+      "card": "Capone\"Gang\"Bege",
+      "number": "ST02-004",
+      "conf": "HIGH",
+      "score": 0.8721086082205062,
+      "time": 1206.9690227508545
+    },
+    "v2": {
+      "card": "Capone\"Gang\"Bege",
+      "number": "ST02-004",
+      "conf": "HIGH",
+      "score": 0.8707862434133772,
+      "time": 986.8278503417969
+    },
+    "v3": {
+      "card": "Capone\"Gang\"Bege",
+      "number": "ST02-004",
+      "conf": "HIGH",
+      "score": 0.8707862434133772,
+      "time": 5408.426761627197
+    },
+    "v3_vs_v1_improvement": -0.15162845483513962,
+    "v3_vs_v2_improvement": 0.0
+  },
+  {
+    "image": "blackbeard.png",
+    "category": "REGULAR",
+    "v1": {
+      "card": "Marshall.D.Teach (093) (Manga)",
+      "number": "OP09-093",
+      "conf": "MODERATE",
+      "score": 0.6893595919315132,
+      "time": 656.8052768707275
+    },
+    "v2": {
+      "card": "Marshall.D.Teach (093) (Manga)",
+      "number": "OP09-093",
+      "conf": "MODERATE",
+      "score": 0.6896531328861031,
+      "time": 678.0929565429688
+    },
+    "v3": {
+      "card": "Marshall.D.Teach (093) (Manga)",
+      "number": "OP09-093",
+      "conf": "MODERATE",
+      "score": 0.6896531328861031,
+      "time": 4803.59959602356
+    },
+    "v3_vs_v1_improvement": 0.04258168857379894,
+    "v3_vs_v2_improvement": 0.0
+  },
+  {
+    "image": "yellow_event.png",
+    "category": "REGULAR",
+    "v1": {
+      "card": "You're the One Who Should Disappear",
+      "number": "OP06-115",
+      "conf": "MODERATE",
+      "score": 0.5714781630817891,
+      "time": 2881.326913833618
+    },
+    "v2": {
+      "card": "Come On!! We'll Fight You!! (Manga)",
+      "number": "OP09-020",
+      "conf": "LOW",
+      "score": 0.5729510426521301,
+      "time": 2904.9346446990967
+    },
+    "v3": {
+      "card": "Come On!! We'll Fight You!! (Manga)",
+      "number": "OP09-020",
+      "conf": "LOW",
+      "score": 0.5729510426521301,
+      "time": 7509.603261947632
+    },
+    "v3_vs_v1_improvement": 0.2577315574751433,
+    "v3_vs_v2_improvement": 0.0
+  }
+]

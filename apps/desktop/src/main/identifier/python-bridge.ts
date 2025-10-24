@@ -232,6 +232,43 @@ export class PythonIdentificationBridge extends EventEmitter {
   }
 
   /**
+   * Identify a card from multiple frames with fusion (V2 feature)
+   */
+  async identifyCardMultiFrame(
+    imagePaths: string[],
+    options: {
+      topK?: number;
+      tcgHint?: string;
+      useGeometric?: boolean;
+    } = {}
+  ): Promise<IdentifyResult & {
+    multiFrame?: {
+      numFrames: number;
+      fusionVotes: number;
+      agreementRate: number;
+      confidenceBoost: boolean;
+    };
+  }> {
+    if (!this.initialized) {
+      const error = new Error('Service not initialized');
+      logger.error('PythonBridge', 'identifyMultiFrame called before initialization', error);
+      throw error;
+    }
+
+    logger.debug('PythonBridge', 'Identifying card (multi-frame)', { 
+      numFrames: imagePaths.length,
+      options 
+    });
+
+    return this.sendRequest('identify_multi_frame', {
+      image_paths: imagePaths,
+      top_k: options.topK || 50,
+      tcg_hint: options.tcgHint || null,
+      use_geometric: options.useGeometric !== undefined ? options.useGeometric : true,
+    });
+  }
+
+  /**
    * Detect card in a video frame (base64 encoded)
    */
   async detectCard(imageData: string): Promise<{

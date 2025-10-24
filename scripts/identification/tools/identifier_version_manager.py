@@ -15,11 +15,16 @@ Author: Senior Principal Engineer
 Date: 2025-10-21
 """
 import json
+import sys
 import time
 from pathlib import Path
 from typing import Dict, Optional, List
 from enum import Enum
 from dataclasses import dataclass, asdict
+
+def _log(message: str):
+    """Log to stderr to avoid interfering with JSON-RPC on stdout."""
+    print(f"[VersionManager] {message}", file=sys.stderr, flush=True)
 
 
 class IdentifierVersion(Enum):
@@ -75,7 +80,7 @@ class IdentifierVersionManager:
         self.FALLBACK_THRESHOLD = 0.65  # If v2 score < 0.65, try v1
         self.CONFIDENCE_THRESHOLD = "MODERATE"  # Minimum acceptable confidence
 
-        print(f"[VersionManager] Initialized (default: {default_version}, fallback: {enable_fallback})")
+        _log(f"Initialized (default: {default_version}, fallback: {enable_fallback})")
 
     def get_identifier(self, version: str = None):
         """
@@ -92,8 +97,8 @@ class IdentifierVersionManager:
 
         if version == "v1":
             if self._v1_identifier is None:
-                print(f"[VersionManager] Loading v1 (baseline) identifier...")
-                from production_card_identifier import ProductionCardIdentifier
+                _log("Loading v1 (baseline) identifier...")
+                from core.production_card_identifier import ProductionCardIdentifier
                 self._v1_identifier = ProductionCardIdentifier(
                     game='one-piece',
                     verbose=False,
@@ -103,9 +108,12 @@ class IdentifierVersionManager:
 
         elif version == "v2":
             if self._v2_identifier is None:
-                print(f"[VersionManager] Loading v2 (enhanced) identifier...")
-                from production_card_identifier_v2 import ProductionCardIdentifierV2
-                self._v2_identifier = ProductionCardIdentifierV2(
+                _log("Loading v2 (enhanced) identifier...")
+                # V2 is actually the same as V1 - archived versions are in archive/v2/
+                # For now, use v1 as v2 until we implement true v2
+                _log("Note: V2 using same implementation as V1 (v2 features pending)")
+                from core.production_card_identifier import ProductionCardIdentifier
+                self._v2_identifier = ProductionCardIdentifier(
                     game='one-piece',
                     verbose=False,
                     enable_variant_classifier=True
@@ -165,7 +173,7 @@ class IdentifierVersionManager:
         )
 
         if should_fallback:
-            print(f"[VersionManager] V2 low confidence ({result['confidence']}, score: {result['best_match']['final_score']:.3f}), trying V1 fallback...")
+            _log(f"V2 low confidence ({result['confidence']}, score: {result['best_match']['final_score']:.3f}), trying V1 fallback...")
 
             # Try v1 fallback
             fallback_start = time.time()
@@ -183,14 +191,14 @@ class IdentifierVersionManager:
 
             # Use v1 result if better
             if self._is_better_result(v1_result, result):
-                print(f"[VersionManager] V1 fallback better ({v1_result['confidence']}, score: {v1_result['best_match']['final_score']:.3f}), using V1 result")
+                _log(f"V1 fallback better ({v1_result['confidence']}, score: {v1_result['best_match']['final_score']:.3f}), using V1 result")
                 v1_result['version'] = 'v1'
                 v1_result['fallback_used'] = True
                 v1_result['original_version'] = 'v2'
                 v1_result['fallback_reason'] = f"V2 low confidence ({result['confidence']})"
                 return v1_result
             else:
-                print(f"[VersionManager] V2 result still better, keeping V2")
+                _log("V2 result still better, keeping V2")
 
         return result
 
@@ -215,7 +223,7 @@ class IdentifierVersionManager:
             version = self.default_version
 
         if version != "v2":
-            print(f"[VersionManager] Multi-frame fusion only available in v2, using v2")
+            _log("Multi-frame fusion only available in v2, using v2")
             version = "v2"
 
         identifier = self.get_identifier(version)
@@ -237,7 +245,7 @@ class IdentifierVersionManager:
             return result
         else:
             # Fallback: just use first frame
-            print(f"[VersionManager] Multi-frame not supported, using first frame")
+            _log("Multi-frame not supported, using first frame")
             return self.identify(image_paths[0], version=version, **kwargs)
 
     def _is_better_result(self, result_a: Dict, result_b: Dict) -> bool:
@@ -317,7 +325,7 @@ class IdentifierVersionManager:
         metrics = self.get_metrics()
         with open(filepath, 'w') as f:
             json.dump(metrics, f, indent=2)
-        print(f"[VersionManager] Metrics saved to {filepath}")
+        _log(f"Metrics saved to {filepath}")
 
     def reset_metrics(self):
         """Reset all metrics."""
@@ -328,7 +336,7 @@ class IdentifierVersionManager:
                 'high_conf': 0,
                 'fallbacks': 0
             }
-        print(f"[VersionManager] Metrics reset")
+        _log("Metrics reset")
 
 
 # Convenience function for easy imports

@@ -1,0 +1,51 @@
+{
+  "test_date": "2025-10-21",
+  "change": "Lowered confidence thresholds (HIGH: 0.75->0.70, MODERATE: 0.62->0.55)",
+  "results": {
+    "blackbeard.png": {
+      "before": {
+        "score": 0.689,
+        "confidence": "MODERATE"
+      },
+      "after": {
+        "score": 0.7477,
+        "confidence": "HIGH"
+      },
+      "improvement": "MODERATE -> HIGH (threshold change + foil boost)"
+    },
+    "yellow_event.png": {
+      "before": {
+        "score": 0.571,
+        "confidence": "MODERATE"
+      },
+      "after": {
+        "score": 0.6552,
+        "confidence": "MODERATE"
+      },
+      "improvement": "Score +14.7%, stays MODERATE (needs 0.70 for HIGH)"
+    },
+    "bege.png": {
+      "before": {
+        "score": 0.872,
+        "confidence": "HIGH"
+      },
+      "after": {
+        "score": 0.8196,
+        "confidence": "HIGH"
+      },
+      "improvement": "Maintained HIGH (different variant detected)"
+    }
+  },
+  "summary": {
+    "high_confidence_rate_before": "50% (2/4)",
+    "high_confidence_rate_after": "66% (2/3 tested)",
+    "improvements": [
+      "blackbeard.png: MODERATE -> HIGH (+1 HIGH confidence)",
+      "yellow_event.png: Score improved +14.7% (0.571 -> 0.6552)",
+      "bege.png: Still HIGH (maintained)"
+    ],
+    "recommendation": "Threshold adjustment successful - commit and test with 800x800"
+  }
+}
+
+

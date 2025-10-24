@@ -16,6 +16,10 @@ const DEFAULT_SETTINGS: IdentificationSettings = {
   useFoilDetection: false,
   topK: 20,
   useGeometric: true,
+  multiFrameEnabled: false,    // Off by default (can enable in settings)
+  multiFrameCount: 3,           // 3 frames when enabled
+  acceptLowConfidence: false,   // OFF by default (only accept HIGH+MODERATE)
+  autoAddModerate: true,        // ON by default (auto-add MODERATE)
 };
 
 // LocalStorage keys
@@ -51,6 +55,12 @@ const App: React.FC = () => {
     lowConfidence: 0,
     sessionStart: Date.now(),
   });
+  const [capturedFrames, setCapturedFrames] = useState<string[]>([]);  // For multi-frame fusion
+  const [pendingReview, setPendingReview] = useState<{
+    card: any;
+    confidence: string;
+    timestamp: number;
+  } | null>(null);  // For manual review of MODERATE/LOW confidence
   const [settings, setSettings] = useState<IdentificationSettings>(() => {
     // Load settings from localStorage
     try {
@@ -110,7 +120,96 @@ const App: React.FC = () => {
       setShowCaptureFlash(true);
       setTimeout(() => setShowCaptureFlash(false), 150);
 
-      // Optimistic UI update - immediate feedback
+      // Multi-frame fusion logic
+      if (settings.multiFrameEnabled) {
+        const newFrames = [...capturedFrames, imagePath];
+        setCapturedFrames(newFrames);
+
+        // Show progress notification
+        const remaining = settings.multiFrameCount - newFrames.length;
+        if (remaining > 0) {
+          showNotification('warning', `Frame ${newFrames.length}/${settings.multiFrameCount} captured - ${remaining} more...`);
+          return; // Wait for more frames
+        }
+
+        // All frames captured - run multi-frame identification
+        console.log('[App] Multi-frame identification:', newFrames.length, 'frames');
+        setIsIdentifying(true);
+        setCapturedFrames([]); // Reset for next card
+
+        try {
+          const result = await window.identifier.identifyMultiFrame(newFrames, {
+            topK: settings.topK,
+            useGeometric: settings.useGeometric,
+            tcgHint: settings.tcgGame,
+          });
+
+          if (!result.success) {
+            throw new Error(result.error || 'Multi-frame identification failed');
+          }
+
+          const { card, confidence, multiFrame } = result.result;
+          
+          // Show fusion info
+          if (multiFrame) {
+            console.log('[App] Multi-frame fusion:', multiFrame);
+          }
+
+          const price = card.prices?.normal?.market || card.prices?.foil?.market || 0;
+
+          // Update scan statistics
+          setScanStats((prev) => ({
+            ...prev,
+            totalScans: prev.totalScans + 1,
+            highConfidence: prev.highConfidence + (confidence === 'HIGH' ? 1 : 0),
+            moderateConfidence: prev.moderateConfidence + (confidence === 'MODERATE' ? 1 : 0),
+            lowConfidence: prev.lowConfidence + (confidence === 'LOW' ? 1 : 0),
+          }));
+
+          // Accept HIGH and MODERATE confidence
+          if (confidence === 'HIGH' || confidence === 'MODERATE') {
+            const stackItem: CardStackItem = {
+              id: `${card.productId}-${Date.now()}`,
+              name: card.name,
+              number: card.number,
+              rarity: card.rarity,
+              set: card.set,
+              price: price,
+              confidence: confidence,
+              timestamp: Date.now(),
+              productId: card.productId,
+            };
+
+            setCards((prev) => [stackItem, ...prev]);
+
+            const emoji = multiFrame?.confidenceBoost ? '⚡' : confidence === 'HIGH' ? '✓' : '~';
+            const suffix = multiFrame ? ` (${multiFrame.fusionVotes.toFixed(1)} votes)` : '';
+            showNotification(
+              confidence === 'HIGH' ? 'success' : 'warning',
+              `${emoji} ${card.name} - $${price.toFixed(2)} (${confidence})${suffix}`
+            );
+
+            playSuccessSound();
+          } else {
+            showNotification(
+              'error',
+              `Low confidence: Found "${card.name}" but not confident. Try: better lighting, center card, reduce glare.`
+            );
+          }
+
+          console.log('[App] Multi-frame complete:', card.name, confidence);
+        } catch (error: any) {
+          console.error('[App] Multi-frame identification error:', error);
+          showNotification('error', `Multi-frame identification failed: ${error.message}`);
+          setCapturedFrames([]); // Reset on error
+        } finally {
+          setIsIdentifying(false);
+        }
+
+        return; // Exit after multi-frame processing
+      }
+
+      // Single-frame identification (original logic)
       setIsIdentifying(true);
 
       try {
@@ -140,8 +239,17 @@ const App: React.FC = () => {
           lowConfidence: prev.lowConfidence + (confidence === 'LOW' ? 1 : 0),
         }));
 
-        // Accept HIGH and MODERATE confidence (60%+ threshold)
-        if (confidence === 'HIGH' || confidence === 'MODERATE') {
+        // Confidence threshold logic based on settings
+        const shouldAutoAdd =
+          confidence === 'HIGH' ||
+          (confidence === 'MODERATE' && settings.autoAddModerate);
+
+        const shouldReview =
+          (confidence === 'MODERATE' && !settings.autoAddModerate) ||
+          (confidence === 'LOW' && settings.acceptLowConfidence);
+
+        if (shouldAutoAdd) {
+          // AUTO-ADD: HIGH or MODERATE (if autoAddModerate enabled)
           // Check for duplicates in last 30 seconds
           const now = Date.now();
           const recentDuplicate = cards.find(
@@ -177,11 +285,27 @@ const App: React.FC = () => {
           );
 
           playSuccessSound();
+        } else if (shouldReview) {
+          // MANUAL REVIEW: Show confirmation dialog
+          setPendingReview({
+            card: { ...card, price },
+            confidence,
+            timestamp: Date.now(),
+          });
+
+          showNotification(
+            'warning',
+            `${confidence} confidence: "${card.name}" - Please review and confirm`
+          );
         } else {
-          // Low confidence - show what was identified with helpful tips
+          // REJECTED: Low confidence not accepted
           showNotification(
             'error',
-            `Low confidence: Found "${card.name}" but not confident. Try: better lighting, center card, reduce glare.`
+            `${confidence} confidence: Found "${card.name}" but not confident. ${
+              confidence === 'LOW'
+                ? 'Enable "Accept LOW confidence" in Settings to review these cards.'
+                : 'Enable "Auto-add MODERATE" in Settings for faster scanning.'
+            }`
           );
         }
 
@@ -257,6 +381,55 @@ const App: React.FC = () => {
     setCards((prev) => prev.filter((card) => card.id !== id));
     showNotification('success', 'Card removed');
   }, []);
+
+  const handleAcceptReview = useCallback(() => {
+    if (!pendingReview) return;
+
+    const { card, confidence } = pendingReview;
+
+    const stackItem: CardStackItem = {
+      id: `${card.productId}-${Date.now()}`,
+      name: card.name,
+      number: card.number,
+      rarity: card.rarity,
+      set: card.set,
+      price: card.price,
+      confidence: confidence,
+      timestamp: Date.now(),
+      productId: card.productId,
+    };
+
+    setCards((prev) => [stackItem, ...prev]);
+    setPendingReview(null);
+
+    showNotification('success', `✓ Added: ${card.name} - $${card.price.toFixed(2)} (${confidence})`);
+    playSuccessSound();
+  }, [pendingReview]);
+
+  const handleRejectReview = useCallback(() => {
+    if (!pendingReview) return;
+
+    setPendingReview(null);
+    showNotification('warning', 'Card rejected - scan again with better positioning');
+  }, [pendingReview]);
+
+  // Keyboard shortcuts for review modal (Enter=Accept, Esc=Reject)
+  useEffect(() => {
+    if (!pendingReview) return;
+
+    const handleKeyPress = (e: KeyboardEvent) => {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        handleAcceptReview();
+      } else if (e.key === 'Escape') {
+        e.preventDefault();
+        handleRejectReview();
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyPress);
+    return () => window.removeEventListener('keydown', handleKeyPress);
+  }, [pendingReview, handleAcceptReview, handleRejectReview]);
 
   const showNotification = (
     type: 'success' | 'error' | 'warning',
@@ -533,6 +706,68 @@ const App: React.FC = () => {
 
       {/* Capture Flash */}
       {showCaptureFlash && <div className="capture-flash" />}
+
+      {/* Review Modal for MODERATE/LOW confidence */}
+      {pendingReview && (
+        <div className="review-modal-overlay" onClick={handleRejectReview} role="presentation">
+          <div
+            className="review-modal"
+            onClick={(e) => e.stopPropagation()}
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="review-title"
+            aria-describedby="review-description"
+          >
+            <div className="review-header">
+              <h2 id="review-title">🔍 Manual Review Required</h2>
+              <span className={`confidence-badge confidence-${pendingReview.confidence.toLowerCase()}`}>
+                {pendingReview.confidence}
+              </span>
+            </div>
+
+            <div className="review-content">
+              <div className="review-card-info">
+                <h3>{pendingReview.card.name}</h3>
+                <div className="review-details">
+                  <span><strong>Number:</strong> {pendingReview.card.number}</span>
+                  <span><strong>Set:</strong> {pendingReview.card.set}</span>
+                  <span><strong>Rarity:</strong> {pendingReview.card.rarity}</span>
+                  <span><strong>Price:</strong> ${pendingReview.card.price.toFixed(2)}</span>
+                </div>
+              </div>
+
+              <div className="review-message" id="review-description">
+                <p>
+                  {pendingReview.confidence === 'LOW'
+                    ? '⚠️ This identification has LOW confidence. Please verify the card matches before adding.'
+                    : '~ This identification has MODERATE confidence. Please verify before adding.'}
+                </p>
+                <p className="review-hint">
+                  <kbd>Enter</kbd> to accept • <kbd>Esc</kbd> to reject
+                </p>
+              </div>
+            </div>
+
+            <div className="review-actions">
+              <button
+                className="btn btn-reject"
+                onClick={handleRejectReview}
+                aria-label="Reject and rescan card"
+              >
+                ✕ Reject & Rescan
+              </button>
+              <button
+                className="btn btn-accept"
+                onClick={handleAcceptReview}
+                aria-label="Accept and add card to stack"
+                autoFocus
+              >
+                ✓ Accept & Add
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Footer */}
       <footer className="app-footer">

@@ -1,0 +1,105 @@
+{
+  "summary": {
+    "total_images": 9,
+    "avg_time_ms": 953.5956647660997,
+    "median_time_ms": 961.9300365447998,
+    "p95_time_ms": 1525.5258083343506,
+    "high_confidence_pct": 44.44444444444444,
+    "moderate_confidence_pct": 44.44444444444444,
+    "low_confidence_pct": 11.11111111111111,
+    "ocr_detection_pct": 0.0,
+    "strong_geometric_pct": 66.66666666666666
+  },
+  "results": [
+    {
+      "image": "Screenshot_20251021_085344_Discord.jpg",
+      "confidence": "MODERATE",
+      "score": 0.5596929973598697,
+      "time_ms": 1041.7542457580566,
+      "visual_score": 0.5950021743774414,
+      "geometric_score": 0.4537654663071544,
+      "ocr_detected": false,
+      "ocr_confidence": 0.0
+    },
+    {
+      "image": "Screenshot_20251021_085357_Discord.jpg",
+      "confidence": "MODERATE",
+      "score": 0.6318871855735779,
+      "time_ms": 961.9300365447998,
+      "visual_score": 0.6125128269195557,
+      "geometric_score": 0.0,
+      "ocr_detected": false,
+      "ocr_confidence": 0.0
+    },
+    {
+      "image": "bege.png",
+      "confidence": "HIGH",
+      "score": 0.9232078194618225,
+      "time_ms": 526.9036293029785,
+      "visual_score": 0.8976104259490967,
+      "geometric_score": 1.0,
+      "ocr_detected": false,
+      "ocr_confidence": 0.0
+    },
+    {
+      "image": "blackbeard-db.jpg",
+      "confidence": "HIGH",
+      "score": 1.0,
+      "time_ms": 592.3354625701904,
+      "visual_score": 1.0,
+      "geometric_score": 1.0,
+      "ocr_detected": false,
+      "ocr_confidence": 0.0
+    },
+    {
+      "image": "blackbeard.png",
+      "confidence": "HIGH",
+      "score": 0.7228208836813703,
+      "time_ms": 1012.2354030609131,
+      "visual_score": 0.7752212285995483,
+      "geometric_score": 0.36561984892683613,
+      "ocr_detected": false,
+      "ocr_confidence": 0.0
+    },
+    {
+      "image": "bonneyleader.png",
+      "confidence": "MODERATE",
+      "score": 0.6155287325382233,
+      "time_ms": 884.4256401062012,
+      "visual_score": 0.595293402671814,
+      "geometric_score": 0.0,
+      "ocr_detected": false,
+      "ocr_confidence": 0.0
+    },
+    {
+      "image": "mihawk.png",
+      "confidence": "HIGH",
+      "score": 0.7004311358371198,
+      "time_ms": 910.9294414520264,
+      "visual_score": 0.7537956237792969,
+      "geometric_score": 0.3403376720105885,
+      "ocr_detected": false,
+      "ocr_confidence": 0.0
+    },
+    {
+      "image": "sanji.jpg",
+      "confidence": "LOW",
+      "score": 0.5442291975021363,
+      "time_ms": 1525.5258083343506,
+      "visual_score": 0.5202412605285645,
+      "geometric_score": 0.0,
+      "ocr_detected": false,
+      "ocr_confidence": 0.0
+    },
+    {
+      "image": "yellow_event.png",
+      "confidence": "MODERATE",
+      "score": 0.6923214336835007,
+      "time_ms": 1126.3213157653809,
+      "visual_score": 0.7279988527297974,
+      "geometric_score": 0.5852891765446109,
+      "ocr_detected": false,
+      "ocr_confidence": 0.0
+    }
+  ]
+}

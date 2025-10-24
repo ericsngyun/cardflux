@@ -1,0 +1,79 @@
+[
+  {
+    "image": "bege.png",
+    "card": "Capone\"Gang\"Bege",
+    "visual_score": 0.8976104259490967,
+    "geometric_score": 0.8338558816276203,
+    "final_score": 0.8721086082205062,
+    "confidence": "HIGH",
+    "weights_visual": 0.6,
+    "weights_geometric": 0.4,
+    "time_ms": 2370
+  },
+  {
+    "image": "blackbeard-db.jpg",
+    "card": "Marshall.D.Teach (093) (Manga)",
+    "visual_score": 1.0,
+    "geometric_score": 1.0,
+    "final_score": 1.0,
+    "confidence": "HIGH",
+    "weights_visual": 0.6,
+    "weights_geometric": 0.4,
+    "time_ms": 1174
+  },
+  {
+    "image": "blackbeard.png",
+    "card": "Marshall.D.Teach (093) (Manga)",
+    "visual_score": 0.7752212285995483,
+    "geometric_score": 0.4355671369294606,
+    "final_score": 0.6893595919315132,
+    "confidence": "MODERATE",
+    "weights_visual": 0.6,
+    "weights_geometric": 0.4,
+    "time_ms": 609
+  },
+  {
+    "image": "yellow_event.png",
+    "card": "You're the One Who Should Disappear",
+    "visual_score": 0.7279988527297974,
+    "geometric_score": 0.5169529151291514,
+    "final_score": 0.5714781630817891,
+    "confidence": "MODERATE",
+    "weights_visual": 0.6,
+    "weights_geometric": 0.4,
+    "time_ms": 3995
+  },
+  {
+    "image": "Screenshot_20251021_085328_Discord.jpg",
+    "card": "Come On!! We'll Fight You!! (Manga)",
+    "visual_score": 0.5202412605285645,
+    "geometric_score": 0.0,
+    "final_score": 0.518217134475708,
+    "confidence": "LOW",
+    "weights_visual": 0.9,
+    "weights_geometric": 0.1,
+    "time_ms": 633
+  },
+  {
+    "image": "Screenshot_20251021_085344_Discord.jpg",
+    "card": "Donquixote Doflamingo (Wanted Poster)",
+    "visual_score": 0.5950021743774414,
+    "geometric_score": 0.31824889522451894,
+    "final_score": 0.48430086271627243,
+    "confidence": "LOW",
+    "weights_visual": 0.6,
+    "weights_geometric": 0.4,
+    "time_ms": 621
+  },
+  {
+    "image": "Screenshot_20251021_085357_Discord.jpg",
+    "card": "Carrot (023) (Parallel)",
+    "visual_score": 0.6125128269195557,
+    "geometric_score": 0.0,
+    "final_score": 0.6012615442276001,
+    "confidence": "MODERATE",
+    "weights_visual": 0.9,
+    "weights_geometric": 0.1,
+    "time_ms": 489
+  }
+]

@@ -1,0 +1,102 @@
+Using a slow image processor as `use_fast` is unset and a slow processor was saved with this model. `use_fast=True` will be the default behavior in v4.52, even if the model was saved with a slow processor. This will result in minor differences in outputs. You'll still be able to use a slow processor with `use_fast=False`.
+================================================================================
+OPTIMIZATION BENCHMARK
+================================================================================
+Test Directory: C:\Users\rayno\eric\cardflux\test-images\one-piece
+Total Images: 9
+
+Initializing identifier...
+Identifier ready (4045ms)
+
+Running benchmark...
+================================================================================
+
+[1/9] Screenshot_20251021_085344_Discord.jpg
+  Card: Donquixote Doflamingo (Wanted Poster)
+  Confidence: MODERATE
+  Time: 1858ms
+  Scores: Final=0.560, Visual=0.595, Geometric=0.454
+
+[2/9] Screenshot_20251021_085357_Discord.jpg
+  Card: Carrot (023) (Parallel)
+  Confidence: MODERATE
+  Time: 1794ms
+  Scores: Final=0.632, Visual=0.613, Geometric=0.000
+
+[3/9] bege.png
+  Card: Capone"Gang"Bege
+  Confidence: HIGH
+  Time: 2035ms
+  Scores: Final=0.923, Visual=0.898, Geometric=1.000
+
+[4/9] blackbeard-db.jpg
+  Card: Marshall.D.Teach (093) (Manga)
+  Confidence: HIGH
+  Time: 2128ms
+  Scores: Final=1.000, Visual=1.000, Geometric=1.000
+
+[5/9] blackbeard.png
+  Card: Marshall.D.Teach (093) (Manga)
+  Confidence: HIGH
+  Time: 1856ms
+  Scores: Final=0.723, Visual=0.775, Geometric=0.365
+
+[6/9] bonneyleader.png
+  Card: Perona (Alternate Art)
+  Confidence: MODERATE
+  Time: 1637ms
+  Scores: Final=0.609, Visual=0.588, Geometric=0.000
+
+[7/9] mihawk.png
+  Card: Dracule Mihawk (OP01-070) (Alternate Art)
+  Confidence: HIGH
+  Time: 1663ms
+  Scores: Final=0.701, Visual=0.754, Geometric=0.341
+
+[8/9] sanji.jpg
+  Card: Come On!! We'll Fight You!! (Manga)
+  Confidence: LOW
+  Time: 1866ms
+  Scores: Final=0.544, Visual=0.520, Geometric=0.000
+
+[9/9] yellow_event.png
+  Card: You're the One Who Should Disappear
+  Confidence: MODERATE
+  Time: 1967ms
+  Scores: Final=0.694, Visual=0.728, Geometric=0.591
+
+================================================================================
+BENCHMARK RESULTS
+================================================================================
+
+Performance Metrics:
+  Total Images:     9
+  Average Time:     1867ms
+  Median Time:      1858ms
+  P95 Time:         2128ms
+  Fastest:          1637ms
+  Slowest:          2128ms
+
+Confidence Distribution:
+  HIGH:     4/9 (44.4%)
+  MODERATE: 4/9 (44.4%)
+  LOW:      1/9 (11.1%)
+
+OCR Performance:
+  Cards with OCR detected:  0/9 (0.0%)
+  High confidence OCR:      0/9 (0.0%)
+
+Geometric Matching:
+  Strong (>0.15):   6/9 (66.7%)
+  Weak (0.05-0.15): 0/9 (0.0%)
+Traceback (most recent call last):
+  File "C:\Users\rayno\eric\cardflux\scripts\identification\tests\benchmark_optimizations.py", line 251, in <module>
+    run_benchmark(test_dir=args.test_dir)
+    ~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\rayno\eric\cardflux\scripts\identification\tests\benchmark_optimizations.py", line 179, in run_benchmark
+    print(f"  Failed (\u22640.05):   {failed_geometric}/{total} ({failed_geometric/total*100:.1f}%)")
+    ~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Program Files\WindowsApps\PythonSoftwareFoundation.Python.3.13_3.13.2544.0_x64__qbz5n2kfra8p0\Lib\encodings\cp1252.py", line 19, in encode
+    return codecs.charmap_encode(input,self.errors,encoding_table)[0]
+           ~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+UnicodeEncodeError: 'charmap' codec can't encode character '\u2264' in position 10: character maps to <undefined>

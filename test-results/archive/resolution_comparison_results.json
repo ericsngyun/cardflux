@@ -1,0 +1,95 @@
+[
+  {
+    "card": "Capone\"Gang\"Bege",
+    "baseline_600x600": {
+      "match": "Capone\"Gang\"Bege",
+      "confidence": "HIGH",
+      "score": 0.8721086082205062,
+      "visual": 0.8976104259490967,
+      "geometric": 0.8338558816276203,
+      "time_ms": 2107.0499420166016
+    },
+    "higher_res_comparison": {
+      "600x600": {
+        "width": 430,
+        "height": 600,
+        "sharpness": 3336.539529623806,
+        "orb_keypoints": 2000
+      },
+      "800x800": {
+        "width": 573,
+        "height": 800,
+        "sharpness": 2349.16441291014,
+        "orb_keypoints": 2000
+      },
+      "1000x1000": {
+        "width": 716,
+        "height": 1000,
+        "sharpness": 1642.4902720387768,
+        "orb_keypoints": 2000
+      }
+    }
+  },
+  {
+    "card": "You're the One Who Should Disappear",
+    "baseline_600x600": {
+      "match": "You're the One Who Should Disappear",
+      "confidence": "MODERATE",
+      "score": 0.5714781630817891,
+      "visual": 0.7279988527297974,
+      "geometric": 0.5169529151291514,
+      "time_ms": 2744.20428276062
+    },
+    "higher_res_comparison": {
+      "600x600": {
+        "width": 430,
+        "height": 600,
+        "sharpness": 6313.381196898487,
+        "orb_keypoints": 2000
+      },
+      "800x800": {
+        "width": 573,
+        "height": 800,
+        "sharpness": 4915.724807981551,
+        "orb_keypoints": 2000
+      },
+      "1000x1000": {
+        "width": 716,
+        "height": 1000,
+        "sharpness": 3809.1135674193024,
+        "orb_keypoints": 2000
+      }
+    }
+  },
+  {
+    "card": "Marshall.D.Teach (093) (Manga)",
+    "baseline_600x600": {
+      "match": "Marshall.D.Teach (093) (Manga)",
+      "confidence": "MODERATE",
+      "score": 0.6893595919315132,
+      "visual": 0.7752212285995483,
+      "geometric": 0.4355671369294606,
+      "time_ms": 633.6767673492432
+    },
+    "higher_res_comparison": {
+      "600x600": {
+        "width": 430,
+        "height": 600,
+        "sharpness": 5968.392498646415,
+        "orb_keypoints": 2000
+      },
+      "800x800": {
+        "width": 573,
+        "height": 800,
+        "sharpness": 4624.360433107874,
+        "orb_keypoints": 2000
+      },
+      "1000x1000": {
+        "width": 716,
+        "height": 1000,
+        "sharpness": 3831.834090826579,
+        "orb_keypoints": 2000
+      }
+    }
+  }
+]
