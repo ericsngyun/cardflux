@@ -60,9 +60,9 @@ WEIGHT_GEOMETRIC_BASE = 0.30
 # - Cards in sleeves (glare reduces score by 0.05-0.10)
 # - Real photos vs database images (inherent 0.05-0.08 gap)
 # - Text-heavy event cards (geometric matching weaker)
-THRESHOLD_HIGH = 0.70       # High confidence - auto-accept (was 0.75)
+THRESHOLD_HIGH = 0.65       # High confidence - auto-accept (was 0.70, lowered 2025-10-24 for 40%→60% boost)
 THRESHOLD_MODERATE = 0.55   # Moderate confidence - review recommended (was 0.62)
-THRESHOLD_MARGIN = 0.08     # Margin for confidence boost (was 0.10, tightened slightly)
+THRESHOLD_MARGIN = 0.05     # Margin for confidence boost (was 0.08, lowered 2025-10-24 for margin-based HIGH boost)
 
 
 class ProductionCardIdentifier:
