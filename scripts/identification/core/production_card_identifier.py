@@ -664,7 +664,7 @@ class ProductionCardIdentifier:
         result['scores'] = {
             'visual': best['visual_score'],
             'geometric': best['geometric_score'],
-            'card_number_boost': best['card_number_match'] * 0.15,
+            'card_number_boost': best['card_number_match'] * 0.12,  # Fixed: was 0.15, should match line 524
             'foil_boost': best['foil_match'] * 0.05,
             'final': best['final_score'],
         }
