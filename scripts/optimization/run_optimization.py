@@ -17,9 +17,7 @@ from benchmark.framework import BenchmarkFramework, load_test_cases_from_directo
 from config.system import ConfigurationManager
 from experiments.tracker import ExperimentTracker, ExperimentRun, get_git_commit, get_hardware_info
 from analysis.reporter import AnalysisReporter
-
-# Import the production identifier
-from production_card_identifier import ProductionCardIdentifier
+from config.configurable_identifier import ConfigurableIdentifier
 
 
 class OptimizationOrchestrator:
@@ -117,10 +115,9 @@ class OptimizationOrchestrator:
                 print(f"Notes: {notes}")
             print()
 
-        # Initialize identifier (would apply config here in real implementation)
-        # For now, we use the production identifier as-is
-        # TODO: Apply config parameters to identifier
-        identifier = ProductionCardIdentifier(
+        # Initialize identifier with configuration
+        identifier = ConfigurableIdentifier(
+            config=config.to_dict(),
             game="one-piece",
             verbose=False
         )
