@@ -1,0 +1,464 @@
+{
+  "config_id": "baseline_1761583039",
+  "name": "Baseline Configuration",
+  "description": "Current production system configuration",
+  "parameters": {
+    "dinov2_model": {
+      "name": "dinov2_model",
+      "value": "facebook/dinov2-small",
+      "param_type": "enum",
+      "valid_range": null,
+      "valid_values": [
+        "facebook/dinov2-small",
+        "facebook/dinov2-base",
+        "facebook/dinov2-large"
+      ],
+      "description": "DINOv2 model size",
+      "category": "dinov2"
+    },
+    "dinov2_preprocessing_bilateral": {
+      "name": "dinov2_preprocessing_bilateral",
+      "value": true,
+      "param_type": "bool",
+      "valid_range": null,
+      "valid_values": null,
+      "description": "Apply bilateral filter preprocessing",
+      "category": "dinov2"
+    },
+    "dinov2_preprocessing_contrast": {
+      "name": "dinov2_preprocessing_contrast",
+      "value": true,
+      "param_type": "bool",
+      "valid_range": null,
+      "valid_values": null,
+      "description": "Apply contrast enhancement preprocessing",
+      "category": "dinov2"
+    },
+    "dinov2_bilateral_d": {
+      "name": "dinov2_bilateral_d",
+      "value": 5,
+      "param_type": "int",
+      "valid_range": [
+        3,
+        15
+      ],
+      "valid_values": null,
+      "description": "Bilateral filter diameter",
+      "category": "dinov2"
+    },
+    "dinov2_bilateral_sigma_color": {
+      "name": "dinov2_bilateral_sigma_color",
+      "value": 50,
+      "param_type": "int",
+      "valid_range": [
+        10,
+        150
+      ],
+      "valid_values": null,
+      "description": "Bilateral filter sigma color",
+      "category": "dinov2"
+    },
+    "dinov2_bilateral_sigma_space": {
+      "name": "dinov2_bilateral_sigma_space",
+      "value": 50,
+      "param_type": "int",
+      "valid_range": [
+        10,
+        150
+      ],
+      "valid_values": null,
+      "description": "Bilateral filter sigma space",
+      "category": "dinov2"
+    },
+    "dinov2_contrast_alpha": {
+      "name": "dinov2_contrast_alpha",
+      "value": 1.05,
+      "param_type": "float",
+      "valid_range": [
+        0.8,
+        1.5
+      ],
+      "valid_values": null,
+      "description": "Contrast enhancement alpha",
+      "category": "dinov2"
+    },
+    "dinov2_contrast_beta": {
+      "name": "dinov2_contrast_beta",
+      "value": 3,
+      "param_type": "int",
+      "valid_range": [
+        0,
+        20
+      ],
+      "valid_values": null,
+      "description": "Contrast enhancement beta",
+      "category": "dinov2"
+    },
+    "faiss_index_type": {
+      "name": "faiss_index_type",
+      "value": "Flat",
+      "param_type": "enum",
+      "valid_range": null,
+      "valid_values": [
+        "Flat",
+        "IVFFlat",
+        "HNSW"
+      ],
+      "description": "FAISS index type",
+      "category": "faiss"
+    },
+    "faiss_top_k": {
+      "name": "faiss_top_k",
+      "value": 50,
+      "param_type": "int",
+      "valid_range": [
+        10,
+        200
+      ],
+      "valid_values": null,
+      "description": "Number of candidates to retrieve",
+      "category": "faiss"
+    },
+    "orb_enabled": {
+      "name": "orb_enabled",
+      "value": true,
+      "param_type": "bool",
+      "valid_range": null,
+      "valid_values": null,
+      "description": "Enable ORB geometric verification",
+      "category": "orb"
+    },
+    "orb_nfeatures": {
+      "name": "orb_nfeatures",
+      "value": 1000,
+      "param_type": "int",
+      "valid_range": [
+        100,
+        5000
+      ],
+      "valid_values": null,
+      "description": "Number of ORB features",
+      "category": "orb"
+    },
+    "orb_scaleFactor": {
+      "name": "orb_scaleFactor",
+      "value": 1.2,
+      "param_type": "float",
+      "valid_range": [
+        1.1,
+        2.0
+      ],
+      "valid_values": null,
+      "description": "ORB scale factor",
+      "category": "orb"
+    },
+    "orb_nlevels": {
+      "name": "orb_nlevels",
+      "value": 8,
+      "param_type": "int",
+      "valid_range": [
+        4,
+        16
+      ],
+      "valid_values": null,
+      "description": "ORB pyramid levels",
+      "category": "orb"
+    },
+    "orb_edgeThreshold": {
+      "name": "orb_edgeThreshold",
+      "value": 15,
+      "param_type": "int",
+      "valid_range": [
+        5,
+        50
+      ],
+      "valid_values": null,
+      "description": "ORB edge threshold",
+      "category": "orb"
+    },
+    "orb_lowe_ratio": {
+      "name": "orb_lowe_ratio",
+      "value": 0.8,
+      "param_type": "float",
+      "valid_range": [
+        0.6,
+        0.9
+      ],
+      "valid_values": null,
+      "description": "Lowe's ratio test threshold",
+      "category": "orb"
+    },
+    "orb_verify_top_n": {
+      "name": "orb_verify_top_n",
+      "value": 10,
+      "param_type": "int",
+      "valid_range": [
+        5,
+        50
+      ],
+      "valid_values": null,
+      "description": "Number of top candidates to verify with ORB",
+      "category": "orb"
+    },
+    "orb_early_stop_visual": {
+      "name": "orb_early_stop_visual",
+      "value": 0.85,
+      "param_type": "float",
+      "valid_range": [
+        0.7,
+        0.95
+      ],
+      "valid_values": null,
+      "description": "Visual score threshold for early stopping",
+      "category": "orb"
+    },
+    "orb_early_stop_geometric": {
+      "name": "orb_early_stop_geometric",
+      "value": 0.8,
+      "param_type": "float",
+      "valid_range": [
+        0.5,
+        1.0
+      ],
+      "valid_values": null,
+      "description": "Geometric score threshold for early stopping",
+      "category": "orb"
+    },
+    "sift_enabled": {
+      "name": "sift_enabled",
+      "value": true,
+      "param_type": "bool",
+      "valid_range": null,
+      "valid_values": null,
+      "description": "Enable SIFT in cascade",
+      "category": "sift"
+    },
+    "sift_nfeatures": {
+      "name": "sift_nfeatures",
+      "value": 1000,
+      "param_type": "int",
+      "valid_range": [
+        100,
+        5000
+      ],
+      "valid_values": null,
+      "description": "Number of SIFT features",
+      "category": "sift"
+    },
+    "sift_cascade_threshold": {
+      "name": "sift_cascade_threshold",
+      "value": 0.12,
+      "param_type": "float",
+      "valid_range": [
+        0.05,
+        0.3
+      ],
+      "valid_values": null,
+      "description": "SIFT score threshold for cascade",
+      "category": "sift"
+    },
+    "akaze_enabled": {
+      "name": "akaze_enabled",
+      "value": true,
+      "param_type": "bool",
+      "valid_range": null,
+      "valid_values": null,
+      "description": "Enable AKAZE in cascade",
+      "category": "akaze"
+    },
+    "akaze_cascade_threshold": {
+      "name": "akaze_cascade_threshold",
+      "value": 0.1,
+      "param_type": "float",
+      "valid_range": [
+        0.05,
+        0.3
+      ],
+      "valid_values": null,
+      "description": "ORB score threshold before trying AKAZE",
+      "category": "akaze"
+    },
+    "fusion_strategy": {
+      "name": "fusion_strategy",
+      "value": "dynamic",
+      "param_type": "enum",
+      "valid_range": null,
+      "valid_values": [
+        "fixed",
+        "dynamic",
+        "learned"
+      ],
+      "description": "Score fusion strategy",
+      "category": "fusion"
+    },
+    "fusion_visual_weight_high_geom": {
+      "name": "fusion_visual_weight_high_geom",
+      "value": 0.75,
+      "param_type": "float",
+      "valid_range": [
+        0.5,
+        1.0
+      ],
+      "valid_values": null,
+      "description": "Visual weight when geometric > 0.15",
+      "category": "fusion"
+    },
+    "fusion_geometric_weight_high_geom": {
+      "name": "fusion_geometric_weight_high_geom",
+      "value": 0.25,
+      "param_type": "float",
+      "valid_range": [
+        0.0,
+        0.5
+      ],
+      "valid_values": null,
+      "description": "Geometric weight when geometric > 0.15",
+      "category": "fusion"
+    },
+    "fusion_visual_weight_mid_geom": {
+      "name": "fusion_visual_weight_mid_geom",
+      "value": 0.85,
+      "param_type": "float",
+      "valid_range": [
+        0.5,
+        1.0
+      ],
+      "valid_values": null,
+      "description": "Visual weight when geometric 0.05-0.15",
+      "category": "fusion"
+    },
+    "fusion_geometric_weight_mid_geom": {
+      "name": "fusion_geometric_weight_mid_geom",
+      "value": 0.15,
+      "param_type": "float",
+      "valid_range": [
+        0.0,
+        0.5
+      ],
+      "valid_values": null,
+      "description": "Geometric weight when geometric 0.05-0.15",
+      "category": "fusion"
+    },
+    "fusion_visual_weight_low_geom": {
+      "name": "fusion_visual_weight_low_geom",
+      "value": 0.95,
+      "param_type": "float",
+      "valid_range": [
+        0.8,
+        1.0
+      ],
+      "valid_values": null,
+      "description": "Visual weight when geometric < 0.05",
+      "category": "fusion"
+    },
+    "fusion_geometric_weight_low_geom": {
+      "name": "fusion_geometric_weight_low_geom",
+      "value": 0.05,
+      "param_type": "float",
+      "valid_range": [
+        0.0,
+        0.2
+      ],
+      "valid_values": null,
+      "description": "Geometric weight when geometric < 0.05",
+      "category": "fusion"
+    },
+    "threshold_high": {
+      "name": "threshold_high",
+      "value": 0.65,
+      "param_type": "float",
+      "valid_range": [
+        0.5,
+        0.9
+      ],
+      "valid_values": null,
+      "description": "High confidence threshold",
+      "category": "confidence"
+    },
+    "threshold_moderate": {
+      "name": "threshold_moderate",
+      "value": 0.55,
+      "param_type": "float",
+      "valid_range": [
+        0.4,
+        0.8
+      ],
+      "valid_values": null,
+      "description": "Moderate confidence threshold",
+      "category": "confidence"
+    },
+    "threshold_margin": {
+      "name": "threshold_margin",
+      "value": 0.05,
+      "param_type": "float",
+      "valid_range": [
+        0.02,
+        0.15
+      ],
+      "valid_values": null,
+      "description": "Margin for confidence boost",
+      "category": "confidence"
+    },
+    "ocr_enabled": {
+      "name": "ocr_enabled",
+      "value": true,
+      "param_type": "bool",
+      "valid_range": null,
+      "valid_values": null,
+      "description": "Enable OCR card number extraction",
+      "category": "ocr"
+    },
+    "ocr_hard_filter_enabled": {
+      "name": "ocr_hard_filter_enabled",
+      "value": true,
+      "param_type": "bool",
+      "valid_range": null,
+      "valid_values": null,
+      "description": "Enable OCR hard filter (narrow to matching cards)",
+      "category": "ocr"
+    },
+    "ocr_hard_filter_confidence": {
+      "name": "ocr_hard_filter_confidence",
+      "value": 0.8,
+      "param_type": "float",
+      "valid_range": [
+        0.6,
+        0.95
+      ],
+      "valid_values": null,
+      "description": "OCR confidence threshold for hard filter",
+      "category": "ocr"
+    },
+    "ocr_hard_filter_min_matches": {
+      "name": "ocr_hard_filter_min_matches",
+      "value": 3,
+      "param_type": "int",
+      "valid_range": [
+        1,
+        10
+      ],
+      "valid_values": null,
+      "description": "Minimum matching cards for hard filter",
+      "category": "ocr"
+    },
+    "ocr_card_number_boost": {
+      "name": "ocr_card_number_boost",
+      "value": 0.12,
+      "param_type": "float",
+      "valid_range": [
+        0.0,
+        0.3
+      ],
+      "valid_values": null,
+      "description": "Score boost for card number match",
+      "category": "ocr"
+    }
+  },
+  "parent_config_id": null,
+  "created_at": "2025-10-27 09:37:19",
+  "git_commit": null,
+  "tags": [
+    "baseline",
+    "production"
+  ]
+}

@@ -20,7 +20,11 @@
       "Bash(git push:*)",
       "Bash(pip:*)",
       "Bash(git mv:*)",
-      "Bash(pnpm typecheck:*)"
+      "Bash(pnpm typecheck:*)",
+      "Bash(pnpm --version:*)",
+      "Bash(pnpm build:dev:*)",
+      "Bash(pwsh scripts/setup/verify-complete-setup.ps1)",
+      "Bash(cat:*)"
     ],
     "deny": [],
     "ask": []

@@ -1,0 +1,42 @@
+{
+  "bege.png": {
+    "card_number": "ST02-004",
+    "name": "Capone\"Gang\"Bege",
+    "tags": ["clean", "high_quality", "production_ready"]
+  },
+  "blackbeard-db.jpg": {
+    "card_number": "OP09-093",
+    "name": "Marshall.D.Teach (093) (Manga)",
+    "tags": ["clean", "high_quality", "database_reference", "production_ready"]
+  },
+  "blackbeard.png": {
+    "card_number": "OP09-093",
+    "name": "Marshall.D.Teach (093) (Manga)",
+    "tags": ["clean", "photo", "production_ready"]
+  },
+  "bonneyleader.png": {
+    "card_number": "OP05-046",
+    "name": "Jewelry Bonney",
+    "tags": ["challenging", "alternate_art", "production_ready"]
+  },
+  "mihawk.png": {
+    "card_number": "OP01-070",
+    "name": "Dracule Mihawk (OP01-070) (Alternate Art)",
+    "tags": ["clean", "alternate_art", "production_ready"]
+  },
+  "radicalbeam.png": {
+    "card_number": "OP03-057",
+    "name": "Radical Beam!!!",
+    "tags": ["event_card", "text_heavy", "production_ready"]
+  },
+  "sanji.jpg": {
+    "card_number": "OP04-104",
+    "name": "Sanji (OP04-104)",
+    "tags": ["challenging", "poor_lighting", "angled", "production_ready"]
+  },
+  "yellow_event.png": {
+    "card_number": "OP06-115",
+    "name": "You're the One Who Should Disappear",
+    "tags": ["event_card", "text_heavy", "clean", "production_ready"]
+  }
+}
