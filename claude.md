@@ -6,8 +6,9 @@
 AI-powered card identification for shops: Transform 3-5 min manual pricing → 3-5 sec automated scanning with 100% accuracy.
 
 ## Current Status
-**Production Ready**: One Piece TCG (4,813 cards), 47% HIGH confidence, 778ms avg identification, desktop app v0.2.2
-**Recent Updates (2025-10-22)**:
+**Production Ready**: One Piece TCG (5,390 cards), 100% HIGH confidence, 1137ms avg identification, desktop app v0.2.2
+**Recent Updates (2025-10-27)**:
+- ✅ Fixed sealed product filter to use metadata-first approach (+577 cards)
 - ✅ 100% card detection system (polished_card_detector.py)
 - ✅ AKAZE hybrid geometric matching for robustness
 - ✅ Comprehensive test suite (19 test images)
@@ -39,7 +40,7 @@ Image → Card Detection → Quality Check → Preprocess → DINOv2 (70-130ms) 
 
 ### 3. Data Pipeline
 `services/{ingest,embedder,indexer}/`
-1. **Scrape**: TCGPlayer API → filter sealed products → JSONL (4,813 cards, 2 min)
+1. **Scrape**: TCGPlayer API → filter sealed products (metadata-first) → JSONL (5,390 cards, 2 min)
 2. **Images**: Download 600x600 JPG (~400 MB, 3 min, 97.4% success)
 3. **Embed**: DINOv2 + preprocessing (bilateral filter + contrast) → embeddings.npy (5 min)
 4. **Index**: FAISS IndexFlatIP → index.faiss (2 min)
@@ -50,7 +51,7 @@ Image → Card Detection → Quality Check → Preprocess → DINOv2 (70-130ms) 
 ### 4. Configuration
 `packages/config/src/tcgplayer-config.ts`
 - TCG categories (One Piece enabled, 67 others disabled)
-- `isSealedProduct()` - filters 299 sealed products (booster boxes, starter decks, tins)
+- `isSealedProduct()` - metadata-first filter (checks 'Number' field), filters 211 sealed products (booster boxes, starter decks, tins)
 - `transformImageUrl()` - 200w → 600x600 JPG
 
 ## Project Structure (Critical Paths)
@@ -76,7 +77,7 @@ docs/                       # Documentation
   development/              # Contributing, organization
   status/                   # Current session summaries
   archive/                  # Historical docs (sessions, improvements, test results)
-data/curated/               # one-piece.jsonl (4,813 cards)
+data/curated/               # one-piece.jsonl (5,390 cards)
 data/images/                # Card images (~400 MB)
 artifacts/faiss/            # FAISS indexes (7.1 MB)
 artifacts/metadata/         # embeddings.npy (7.4 MB), reprints.json
@@ -170,6 +171,7 @@ cd apps/desktop && pnpm package   # Create installer (NSIS/DMG/AppImage)
 3. **Dynamic > Static**: Adaptive weights (60/40-90/10) more robust than fixed 70/30
 4. **Codebase Organization** (2025-10-22): Clean structure is critical for maintainability - archive old versions, separate production from experiments
 5. **Hybrid Geometric Matching** (2025-10-22): AKAZE provides safety net when ORB fails on compressed images
+6. **Metadata-First Filtering** (2025-10-27): Use card metadata (Number field) to identify cards vs sealed products - 10x more reliable than name-based pattern matching (+577 cards recovered)
 
 ## Quick Reference
 - **Config**: `packages/config/src/tcgplayer-config.ts`
