@@ -8,12 +8,17 @@ dist/
 build/
 *.tsbuildinfo
 
-# Data - ALL production data excluded from Git (published to S3)
-data/**
+# Data - Store curated data in Git LFS, exclude raw/images
+data/raw/**
+data/images/**
 !data/.gitkeep
+# Curated data (JSONL) stored in Git LFS
+!data/curated/**/*.jsonl
 
-# Artifacts - ALL production artifacts excluded (published to S3)
-artifacts/**
+# Artifacts - Store indices/embeddings in Git LFS, exclude large files
+# FAISS indices and embeddings stored in Git LFS
+!artifacts/faiss/**
+!artifacts/metadata/**
 # Exception: Keep tiny samples for development
 !artifacts/samples/**
 !artifacts/.gitkeep

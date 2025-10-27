@@ -9,6 +9,7 @@ const STATE_DIR = path.resolve(__dirname, '../../data/state');
 const STATE_FILE = path.join(STATE_DIR, 'incremental-pipeline.state.json');
 
 const STEPS = [
+  { name: 'scrape', cmd: 'pnpm', args: ['tcgplayer:scrape:incremental'] },
   { name: 'normalize', cmd: 'pnpm', args: ['pipeline:normalize:incremental'] },
   { name: 'images', cmd: 'pnpm', args: ['pipeline:fetch-images:incremental'] },
   { name: 'sqlite', cmd: 'pnpm', args: ['pipeline:metadata'] },
