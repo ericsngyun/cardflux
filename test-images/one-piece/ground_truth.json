@@ -1,0 +1,102 @@
+{
+  "bege.png": {
+    "card_number": "ST02-004",
+    "name": "Capone\"Gang\"Bege",
+    "tags": ["clean", "high_quality"]
+  },
+  "blackbeard-db.jpg": {
+    "card_number": "OP09-093",
+    "name": "Marshall.D.Teach (093) (Manga)",
+    "tags": ["clean", "high_quality", "database_reference"]
+  },
+  "blackbeard.png": {
+    "card_number": "OP09-093",
+    "name": "Marshall.D.Teach (093) (Manga)",
+    "tags": ["clean", "photo"]
+  },
+  "bonneyleader.png": {
+    "card_number": "OP05-046",
+    "name": "Jewelry Bonney",
+    "tags": ["challenging", "alternate_art"]
+  },
+  "mihawk.png": {
+    "card_number": "OP01-070",
+    "name": "Dracule Mihawk (OP01-070) (Alternate Art)",
+    "tags": ["clean", "alternate_art"]
+  },
+  "radicalbeam.png": {
+    "card_number": "OP03-057",
+    "name": "Radical Beam!!!",
+    "tags": ["event_card", "text_heavy"]
+  },
+  "sanji.jpg": {
+    "card_number": "OP04-104",
+    "name": "Sanji (OP04-104)",
+    "tags": ["challenging", "poor_lighting", "angled"]
+  },
+  "yellow_event.png": {
+    "card_number": "OP06-115",
+    "name": "You're the One Who Should Disappear",
+    "tags": ["event_card", "text_heavy", "clean"]
+  },
+  "Screenshot_20251021_085344_Discord.jpg": {
+    "card_number": "ST03-009",
+    "name": "Donquixote Doflamingo (Wanted Poster)",
+    "tags": ["challenging", "phone_photo", "poor_quality", "angle"]
+  },
+  "Screenshot_20251021_085357_Discord.jpg": {
+    "card_number": "OP08-023",
+    "name": "Carrot (023) (Parallel)",
+    "tags": ["challenging", "phone_photo", "foil", "glare"]
+  },
+  "cropped_bege.png": {
+    "card_number": "ST02-004",
+    "name": "Capone\"Gang\"Bege",
+    "tags": ["cropped", "clean"]
+  },
+  "cropped_blackbeard-db.jpg": {
+    "card_number": "OP09-093",
+    "name": "Marshall.D.Teach (093) (Manga)",
+    "tags": ["cropped", "clean", "database_reference"]
+  },
+  "cropped_blackbeard.png": {
+    "card_number": "OP09-093",
+    "name": "Marshall.D.Teach (093) (Manga)",
+    "tags": ["cropped", "clean"]
+  },
+  "cropped_bonneyleader.png": {
+    "card_number": "OP05-046",
+    "name": "Jewelry Bonney",
+    "tags": ["cropped", "challenging", "alternate_art"]
+  },
+  "cropped_mihawk.png": {
+    "card_number": "OP01-070",
+    "name": "Dracule Mihawk (OP01-070) (Alternate Art)",
+    "tags": ["cropped", "alternate_art"]
+  },
+  "cropped_sanji.jpg": {
+    "card_number": "OP04-104",
+    "name": "Sanji (OP04-104)",
+    "tags": ["cropped", "challenging", "poor_quality"]
+  },
+  "cropped_yellow_event.png": {
+    "card_number": "OP06-115",
+    "name": "You're the One Who Should Disappear",
+    "tags": ["cropped", "event_card", "text_heavy"]
+  },
+  "cropped_Screenshot_20251021_085344_Discord.jpg": {
+    "card_number": "ST03-009",
+    "name": "Donquixote Doflamingo (Wanted Poster)",
+    "tags": ["cropped", "challenging", "phone_photo", "poor_quality"]
+  },
+  "cropped_Screenshot_20251021_085357_Discord.jpg": {
+    "card_number": "OP08-023",
+    "name": "Carrot (023) (Parallel)",
+    "tags": ["cropped", "challenging", "phone_photo", "foil"]
+  },
+  "detected_bege.png": {
+    "card_number": "ST02-004",
+    "name": "Capone\"Gang\"Bege",
+    "tags": ["detected", "clean"]
+  }
+}
