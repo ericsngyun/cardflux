@@ -194,8 +194,22 @@ export function parseExtendedData(extendedData: Array<{ name: string; value: str
  * But keeps individual cards like:
  * - "Card Name (Deck Name)" - single cards from a deck
  * - "Card Name - Starter Deck Promo" - promo cards
+ * - Cards from Premium Card Collections/Boosters
+ *
+ * Strategy: Use metadata first (cards have 'Number' field), fall back to name patterns
  */
 export function isSealedProduct(product: TCGProduct): boolean {
+  // CRITICAL: Cards have a 'Number' field (e.g., "OP01-029"), sealed products don't
+  // This is the most reliable indicator - check this FIRST before name patterns
+  if (product.extendedData && Array.isArray(product.extendedData)) {
+    const hasNumber = product.extendedData.some(item => item.name === 'Number' && item.value);
+    if (hasNumber) {
+      // Has a card number -> definitely a single card, NOT a sealed product
+      return false;
+    }
+  }
+
+  // Fall back to name-based pattern matching for products without metadata
   const nameLower = product.name.toLowerCase();
   const cleanNameLower = product.cleanName.toLowerCase();
 
