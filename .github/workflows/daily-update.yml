@@ -83,8 +83,37 @@ jobs:
           fi
           echo "Backup created: backups/pre-update-$(date +%Y%m%d)"
 
+      - name: Check if initial data exists
+        id: check_data
+        run: |
+          if [ -f "data/curated/one-piece.jsonl" ] && [ -f "artifacts/faiss/one-piece-dinov2/index.faiss" ]; then
+            echo "has_data=true" >> $GITHUB_OUTPUT
+            echo "✅ Existing data found - will run incremental update"
+          else
+            echo "has_data=false" >> $GITHUB_OUTPUT
+            echo "⚠️  No existing data - will run full scrape"
+          fi
+
+      - name: Run initial full scrape (first time only)
+        if: steps.check_data.outputs.has_data == 'false'
+        run: |
+          echo "🔄 Running full scrape from TCGPlayer..."
+          echo "This is the first run - building database from scratch"
+
+          # Run One Piece scraper
+          cd services/ingest && pnpm tsx bin/tcgplayer-scraper-onepiece.ts
+
+          # Download images
+          cd services/ingest && pnpm tsx bin/fetch_images_onepiece.ts
+
+          # Generate embeddings
+          python services/embedder/bin/embed_onepiece_dinov2_with_preprocessing.py
+
+          echo "✅ Initial data created"
+
       - name: Run incremental update
         id: update
+        if: steps.check_data.outputs.has_data == 'true'
         run: |
           echo "Starting CardFlux incremental update..."
           echo "Game: ${{ github.event.inputs.game || 'one-piece' }}"
