@@ -223,9 +223,11 @@ button {
 }
 
 .sync-icon {
-  font-size: 1rem;
+  width: 16px;
+  height: 16px;
   opacity: 0.7;
   transition: transform 0.3s ease;
+  flex-shrink: 0;
 }
 
 .sync-info {
@@ -906,26 +908,39 @@ button {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: var(--spacing-md);
-  background: var(--bg-primary);
-  border: 1px solid var(--border-primary);
+  padding: var(--spacing-lg);
+  background: var(--bg-tertiary);
+  border: 2px solid var(--border-primary);
   border-radius: var(--radius-md);
 }
 
+.total-info {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
 .total-label {
+  font-size: 0.75rem;
+  color: var(--text-tertiary);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+}
+
+.total-count {
   font-size: 0.875rem;
   color: var(--text-secondary);
   font-weight: 500;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
 }
 
 .total-amount {
-  font-size: 1.5rem;
+  font-size: 2rem;
   font-weight: 700;
   color: #4CAF50; /* Green to indicate value */
   font-variant-numeric: tabular-nums;
-  text-shadow: 0 0 10px rgba(76, 175, 80, 0.3);
+  text-shadow: 0 0 20px rgba(76, 175, 80, 0.4);
+  letter-spacing: -0.02em;
 }
 
 /* ===================================

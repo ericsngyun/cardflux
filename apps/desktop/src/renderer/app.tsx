@@ -592,8 +592,8 @@ const App: React.FC = () => {
       <header className="app-header">
         <div className="header-left">
           <h1 className="app-title">
-            <span className="app-icon">🎴</span>
-            CardFlux Scanner
+            <span className="app-icon">♠</span>
+            CardFlux
           </h1>
           <div className="game-badge">
             {settings.tcgGame === 'one-piece' && 'One Piece TCG'}
@@ -609,7 +609,9 @@ const App: React.FC = () => {
           {/* Sync Status & Button */}
           <div className="sync-container">
             <div className={`sync-status sync-status-${getSyncStatus.status}`}>
-              <span className="sync-icon">🔄</span>
+              <svg className="sync-icon" width="16" height="16" viewBox="0 0 16 16" fill="none">
+                <path d="M13.6533 2.34667C12.1064 0.79991 10.0494 0 8.00003 0C5.95066 0 3.89366 0.79991 2.34667 2.34667C0.79991 3.89343 0 5.95066 0 8C0 10.0494 0.79991 12.1064 2.34667 13.6533C3.89366 15.2001 5.95066 16 8.00003 16C10.0494 16 12.1064 15.2001 13.6533 13.6533C15.2001 12.1064 16 10.0494 16 8C16 5.95066 15.2001 3.89343 13.6533 2.34667ZM11.4133 3.58667L13.0667 5.24L9.33337 8.97333L5.6 5.24L7.25333 3.58667L8.66667 5V2.66667H10V5L11.4133 3.58667Z" fill="currentColor" opacity="0.7"/>
+              </svg>
               <div className="sync-info">
                 <span className="sync-label">Last Sync</span>
                 <span className="sync-time">{getSyncStatus.text}</span>
@@ -630,9 +632,7 @@ const App: React.FC = () => {
                   Syncing...
                 </>
               ) : (
-                <>
-                  🔄 Sync
-                </>
+                'Sync Now'
               )}
             </button>
           </div>
@@ -642,7 +642,7 @@ const App: React.FC = () => {
             onClick={() => setShowSettings(true)}
             aria-label="Open settings"
           >
-            ⚙️ Settings
+            Settings
           </button>
           <div className="system-status">
             <div className={`status-indicator ${isSystemReady ? 'ready' : 'loading'}`}>
@@ -678,17 +678,32 @@ const App: React.FC = () => {
         <div className={`notification notification-${notification.type}`}>
           <div className="notification-content">
             <span className="notification-icon">
-              {notification.type === 'success' && '✓'}
-              {notification.type === 'error' && '✕'}
-              {notification.type === 'warning' && '⚠'}
+              {notification.type === 'success' && (
+                <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+                  <path d="M10 0C4.48 0 0 4.48 0 10C0 15.52 4.48 20 10 20C15.52 20 20 15.52 20 10C20 4.48 15.52 0 10 0ZM8 15L3 10L4.41 8.59L8 12.17L15.59 4.58L17 6L8 15Z" fill="currentColor"/>
+                </svg>
+              )}
+              {notification.type === 'error' && (
+                <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+                  <path d="M10 0C4.48 0 0 4.48 0 10C0 15.52 4.48 20 10 20C15.52 20 20 15.52 20 10C20 4.48 15.52 0 10 0ZM11 15H9V13H11V15ZM11 11H9V5H11V11Z" fill="currentColor"/>
+                </svg>
+              )}
+              {notification.type === 'warning' && (
+                <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+                  <path d="M10 0C4.48 0 0 4.48 0 10C0 15.52 4.48 20 10 20C15.52 20 20 15.52 20 10C20 4.48 15.52 0 10 0ZM11 15H9V13H11V15ZM11 11H9V5H11V11Z" fill="currentColor"/>
+                </svg>
+              )}
             </span>
             <span className="notification-message">{notification.message}</span>
           </div>
           <button
             className="notification-close"
             onClick={() => setNotification(null)}
+            aria-label="Close notification"
           >
-            ✕
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+              <path d="M12.6 3.4L8 8L3.4 3.4L2 4.8L6.6 9.4L2 14L3.4 15.4L8 10.8L12.6 15.4L14 14L9.4 9.4L14 4.8L12.6 3.4Z" fill="currentColor"/>
+            </svg>
           </button>
         </div>
       )}

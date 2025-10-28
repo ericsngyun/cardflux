@@ -32,7 +32,7 @@ export const CardStack: React.FC<CardStackProps> = React.memo(({ cards, onClear,
     <div className="card-stack">
       <div className="card-stack-header">
         <div className="stack-title">
-          <h2>📚 Card Stack</h2>
+          <h2>Card Stack</h2>
           <span className="card-count">{cardCount} {cardCount === 1 ? 'card' : 'cards'}</span>
         </div>
         <div className="stack-actions">
@@ -40,15 +40,17 @@ export const CardStack: React.FC<CardStackProps> = React.memo(({ cards, onClear,
             className="btn btn-secondary btn-sm"
             onClick={onExport}
             disabled={cardCount === 0}
+            aria-label="Export to CSV"
           >
-            📊 Export CSV
+            Export CSV
           </button>
           <button
             className="btn btn-danger btn-sm"
             onClick={onClear}
             disabled={cardCount === 0}
+            aria-label="Clear all cards"
           >
-            🗑️ Clear Stack
+            Clear
           </button>
         </div>
       </div>
@@ -56,9 +58,9 @@ export const CardStack: React.FC<CardStackProps> = React.memo(({ cards, onClear,
       <div className="card-stack-list">
         {cardCount === 0 ? (
           <div className="empty-state">
-            <div className="empty-icon">🎴</div>
+            <div className="empty-icon">♠</div>
             <p>No cards scanned yet</p>
-            <p className="empty-hint">Use SPACE to capture and identify cards</p>
+            <p className="empty-hint">Press SPACE to capture and identify cards</p>
           </div>
         ) : (
           <div className="stack-items">
@@ -112,7 +114,10 @@ export const CardStack: React.FC<CardStackProps> = React.memo(({ cards, onClear,
 
       <div className="card-stack-footer">
         <div className="total-value">
-          <span className="total-label">Total Value:</span>
+          <div className="total-info">
+            <span className="total-label">Total Value</span>
+            <span className="total-count">{cardCount} {cardCount === 1 ? 'card' : 'cards'}</span>
+          </div>
           <span className="total-amount">${totalValue.toFixed(2)}</span>
         </div>
       </div>
