@@ -1,6 +1,74 @@
 {
   "results": [
     {
+      "image": "Screenshot_20251021_085344_Discord.jpg",
+      "card_name": "Donquixote Doflamingo (Wanted Poster)",
+      "card_number": "ST03-009",
+      "confidence": "HIGH",
+      "final_score": 0.5596929973598697,
+      "visual_score": 0.5950021743774414,
+      "geometric_score": 0.4537654663071544,
+      "quality_tier": "unknown",
+      "resolution": [
+        0,
+        0
+      ],
+      "sharpness": 1489.1147795314428,
+      "time_ms": 1569,
+      "foil_detected": true,
+      "top_3_matches": [
+        {
+          "name": "Donquixote Doflamingo (Wanted Poster)",
+          "number": "ST03-009",
+          "score": 0.5596929973598697
+        },
+        {
+          "name": "Kaido (061) (Parallel)",
+          "number": "OP01-061",
+          "score": 0.5084513455629349
+        },
+        {
+          "name": "Monkey.D.Luffy (Wanted Poster)",
+          "number": "ST01-012",
+          "score": 0.498720528080536
+        }
+      ]
+    },
+    {
+      "image": "Screenshot_20251021_085357_Discord.jpg",
+      "card_name": "Carrot (023) (Parallel)",
+      "card_number": "OP08-023",
+      "confidence": "MODERATE",
+      "final_score": 0.6318871855735779,
+      "visual_score": 0.6125128269195557,
+      "geometric_score": 0.0,
+      "quality_tier": "unknown",
+      "resolution": [
+        0,
+        0
+      ],
+      "sharpness": 1838.9393487382422,
+      "time_ms": 1089,
+      "foil_detected": true,
+      "top_3_matches": [
+        {
+          "name": "Carrot (023) (Parallel)",
+          "number": "OP08-023",
+          "score": 0.6318871855735779
+        },
+        {
+          "name": "Monkey.D.Garp (115) (Alternate Art)",
+          "number": "OP02-115",
+          "score": 0.6292141735553741
+        },
+        {
+          "name": "Eustass\"Captain\"Kid (Parallel)",
+          "number": "OP01-051",
+          "score": 0.628143858909607
+        }
+      ]
+    },
+    {
       "image": "bege.png",
       "card_name": "Capone\"Gang\"Bege",
       "card_number": "ST02-004",
@@ -14,7 +82,7 @@
         0
       ],
       "sharpness": 1941.0353781150334,
-      "time_ms": 1245,
+      "time_ms": 660,
       "foil_detected": true,
       "top_3_matches": [
         {
@@ -35,26 +103,60 @@
       ]
     },
     {
+      "image": "blackbeard-db.jpg",
+      "card_name": "Marshall.D.Teach (093) (Manga)",
+      "card_number": "OP09-093",
+      "confidence": "HIGH",
+      "final_score": 1.0,
+      "visual_score": 1.0,
+      "geometric_score": 1.0,
+      "quality_tier": "unknown",
+      "resolution": [
+        0,
+        0
+      ],
+      "sharpness": 14643.912415294619,
+      "time_ms": 642,
+      "foil_detected": true,
+      "top_3_matches": [
+        {
+          "name": "Marshall.D.Teach (093) (Manga)",
+          "number": "OP09-093",
+          "score": 1.0
+        },
+        {
+          "name": "Vegapunk (Parallel)",
+          "number": "OP07-097",
+          "score": 0.763520485162735
+        },
+        {
+          "name": "Sabo (OP04-083) (Manga)",
+          "number": "OP04-083",
+          "score": 0.7508389949798584
+        }
+      ]
+    },
+    {
       "image": "blackbeard.png",
       "card_name": "Marshall.D.Teach (093) (Manga)",
       "card_number": "OP09-093",
       "confidence": "HIGH",
-      "final_score": 0.7226884664387753,
+      "final_score": 0.7228208836813703,
       "visual_score": 0.7752212285995483,
-      "geometric_score": 0.365090179956456,
+      "geometric_score": 0.36561984892683613,
       "quality_tier": "unknown",
       "resolution": [
         0,
         0
       ],
       "sharpness": 3884.746381638388,
-      "time_ms": 1638,
+      "time_ms": 1092,
       "foil_detected": true,
       "top_3_matches": [
         {
           "name": "Marshall.D.Teach (093) (Manga)",
           "number": "OP09-093",
-          "score": 0.7226884664387753
+          "score": 0.7228208836813703
         },
         {
           "name": "Nefeltari Vivi (001) (Alternate Art)",
@@ -69,26 +171,60 @@
       ]
     },
     {
+      "image": "bonneyleader.png",
+      "card_name": "Trafalgar Law (CS 25-26 Regionals Textured Chase Promo)",
+      "card_number": "OP07-047",
+      "confidence": "MODERATE",
+      "final_score": 0.6162253260612488,
+      "visual_score": 0.5960266590118408,
+      "geometric_score": 0.0,
+      "quality_tier": "unknown",
+      "resolution": [
+        0,
+        0
+      ],
+      "sharpness": 3105.8654669514303,
+      "time_ms": 941,
+      "foil_detected": true,
+      "top_3_matches": [
+        {
+          "name": "Trafalgar Law (CS 25-26 Regionals Textured Chase Promo)",
+          "number": "OP07-047",
+          "score": 0.6162253260612488
+        },
+        {
+          "name": "Carrot (023) (Parallel)",
+          "number": "OP08-023",
+          "score": 0.6155287325382233
+        },
+        {
+          "name": "Shirahoshi (OP05-082) (Full Art)",
+          "number": "OP05-082",
+          "score": 0.6151734709739686
+        }
+      ]
+    },
+    {
       "image": "mihawk.png",
       "card_name": "Dracule Mihawk (OP01-070) (Alternate Art)",
       "card_number": "OP01-070",
       "confidence": "HIGH",
-      "final_score": 0.7009623675663553,
+      "final_score": 0.7004311358371198,
       "visual_score": 0.7537956237792969,
-      "geometric_score": 0.3424625989275304,
+      "geometric_score": 0.3403376720105885,
       "quality_tier": "unknown",
       "resolution": [
         0,
         0
       ],
       "sharpness": 2630.8235953165695,
-      "time_ms": 1071,
+      "time_ms": 983,
       "foil_detected": true,
       "top_3_matches": [
         {
           "name": "Dracule Mihawk (OP01-070) (Alternate Art)",
           "number": "OP01-070",
-          "score": 0.7009623675663553
+          "score": 0.7004311358371198
         },
         {
           "name": "Izo (OP01-033) (Alternate Art)",
@@ -107,22 +243,22 @@
       "card_name": "Radical Beam!! (Premium Card Collection -Best Selection Vol. 1-)",
       "card_number": "OP01-029",
       "confidence": "HIGH",
-      "final_score": 0.9377794199813314,
+      "final_score": 0.9386724044941209,
       "visual_score": 0.9406108856201172,
-      "geometric_score": 0.9292850230649741,
+      "geometric_score": 0.9328569611161321,
       "quality_tier": "unknown",
       "resolution": [
         0,
         0
       ],
       "sharpness": 7465.185375070072,
-      "time_ms": 539,
+      "time_ms": 546,
       "foil_detected": true,
       "top_3_matches": [
         {
           "name": "Radical Beam!! (Premium Card Collection -Best Selection Vol. 1-)",
           "number": "OP01-029",
-          "score": 0.9377794199813314
+          "score": 0.9386724044941209
         },
         {
           "name": "Divine Departure (Parallel)",
@@ -137,31 +273,65 @@
       ]
     },
     {
+      "image": "sanji.jpg",
+      "card_name": "Trafalgar Law (CS 25-26 Regionals Textured Chase Promo)",
+      "card_number": "OP07-047",
+      "confidence": "MODERATE",
+      "final_score": 0.5531113028526307,
+      "visual_score": 0.5295908451080322,
+      "geometric_score": 0.0,
+      "quality_tier": "unknown",
+      "resolution": [
+        0,
+        0
+      ],
+      "sharpness": 1252.7542754471328,
+      "time_ms": 1714,
+      "foil_detected": true,
+      "top_3_matches": [
+        {
+          "name": "Trafalgar Law (CS 25-26 Regionals Textured Chase Promo)",
+          "number": "OP07-047",
+          "score": 0.5531113028526307
+        },
+        {
+          "name": "Come On!! We'll Fight You!! (Manga)",
+          "number": "OP09-020",
+          "score": 0.5442291975021363
+        },
+        {
+          "name": "Shirahoshi (Alternate Art)",
+          "number": "OP12-102",
+          "score": 0.54324931204319
+        }
+      ]
+    },
+    {
       "image": "yellow_event.png",
       "card_name": "You're the One Who Should Disappear",
       "card_number": "OP06-115",
       "confidence": "HIGH",
-      "final_score": 0.6929099619784194,
+      "final_score": 0.6925674010561761,
       "visual_score": 0.7279988527297974,
-      "geometric_score": 0.5876432897242854,
+      "geometric_score": 0.5862730460353123,
       "quality_tier": "unknown",
       "resolution": [
         0,
         0
       ],
       "sharpness": 3977.2151087733046,
-      "time_ms": 1191,
+      "time_ms": 1266,
       "foil_detected": true,
       "top_3_matches": [
         {
           "name": "You're the One Who Should Disappear",
           "number": "OP06-115",
-          "score": 0.6929099619784194
+          "score": 0.6925674010561761
         },
         {
           "name": "You're the One Who Should Disappear (Reprint)",
           "number": "OP06-115",
-          "score": 0.6367273841834322
+          "score": 0.6378351864600849
         },
         {
           "name": "Come On!! We'll Fight You!! (Manga)",
@@ -172,15 +342,15 @@
     }
   ],
   "statistics": {
-    "total_images": 5,
-    "successful": 5,
-    "high_confidence": 5,
-    "moderate_confidence": 0,
+    "total_images": 10,
+    "successful": 10,
+    "high_confidence": 7,
+    "moderate_confidence": 3,
     "low_confidence": 0,
-    "avg_final_score": 0.7955096070853408,
-    "avg_visual_score": 0.8190474033355712,
-    "avg_geometric_score": 0.6448962183346492,
-    "avg_time_ms": 1136.8,
+    "avg_final_score": 0.7338616456377938,
+    "avg_visual_score": 0.7428369522094727,
+    "avg_geometric_score": 0.46788529943960244,
+    "avg_time_ms": 1050.2,
     "quality_distribution": {
       "high": 0,
       "medium": 0,
