@@ -10,6 +10,7 @@ export interface CardStackItem {
   confidence: string;
   timestamp: number;
   productId: number;
+  imageUrl?: string;  // Card image URL for thumbnail
 }
 
 interface CardStackProps {
@@ -64,6 +65,18 @@ export const CardStack: React.FC<CardStackProps> = React.memo(({ cards, onClear,
             {cards.map((card) => (
               <div key={card.id} className="stack-item">
                 <div className="stack-item-main">
+                  {card.imageUrl && (
+                    <div className="card-thumbnail">
+                      <img
+                        src={card.imageUrl}
+                        alt={card.name}
+                        onError={(e) => {
+                          // Hide image if it fails to load
+                          e.currentTarget.style.display = 'none';
+                        }}
+                      />
+                    </div>
+                  )}
                   <div className="card-info">
                     <div className="card-name">{card.name}</div>
                     <div className="card-meta">

@@ -752,8 +752,29 @@ button {
 .stack-item-main {
   display: flex;
   justify-content: space-between;
+  align-items: flex-start;
   padding: var(--spacing-md);
   gap: var(--spacing-md);
+}
+
+.card-thumbnail {
+  flex-shrink: 0;
+  width: 60px;
+  height: 84px;
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+  background: var(--bg-primary);
+  border: 1px solid var(--border-primary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.card-thumbnail img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
 }
 
 .card-info {
@@ -902,8 +923,9 @@ button {
 .total-amount {
   font-size: 1.5rem;
   font-weight: 700;
-  color: var(--text-primary);
+  color: #4CAF50; /* Green to indicate value */
   font-variant-numeric: tabular-nums;
+  text-shadow: 0 0 10px rgba(76, 175, 80, 0.3);
 }
 
 /* ===================================
