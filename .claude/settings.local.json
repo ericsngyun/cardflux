@@ -24,7 +24,9 @@
       "Bash(pnpm --version:*)",
       "Bash(pnpm build:dev:*)",
       "Bash(pwsh scripts/setup/verify-complete-setup.ps1)",
-      "Bash(cat:*)"
+      "Bash(cat:*)",
+      "Bash(pnpm list:*)",
+      "Bash(rm:*)"
     ],
     "deny": [],
     "ask": []
