@@ -6,15 +6,23 @@ CardFlux uses computer vision and machine learning to identify trading cards in 
 
 ---
 
-## ⚠️ IMPORTANT: Data Requirements
+## ⚠️ IMPORTANT: Setup Requirements
 
-**This repository does NOT include data files (gitignored due to size).**
+**This repository requires specific prerequisites before building.**
 
-After cloning, you must obtain the required data (~500 MB):
-- **Option 1 (Fast)**: Download pre-built package → See [DATA_REQUIREMENTS.md](DATA_REQUIREMENTS.md)
-- **Option 2 (Fresh)**: Build from scratch (15 min) → See below
+### 🚀 Quick Setup
+👉 **[SETUP.md](SETUP.md)** - **Complete setup guide for all platforms (Windows, macOS, Linux)**
 
-📖 **[Read DATA_REQUIREMENTS.md](DATA_REQUIREMENTS.md)** for complete instructions.
+**Critical requirements:**
+- Git LFS (install BEFORE cloning)
+- Node.js 20+ & pnpm 9+
+- Python 3.10+
+- Platform-specific build tools
+
+### 📦 Data Requirements
+Some data files use Git LFS and are NOT in regular Git:
+- **[DATA_REQUIREMENTS.md](DATA_REQUIREMENTS.md)** - Data files information
+- **[SETUP.md](SETUP.md)** - Full installation instructions
 
 ---
 
@@ -56,25 +64,35 @@ chmod +x scripts/setup/setup-macos.sh  # or setup-linux.sh
 
 ### For Developers
 
-#### Prerequisites
+**📖 [Read SETUP.md for complete instructions](SETUP.md)**
 
-- Node.js 20+ and pnpm
-- Python 3.10+
-- Git
-
-#### Installation
+#### Quick Installation
 
 ```bash
-# Clone repository
+# 1. Install Git LFS first!
+git lfs install
+
+# 2. Clone repository
 git clone https://github.com/yourusername/cardflux.git
 cd cardflux
 
-# Install Node dependencies
+# 3. Install Node dependencies
 pnpm install
 
-# Install Python dependencies
+# 4. Install Python dependencies
 pip install -r requirements.txt
+
+# 5. Build project
+pnpm build
 ```
+
+**Prerequisites:**
+- Git with Git LFS
+- Node.js 20+ and pnpm 9+
+- Python 3.10+
+- Platform-specific build tools (Visual Studio/Xcode/build-essential)
+
+See [SETUP.md](SETUP.md) for detailed platform-specific instructions and troubleshooting.
 
 ### Build One Piece TCG Index
 
