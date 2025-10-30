@@ -320,7 +320,7 @@ class IdentificationService:
                 cv2.imwrite(tmp.name, frame)
                 tmp_path = tmp.name
 
-            # Detect card using detect_and_crop
+            # Detect card using detect_and_crop (returns Dict)
             result = self.card_detector.detect_and_crop(tmp_path)
 
             # Clean up temp file
@@ -334,15 +334,9 @@ class IdentificationService:
             # vis_frame = self.card_detector.create_visualization(frame, result)
             # vis_base64 = self._encode_image_base64(vis_frame)
 
-            return {
-                "status": result.status.value,
-                "confidence": result.confidence,
-                "qualityScore": result.quality_score,
-                "warnings": result.warnings,
-                "isReady": result.status == CardDetectionStatus.CARD_READY,
-                "bbox": result.bbox if result.bbox else None,
-                # "visualization": vis_base64  # Uncomment if you want visualization
-            }
+            # Result is already a dict with the correct structure
+            # Just return it directly
+            return result
         except Exception as e:
             self._log(f"Card detection error: {e}")
             raise

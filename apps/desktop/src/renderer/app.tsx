@@ -98,9 +98,15 @@ const App: React.FC = () => {
       // Don't call initialize - main process already did it
       // Just check if it's ready yet
       const status = await window.identifier.getStatus();
+
+      // Only show notification on first transition to ready (not every poll)
+      const wasReady = systemStatus.identifier.ready;
+      const isNowReady = status.initialized && status.ready;
+
       setSystemStatus((prev) => ({ ...prev, identifier: status }));
 
-      if (status.initialized && status.ready && !systemStatus.identifier.ready) {
+      if (isNowReady && !wasReady) {
+        // First time becoming ready - show notification once
         console.log('[App] System ready');
         showNotification('success', 'System initialized - Ready to scan!');
       }
