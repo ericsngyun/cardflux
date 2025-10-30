@@ -38,8 +38,8 @@ export const CameraView: React.FC<CameraViewProps> = React.memo(({ onCapture, is
   const readyTimerRef = useRef<number>(0);
   const animationFrameRef = useRef<number | null>(null);
 
-  // Auto-capture settings
-  const [autoCapture, setAutoCapture] = useState(true);
+  // Auto-capture settings (disabled by default - manual scan recommended)
+  const [autoCapture, setAutoCapture] = useState(false);
   const [autoCapturCountdown, setAutoCapturCountdown] = useState<number | null>(null);
   const autoCapturTimerRef = useRef<NodeJS.Timeout | null>(null);
 
@@ -461,36 +461,85 @@ export const CameraView: React.FC<CameraViewProps> = React.memo(({ onCapture, is
     const video = videoRef.current;
     const canvas = canvasRef.current;
 
-    // Set canvas size to match video (capture at full resolution)
-    canvas.width = video.videoWidth;
-    canvas.height = video.videoHeight;
+    // Check if we have a detected card bbox
+    const hasBBox = detectionResult?.bbox && smoothedBBoxRef.current;
 
-    // Draw video frame to canvas with high-quality rendering
-    const ctx = canvas.getContext('2d', {
-      alpha: false,
-      desynchronized: false,
-      willReadFrequently: false,
-    });
+    if (hasBBox && smoothedBBoxRef.current) {
+      // Crop to detected card boundary
+      const { x, y, w, h } = smoothedBBoxRef.current;
 
-    if (ctx) {
-      // Use high-quality image smoothing
-      ctx.imageSmoothingEnabled = true;
-      ctx.imageSmoothingQuality = 'high';
+      // Add 5% padding around detected card for safety
+      const padding = 0.05;
+      const paddedX = Math.max(0, x - w * padding);
+      const paddedY = Math.max(0, y - h * padding);
+      const paddedW = Math.min(video.videoWidth - paddedX, w * (1 + 2 * padding));
+      const paddedH = Math.min(video.videoHeight - paddedY, h * (1 + 2 * padding));
 
-      // Draw the frame
-      ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+      // Set canvas to cropped size
+      canvas.width = paddedW;
+      canvas.height = paddedH;
 
-      // Convert to JPEG with high quality (98% for card details)
-      // JPEG chosen over PNG for faster transmission (card photos compress well)
-      const imageData = canvas.toDataURL('image/jpeg', 0.98);
+      const ctx = canvas.getContext('2d', {
+        alpha: false,
+        desynchronized: false,
+        willReadFrequently: false,
+      });
 
-      // Send to main process to save
-      const captureResult = await window.camera.capture(imageData);
+      if (ctx) {
+        // Use high-quality image smoothing
+        ctx.imageSmoothingEnabled = true;
+        ctx.imageSmoothingQuality = 'high';
 
-      if (captureResult.success && captureResult.imagePath) {
-        onCapture(captureResult.imagePath);
-      } else {
-        console.error('Capture failed:', captureResult.error);
+        // Draw only the cropped region
+        ctx.drawImage(
+          video,
+          paddedX, paddedY, paddedW, paddedH,  // Source rectangle (from video)
+          0, 0, paddedW, paddedH                // Destination rectangle (to canvas)
+        );
+
+        // Convert to JPEG with high quality (98% for card details)
+        const imageData = canvas.toDataURL('image/jpeg', 0.98);
+
+        // Send to main process to save
+        const captureResult = await window.camera.capture(imageData);
+
+        if (captureResult.success && captureResult.imagePath) {
+          onCapture(captureResult.imagePath);
+        } else {
+          console.error('Capture failed:', captureResult.error);
+        }
+      }
+    } else {
+      // No bbox detected - capture full frame (fallback)
+      // Python service will crop it server-side
+      canvas.width = video.videoWidth;
+      canvas.height = video.videoHeight;
+
+      const ctx = canvas.getContext('2d', {
+        alpha: false,
+        desynchronized: false,
+        willReadFrequently: false,
+      });
+
+      if (ctx) {
+        // Use high-quality image smoothing
+        ctx.imageSmoothingEnabled = true;
+        ctx.imageSmoothingQuality = 'high';
+
+        // Draw the full frame
+        ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+        // Convert to JPEG with high quality (98% for card details)
+        const imageData = canvas.toDataURL('image/jpeg', 0.98);
+
+        // Send to main process to save
+        const captureResult = await window.camera.capture(imageData);
+
+        if (captureResult.success && captureResult.imagePath) {
+          onCapture(captureResult.imagePath);
+        } else {
+          console.error('Capture failed:', captureResult.error);
+        }
       }
     }
   };
