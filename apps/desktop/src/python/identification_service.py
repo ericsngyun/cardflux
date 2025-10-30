@@ -314,8 +314,21 @@ class IdentificationService:
             if frame is None:
                 raise ValueError("Failed to decode image")
 
-            # Detect card
-            result = self.card_detector.detect_card(frame)
+            # Save frame temporarily for detection
+            import tempfile
+            with tempfile.NamedTemporaryFile(suffix='.jpg', delete=False) as tmp:
+                cv2.imwrite(tmp.name, frame)
+                tmp_path = tmp.name
+
+            # Detect card using detect_and_crop
+            result = self.card_detector.detect_and_crop(tmp_path)
+
+            # Clean up temp file
+            import os
+            try:
+                os.unlink(tmp_path)
+            except:
+                pass
 
             # Create visualization (optional)
             # vis_frame = self.card_detector.create_visualization(frame, result)

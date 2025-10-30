@@ -324,8 +324,10 @@ export class PythonIdentificationBridge extends EventEmitter {
         params,
       };
 
-      // Set timeout (30 seconds for identification, 60 for initialization)
-      const timeout = method === 'initialize' ? 60000 : 30000;
+      // Set timeout (20 seconds for identification, 60 for initialization)
+      // Reduced from 30s to 20s since we're optimizing performance
+      // Detection should be fast (5s timeout)
+      const timeout = method === 'initialize' ? 60000 : method === 'detect_card' ? 5000 : 20000;
       const timer = setTimeout(() => {
         const pending = this.pendingRequests.get(id);
         if (pending) {

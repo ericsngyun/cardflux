@@ -29,6 +29,7 @@ export const CameraView: React.FC<CameraViewProps> = React.memo(({ onCapture, is
   const [error, setError] = useState<string | null>(null);
   const [detectionResult, setDetectionResult] = useState<CardDetectionResult | null>(null);
   const detectionIntervalRef = useRef<NodeJS.Timeout | null>(null);
+  const detectionInProgressRef = useRef<boolean>(false);  // Prevent concurrent detections
 
   // Smoothing and stabilization
   const smoothedBBoxRef = useRef<SmoothedBBox | null>(null);
@@ -199,9 +200,12 @@ export const CameraView: React.FC<CameraViewProps> = React.memo(({ onCapture, is
   };
 
   const detectCardInFrame = async () => {
-    if (!videoRef.current || !canvasRef.current || isIdentifying) {
+    // Skip if already detecting (prevent request pileup)
+    if (!videoRef.current || !canvasRef.current || isIdentifying || detectionInProgressRef.current) {
       return;
     }
+
+    detectionInProgressRef.current = true;
 
     const video = videoRef.current;
     const canvas = canvasRef.current;
@@ -216,8 +220,23 @@ export const CameraView: React.FC<CameraViewProps> = React.memo(({ onCapture, is
 
     ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
 
-    // Convert to base64 (lower quality for detection, faster transmission)
-    const imageData = canvas.toDataURL('image/jpeg', 0.7);
+    // Convert to base64 with lower resolution for detection (reduce IPC overhead)
+    // Downsample to 640x360 for detection (4x smaller than full HD)
+    const detectionCanvas = document.createElement('canvas');
+    const targetWidth = 640;
+    const targetHeight = Math.round((canvas.height / canvas.width) * targetWidth);
+    detectionCanvas.width = targetWidth;
+    detectionCanvas.height = targetHeight;
+
+    const detectionCtx = detectionCanvas.getContext('2d', { alpha: false });
+    if (detectionCtx) {
+      detectionCtx.imageSmoothingEnabled = true;
+      detectionCtx.imageSmoothingQuality = 'medium';
+      detectionCtx.drawImage(canvas, 0, 0, targetWidth, targetHeight);
+    }
+
+    // Convert to base64 (low quality for detection, faster transmission)
+    const imageData = detectionCanvas.toDataURL('image/jpeg', 0.5);
 
     try {
       // Call detection API
@@ -253,6 +272,9 @@ export const CameraView: React.FC<CameraViewProps> = React.memo(({ onCapture, is
       }
     } catch (error) {
       console.error('Detection error:', error);
+    } finally {
+      // Always clear the in-progress flag
+      detectionInProgressRef.current = false;
     }
   };
 
@@ -278,8 +300,9 @@ export const CameraView: React.FC<CameraViewProps> = React.memo(({ onCapture, is
         readyTimerRef.current = Date.now();
         startAutoCapturCountdown();
       }
+      // If countdown already started, let it continue
     } else {
-      // Card not ready anymore - reset
+      // Card not ready anymore - PROPERLY reset all timers
       if (autoCapturTimerRef.current) {
         clearTimeout(autoCapturTimerRef.current);
         autoCapturTimerRef.current = null;
@@ -401,11 +424,12 @@ export const CameraView: React.FC<CameraViewProps> = React.memo(({ onCapture, is
   // Start/stop live detection when camera state changes
   useEffect(() => {
     if (isCameraActive && !isIdentifying) {
-      // Start detection interval (every 300ms for stable, smooth feedback)
-      // Increased from 200ms to reduce CPU usage and improve stability
+      // Start detection interval (every 500ms for better performance)
+      // Reduced frequency to minimize IPC overhead and CPU usage
+      // 500ms is still responsive enough for user feedback
       detectionIntervalRef.current = setInterval(() => {
         detectCardInFrame();
-      }, 300);
+      }, 500);
     } else {
       // Stop detection interval
       if (detectionIntervalRef.current) {
@@ -418,6 +442,7 @@ export const CameraView: React.FC<CameraViewProps> = React.memo(({ onCapture, is
       statusHistoryRef.current = [];
       stableStatusRef.current = 'no_card';
       setAutoCapturCountdown(null);
+      detectionInProgressRef.current = false;
     }
 
     return () => {

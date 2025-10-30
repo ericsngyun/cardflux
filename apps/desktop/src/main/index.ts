@@ -118,6 +118,17 @@ app.whenReady().then(async () => {
       return;
     }
 
+    // Initialize Python identification service ONCE at startup
+    logger.info('App', 'Initializing Python identification service');
+    try {
+      identificationService = new PythonIdentificationBridge();
+      await identificationService.start('one-piece');
+      logger.info('App', 'Python identification service ready');
+    } catch (error) {
+      logger.error('App', 'Failed to initialize identification service', error as Error);
+      // Continue anyway - we'll show error in UI
+    }
+
     createWindow();
     setupIpcHandlers(ipcMain);
 
@@ -155,6 +166,11 @@ app.on('will-quit', async () => {
 // Handle identification service
 ipcMain.handle('identifier:initialize', async (_event, game: string = 'one-piece') => {
   try {
+    // Service is already initialized at startup - just return status
+    if (identificationService && identificationService.isInitialized()) {
+      return { success: true, game };
+    }
+    // If not initialized, try to initialize now
     if (!identificationService) {
       identificationService = new PythonIdentificationBridge();
       await identificationService.start(game);
@@ -169,9 +185,7 @@ ipcMain.handle('identifier:initialize', async (_event, game: string = 'one-piece
 ipcMain.handle('identifier:identify', async (_event, imagePath: string, options: any = {}) => {
   try {
     if (!identificationService || !identificationService.isInitialized()) {
-      // Auto-initialize if not ready
-      identificationService = new PythonIdentificationBridge();
-      await identificationService.start(options.game || 'one-piece');
+      return { success: false, error: 'Service not initialized' };
     }
 
     const result = await identificationService.identifyCard(imagePath, options);
@@ -185,9 +199,7 @@ ipcMain.handle('identifier:identify', async (_event, imagePath: string, options:
 ipcMain.handle('identifier:identify-multi-frame', async (_event, imagePaths: string[], options: any = {}) => {
   try {
     if (!identificationService || !identificationService.isInitialized()) {
-      // Auto-initialize if not ready
-      identificationService = new PythonIdentificationBridge();
-      await identificationService.start(options.game || 'one-piece');
+      return { success: false, error: 'Service not initialized' };
     }
 
     const result = await identificationService.identifyCardMultiFrame(imagePaths, options);

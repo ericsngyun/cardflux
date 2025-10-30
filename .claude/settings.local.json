@@ -26,7 +26,8 @@
       "Bash(pwsh scripts/setup/verify-complete-setup.ps1)",
       "Bash(cat:*)",
       "Bash(pnpm list:*)",
-      "Bash(rm:*)"
+      "Bash(rm:*)",
+      "Bash(git lfs ls-files:*)"
     ],
     "deny": [],
     "ask": []
