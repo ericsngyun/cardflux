@@ -110,12 +110,11 @@ app.whenReady().then(async () => {
       // TODO: Show first-run wizard
     }
 
-    // Request camera permissions
+    // Request camera permissions (but don't quit if denied - let user see error in UI)
     const hasPermission = await requestCameraPermission();
     if (!hasPermission) {
-      logger.error('App', 'Camera permission denied');
-      app.quit();
-      return;
+      logger.warn('App', 'Camera permission denied - app will show error UI');
+      // Don't quit - let the app show camera error in UI
     }
 
     // Initialize Python identification service ONCE at startup

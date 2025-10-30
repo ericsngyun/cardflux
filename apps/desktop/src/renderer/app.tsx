@@ -85,30 +85,32 @@ const App: React.FC = () => {
   }, [settings]);
 
 
-  // Initialize identification service on mount
+  // Poll Python service status until ready (no re-initialization)
   useEffect(() => {
-    initializeSystem();
+    checkSystemStatus();
+    const interval = setInterval(checkSystemStatus, 1000); // Check every second
+
+    return () => clearInterval(interval);
   }, []);
 
-  const initializeSystem = async () => {
+  const checkSystemStatus = async () => {
     try {
-      console.log('[App] Initializing identification service...');
-      const result = await window.identifier.initialize(settings.tcgGame);
-
-      if (!result.success) {
-        throw new Error(result.error || 'Failed to initialize');
-      }
-
-      // Get status
+      // Don't call initialize - main process already did it
+      // Just check if it's ready yet
       const status = await window.identifier.getStatus();
       setSystemStatus((prev) => ({ ...prev, identifier: status }));
 
-      console.log('[App] System ready');
-      showNotification('success', 'System initialized - Ready to scan!');
+      if (status.initialized && status.ready && !systemStatus.identifier.ready) {
+        console.log('[App] System ready');
+        showNotification('success', 'System initialized - Ready to scan!');
+      }
     } catch (error: any) {
-      console.error('[App] Initialization error:', error);
-      setInitError(error.message || 'Failed to initialize system');
-      showNotification('error', `Initialization failed: ${error.message}`);
+      console.error('[App] Status check error:', error);
+      // Don't set init error yet - Python might still be starting
+      if (systemStatus.identifier.ready) {
+        // Only show error if we were ready before
+        setInitError(error.message || 'Failed to connect to identification service');
+      }
     }
   };
 
@@ -548,6 +550,34 @@ const App: React.FC = () => {
     return () => window.removeEventListener('keydown', handleKeyPress);
   }, [showSettings, cards, handleClearStack, handleExportStack]);
 
+  // Show loading screen while Python service is initializing
+  if (!systemStatus.identifier.ready && !initError) {
+    return (
+      <div className="app-container loading-state">
+        <div className="loading-panel">
+          <div className="loading-spinner-large"></div>
+          <h1>Initializing CardFlux</h1>
+          <p className="loading-message">Loading AI models and card database...</p>
+          <div className="loading-steps">
+            <div className={`loading-step ${systemStatus.identifier.initialized ? 'complete' : 'active'}`}>
+              <span className="step-icon">{systemStatus.identifier.initialized ? '✓' : '⏳'}</span>
+              <span>Starting Python service</span>
+            </div>
+            <div className={`loading-step ${systemStatus.identifier.ready ? 'complete' : systemStatus.identifier.initialized ? 'active' : ''}`}>
+              <span className="step-icon">{systemStatus.identifier.ready ? '✓' : systemStatus.identifier.initialized ? '⏳' : '○'}</span>
+              <span>Loading DINOv2 vision model</span>
+            </div>
+            <div className={`loading-step ${systemStatus.identifier.ready ? 'complete' : ''}`}>
+              <span className="step-icon">{systemStatus.identifier.ready ? '✓' : '○'}</span>
+              <span>Loading card index (5,390 cards)</span>
+            </div>
+          </div>
+          <p className="loading-hint">This takes 3-5 seconds on first startup</p>
+        </div>
+      </div>
+    );
+  }
+
   if (initError) {
     return (
       <div className="app-container error-state">
@@ -564,8 +594,8 @@ const App: React.FC = () => {
               <li>Check the console for detailed error messages</li>
             </ul>
           </div>
-          <button className="btn btn-primary" onClick={initializeSystem}>
-            Retry Initialization
+          <button className="btn btn-primary" onClick={checkSystemStatus}>
+            Retry Connection
           </button>
         </div>
       </div>
