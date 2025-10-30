@@ -217,9 +217,18 @@ export const CameraView: React.FC<CameraViewProps> = React.memo(({ onCapture, is
       return;
     }
 
+    const video = videoRef.current;
+
+    // CRITICAL: Check if video has loaded frames before attempting detection
+    // readyState >= 2 means HAVE_CURRENT_DATA (frame is available)
+    // videoWidth/videoHeight > 0 means dimensions are known
+    if (video.readyState < 2 || video.videoWidth === 0 || video.videoHeight === 0) {
+      console.debug('[Camera] Video not ready for detection (readyState:', video.readyState, 'size:', video.videoWidth, 'x', video.videoHeight, ')');
+      return;
+    }
+
     detectionInProgressRef.current = true;
 
-    const video = videoRef.current;
     const canvas = canvasRef.current;
 
     // Set canvas size to match video
@@ -228,7 +237,10 @@ export const CameraView: React.FC<CameraViewProps> = React.memo(({ onCapture, is
 
     // Draw current frame
     const ctx = canvas.getContext('2d', { alpha: false });
-    if (!ctx) return;
+    if (!ctx) {
+      detectionInProgressRef.current = false;
+      return;
+    }
 
     ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
 
