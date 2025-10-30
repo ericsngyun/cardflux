@@ -25,9 +25,9 @@ const PYTHON_VERSION = '3.13.1';
 const PYTHON_DOWNLOAD_URL = `https://www.python.org/ftp/python/${PYTHON_VERSION}/python-${PYTHON_VERSION}-embed-amd64.zip`;
 
 // SHA256 checksum from https://www.python.org/downloads/release/python-3131/
-// Verified on 2025-10-20 - Windows embeddable package (64-bit)
+// Updated 2025-10-30 - Windows embeddable package (64-bit)
 // NOTE: Update this when Python version changes
-const PYTHON_SHA256 = '3e63bf8e0138d05660702e4e85c3e8e6dcbc0e86e5cb15dd7f5f3f1b8f0b7f2c';
+const PYTHON_SHA256 = '7b7923ff0183a8b8fca90f6047184b419b108cb437f75fc1c002f9d2f8bcec16';
 
 // get-pip.py SHA256 from https://bootstrap.pypa.io/get-pip.py
 // Downloaded and verified on 2025-10-20
