@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useCallback, useMemo } from 'react';
+import React, { useEffect, useState, useCallback, useMemo, useRef } from 'react';
 import { createRoot } from 'react-dom/client';
 import { CameraView } from './components/CameraView';
 import { CardStack, CardStackItem } from './components/CardStack';
@@ -48,6 +48,9 @@ const App: React.FC = () => {
       return null;
     }
   });
+
+  // Use ref to track if we've shown the "System initialized" notification
+  const hasShownReadyNotification = useRef(false);
   const [scanStats, setScanStats] = useState({
     totalScans: 0,
     highConfidence: 0,
@@ -99,15 +102,15 @@ const App: React.FC = () => {
       // Just check if it's ready yet
       const status = await window.identifier.getStatus();
 
-      // Only show notification on first transition to ready (not every poll)
-      const wasReady = systemStatus.identifier.ready;
+      // Only show notification ONCE when system first becomes ready
       const isNowReady = status.initialized && status.ready;
 
       setSystemStatus((prev) => ({ ...prev, identifier: status }));
 
-      if (isNowReady && !wasReady) {
+      if (isNowReady && !hasShownReadyNotification.current) {
         // First time becoming ready - show notification once
-        console.log('[App] System ready');
+        console.log('[App] System ready - showing notification');
+        hasShownReadyNotification.current = true;
         showNotification('success', 'System initialized - Ready to scan!');
       }
     } catch (error: any) {

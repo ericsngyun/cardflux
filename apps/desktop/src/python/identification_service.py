@@ -330,13 +330,23 @@ class IdentificationService:
             except:
                 pass
 
-            # Create visualization (optional)
-            # vis_frame = self.card_detector.create_visualization(frame, result)
-            # vis_base64 = self._encode_image_base64(vis_frame)
+            # The result dict contains enum objects that aren't JSON serializable
+            # Convert enum to string value
+            status_value = result['status']
+            if hasattr(status_value, 'value'):
+                status_value = status_value.value
 
-            # Result is already a dict with the correct structure
-            # Just return it directly
-            return result
+            # Serialize the result for JSON-RPC response
+            serialized_result = {
+                "status": status_value,
+                "confidence": float(result.get('confidence', 0)),
+                "qualityScore": float(result.get('quality_score', 0)),
+                "warnings": result.get('warnings', []),
+                "isReady": status_value in ('perfect', 'good'),
+                "bbox": result.get('bounding_box') if result.get('bounding_box') else None,
+            }
+
+            return serialized_result
         except Exception as e:
             self._log(f"Card detection error: {e}")
             raise
