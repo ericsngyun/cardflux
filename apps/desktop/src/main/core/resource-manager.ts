@@ -191,9 +191,10 @@ export class ResourceManager {
 
     // Validate scripts path exists and is within project root
     const normalizedScriptsPath = path.normalize(scriptsPath).toLowerCase();
-    if (!normalizedScriptsPath.startsWith(normalizedProjectRoot)) {
+    const normalizedProjectRootLower = normalizedProjectRoot.toLowerCase();
+    if (!normalizedScriptsPath.startsWith(normalizedProjectRootLower)) {
       throw new Error(
-        `Path traversal detected in scripts: ${scriptsPath}`
+        `Path traversal detected in scripts: ${scriptsPath} (normalized: ${normalizedScriptsPath}) does not start with project root: ${normalizedProjectRootLower}`
       );
     }
 
