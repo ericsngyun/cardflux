@@ -550,6 +550,22 @@ const App: React.FC = () => {
     return () => window.removeEventListener('keydown', handleKeyPress);
   }, [showSettings, cards, handleClearStack, handleExportStack]);
 
+  // ⚠️ IMPORTANT: All hooks must be called BEFORE any conditional returns (Rules of Hooks)
+  // Memoize total value calculation for performance
+  const totalValue = useMemo(() => {
+    return cards.reduce((sum, card) => sum + card.price, 0);
+  }, [cards]);
+
+  // Calculate scan statistics
+  const sessionDuration = Math.floor((Date.now() - scanStats.sessionStart) / 60000); // minutes
+  const scansPerMinute = sessionDuration > 0 ? (scanStats.totalScans / sessionDuration).toFixed(1) : '0.0';
+  const successRate = scanStats.totalScans > 0
+    ? (((scanStats.highConfidence + scanStats.moderateConfidence) / scanStats.totalScans) * 100).toFixed(0)
+    : '0';
+
+  const isSystemReady = systemStatus.identifier.ready;
+
+  // Conditional rendering AFTER all hooks
   // Show loading screen while Python service is initializing
   if (!systemStatus.identifier.ready && !initError) {
     return (
@@ -601,20 +617,6 @@ const App: React.FC = () => {
       </div>
     );
   }
-
-  const isSystemReady = systemStatus.identifier.ready;
-
-  // Memoize total value calculation for performance
-  const totalValue = useMemo(() => {
-    return cards.reduce((sum, card) => sum + card.price, 0);
-  }, [cards]);
-
-  // Calculate scan statistics
-  const sessionDuration = Math.floor((Date.now() - scanStats.sessionStart) / 60000); // minutes
-  const scansPerMinute = sessionDuration > 0 ? (scanStats.totalScans / sessionDuration).toFixed(1) : '0.0';
-  const successRate = scanStats.totalScans > 0
-    ? (((scanStats.highConfidence + scanStats.moderateConfidence) / scanStats.totalScans) * 100).toFixed(0)
-    : '0';
 
   return (
     <div className="app-container">
