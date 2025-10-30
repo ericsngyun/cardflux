@@ -12,6 +12,9 @@ let identificationService: PythonIdentificationBridge | null = null;
 let resourceManager: ResourceManager | null = null;
 let dataManager: DataManager | null = null;
 
+// CRITICAL FIX: Add initialization lock to prevent race conditions
+let isInitializing = false;
+
 /**
  * Request camera permissions on macOS
  */
@@ -169,10 +172,22 @@ ipcMain.handle('identifier:initialize', async (_event, game: string = 'one-piece
     if (identificationService && identificationService.isInitialized()) {
       return { success: true, game };
     }
+
+    // CRITICAL FIX: Prevent concurrent initialization attempts
+    if (isInitializing) {
+      return { success: false, error: 'Initialization already in progress' };
+    }
+
     // If not initialized, try to initialize now
     if (!identificationService) {
-      identificationService = new PythonIdentificationBridge();
-      await identificationService.start(game);
+      isInitializing = true;
+      try {
+        identificationService = new PythonIdentificationBridge();
+        await identificationService.start(game);
+        return { success: true, game };
+      } finally {
+        isInitializing = false;
+      }
     }
     return { success: true, game };
   } catch (error: any) {
@@ -250,6 +265,30 @@ ipcMain.handle('identifier:stop', async () => {
 // Handle camera capture for identification
 ipcMain.handle('camera:capture', async (_event, imageData: string) => {
   try {
+    // HIGH SEVERITY FIX: Validate input to prevent memory exhaustion attacks
+    if (!imageData || typeof imageData !== 'string') {
+      throw new Error('Invalid image data: must be a non-empty string');
+    }
+
+    // Check data URI prefix
+    if (!imageData.startsWith('data:image/')) {
+      throw new Error('Invalid image data: must be a data URI with image/* MIME type');
+    }
+
+    // Extract base64 portion
+    const base64Data = imageData.replace(/^data:image\/\w+;base64,/, '');
+
+    // Validate base64 size (10MB limit = 13.3MB base64)
+    const MAX_BASE64_SIZE = 14 * 1024 * 1024; // ~10MB actual image data
+    if (base64Data.length > MAX_BASE64_SIZE) {
+      throw new Error(`Image too large: ${(base64Data.length / 1024 / 1024).toFixed(1)}MB (max 10MB)`);
+    }
+
+    // Validate base64 format
+    if (!/^[A-Za-z0-9+/=]+$/.test(base64Data)) {
+      throw new Error('Invalid base64 encoding');
+    }
+
     // Use temp directory
     const tempDir = path.join(app.getPath('temp'), 'cardflux');
     if (!fs.existsSync(tempDir)) {
@@ -259,7 +298,6 @@ ipcMain.handle('camera:capture', async (_event, imageData: string) => {
     const outputPath = path.join(tempDir, `capture-${Date.now()}.jpg`);
 
     // Convert base64 to buffer and save
-    const base64Data = imageData.replace(/^data:image\/\w+;base64,/, '');
     const buffer = Buffer.from(base64Data, 'base64');
     fs.writeFileSync(outputPath, buffer);
 
@@ -274,6 +312,12 @@ ipcMain.handle('camera:capture', async (_event, imageData: string) => {
 // Handle data sync
 ipcMain.handle('sync:data', async (_event, game: string) => {
   try {
+    // CRITICAL FIX: Whitelist allowed game values to prevent command injection
+    const ALLOWED_GAMES = ['one-piece', 'pokemon', 'magic', 'yugioh'];
+    if (!ALLOWED_GAMES.includes(game)) {
+      throw new Error(`Invalid game: ${game}. Allowed games: ${ALLOWED_GAMES.join(', ')}`);
+    }
+
     console.log('[Sync] Starting data sync for:', game);
 
     const { spawn } = require('child_process');
@@ -292,18 +336,12 @@ ipcMain.handle('sync:data', async (_event, game: string) => {
     }
 
     return new Promise((resolve, reject) => {
-      // Use shell to properly resolve pnpm in PATH
-      // On Windows, this uses cmd.exe which has access to PATH
-      const command = process.platform === 'win32'
-        ? `pnpm tsx "${scraperPath}"`
-        : `pnpm tsx ${scraperPath}`;
-
-      console.log('[Sync] Running command:', command);
-
-      const scraper = spawn(command, [], {
+      // CRITICAL FIX: Use argument array instead of shell=true to prevent injection
+      // Pass pnpm and tsx as separate arguments
+      const scraper = spawn('pnpm', ['tsx', scraperPath], {
         cwd: rootDir,
         stdio: 'pipe',
-        shell: true, // Use shell to resolve pnpm in PATH
+        shell: false, // SECURE: No shell interpretation
         env: {
           ...process.env,
           FORCE_COLOR: '0', // Disable colors in output for easier parsing

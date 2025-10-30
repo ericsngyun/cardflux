@@ -124,10 +124,22 @@ export const CameraView: React.FC<CameraViewProps> = React.memo(({ onCapture, is
   };
 
   const stopCamera = () => {
-    if (videoRef.current && videoRef.current.srcObject) {
-      const stream = videoRef.current.srcObject as MediaStream;
-      stream.getTracks().forEach((track) => track.stop());
-      videoRef.current.srcObject = null;
+    // HIGH SEVERITY FIX: Add error handling to prevent resource leak
+    try {
+      if (videoRef.current && videoRef.current.srcObject) {
+        const stream = videoRef.current.srcObject as MediaStream;
+        // Check if tracks are still active before stopping
+        stream.getTracks().forEach((track) => {
+          if (track.readyState !== 'ended') {
+            track.stop();
+          }
+        });
+        videoRef.current.srcObject = null;
+      }
+    } catch (error) {
+      console.error('[Camera] Error stopping video tracks:', error);
+    } finally {
+      // Always mark camera as inactive, even if track.stop() fails
       setIsCameraActive(false);
     }
 

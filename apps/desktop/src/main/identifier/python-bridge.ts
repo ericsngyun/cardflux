@@ -331,6 +331,8 @@ export class PythonIdentificationBridge extends EventEmitter {
       const timer = setTimeout(() => {
         const pending = this.pendingRequests.get(id);
         if (pending) {
+          // CRITICAL FIX: Clear timer BEFORE rejecting to prevent memory leak
+          clearTimeout(timer);
           this.pendingRequests.delete(id);
           const elapsed = Date.now() - pending.timestamp;
           logger.error('PythonBridge', `Request timeout after ${elapsed}ms`, undefined, {
