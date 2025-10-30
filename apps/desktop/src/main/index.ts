@@ -6,6 +6,7 @@ import { PythonIdentificationBridge } from './identifier/python-bridge';
 import { logger } from './core/logger';
 import { ResourceManager } from './core/resource-manager';
 import { DataManager } from './core/data-manager';
+import { createRateLimitMiddleware } from './core/rate-limiter';
 
 let mainWindow: BrowserWindow | null = null;
 let identificationService: PythonIdentificationBridge | null = null;
@@ -14,6 +15,38 @@ let dataManager: DataManager | null = null;
 
 // CRITICAL FIX: Add initialization lock to prevent race conditions
 let isInitializing = false;
+
+// HIGH SEVERITY FIX: Track active identification request for cancellation
+let activeIdentificationAbortController: AbortController | null = null;
+
+// HIGH SEVERITY FIX: Rate limiting to prevent DoS attacks via IPC spam
+// Identification: Max 10 requests per 10 seconds (600ms avg per request)
+const identifyRateLimiter = createRateLimitMiddleware({
+  maxRequests: 10,
+  windowMs: 10000,
+  message: 'Too many identification requests. Please wait a moment.',
+});
+
+// Detection: Max 30 requests per 10 seconds (~333ms interval, we poll at 500ms)
+const detectRateLimiter = createRateLimitMiddleware({
+  maxRequests: 30,
+  windowMs: 10000,
+  message: 'Detection rate limit exceeded.',
+});
+
+// Camera capture: Max 20 captures per 10 seconds (user can spam SPACE key)
+const captureRateLimiter = createRateLimitMiddleware({
+  maxRequests: 20,
+  windowMs: 10000,
+  message: 'Too many capture requests. Please wait a moment.',
+});
+
+// Data sync: Max 1 request per 60 seconds (expensive operation)
+const syncRateLimiter = createRateLimitMiddleware({
+  maxRequests: 1,
+  windowMs: 60000,
+  message: 'Data sync already in progress. Please wait before syncing again.',
+});
 
 /**
  * Request camera permissions on macOS
@@ -196,19 +229,46 @@ ipcMain.handle('identifier:initialize', async (_event, game: string = 'one-piece
   }
 });
 
-ipcMain.handle('identifier:identify', async (_event, imagePath: string, options: any = {}) => {
+ipcMain.handle('identifier:identify', identifyRateLimiter.wrap('identifier:identify', async (_event, imagePath: string, options: any = {}) => {
   try {
     if (!identificationService || !identificationService.isInitialized()) {
       return { success: false, error: 'Service not initialized' };
     }
 
-    const result = await identificationService.identifyCard(imagePath, options);
-    return { success: true, result };
+    // HIGH SEVERITY FIX: Cancel previous identification if still running
+    if (activeIdentificationAbortController) {
+      logger.info('Main', 'Cancelling previous identification request');
+      activeIdentificationAbortController.abort();
+      activeIdentificationAbortController = null;
+    }
+
+    // Create new abort controller for this request
+    activeIdentificationAbortController = new AbortController();
+    const currentController = activeIdentificationAbortController;
+
+    try {
+      // Note: Python service doesn't support AbortSignal yet, but we can at least
+      // detect when request is superseded and avoid returning stale results
+      const result = await identificationService.identifyCard(imagePath, options);
+
+      // Check if this request was cancelled while waiting
+      if (currentController.signal.aborted) {
+        logger.info('Main', 'Identification completed but was cancelled - discarding result');
+        return { success: false, error: 'Request was cancelled' };
+      }
+
+      return { success: true, result };
+    } finally {
+      // Clear controller if it's still the active one
+      if (activeIdentificationAbortController === currentController) {
+        activeIdentificationAbortController = null;
+      }
+    }
   } catch (error: any) {
     console.error('Identification failed:', error);
     return { success: false, error: error.message };
   }
-});
+}));
 
 ipcMain.handle('identifier:identify-multi-frame', async (_event, imagePaths: string[], options: any = {}) => {
   try {
@@ -224,7 +284,7 @@ ipcMain.handle('identifier:identify-multi-frame', async (_event, imagePaths: str
   }
 });
 
-ipcMain.handle('identifier:detect-card', async (_event, imageData: string) => {
+ipcMain.handle('identifier:detect-card', detectRateLimiter.wrap('identifier:detect-card', async (_event, imageData: string) => {
   try {
     if (!identificationService || !identificationService.isInitialized()) {
       return { success: false, error: 'Service not initialized' };
@@ -236,7 +296,7 @@ ipcMain.handle('identifier:detect-card', async (_event, imageData: string) => {
     console.error('Card detection failed:', error);
     return { success: false, error: error.message };
   }
-});
+}));
 
 ipcMain.handle('identifier:status', async () => {
   if (!identificationService) {
@@ -263,7 +323,7 @@ ipcMain.handle('identifier:stop', async () => {
 });
 
 // Handle camera capture for identification
-ipcMain.handle('camera:capture', async (_event, imageData: string) => {
+ipcMain.handle('camera:capture', captureRateLimiter.wrap('camera:capture', async (_event, imageData: string) => {
   try {
     // HIGH SEVERITY FIX: Validate input to prevent memory exhaustion attacks
     if (!imageData || typeof imageData !== 'string') {
@@ -307,10 +367,10 @@ ipcMain.handle('camera:capture', async (_event, imageData: string) => {
     console.error('Camera capture failed:', error);
     return { success: false, error: error.message };
   }
-});
+}));
 
 // Handle data sync
-ipcMain.handle('sync:data', async (_event, game: string) => {
+ipcMain.handle('sync:data', syncRateLimiter.wrap('sync:data', async (_event, game: string) => {
   try {
     // CRITICAL FIX: Whitelist allowed game values to prevent command injection
     const ALLOWED_GAMES = ['one-piece', 'pokemon', 'magic', 'yugioh'];
@@ -405,4 +465,4 @@ ipcMain.handle('sync:data', async (_event, game: string) => {
     console.error('[Sync] Sync failed:', error);
     return { success: false, error: error.message };
   }
-});
+}));

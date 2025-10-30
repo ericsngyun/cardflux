@@ -170,13 +170,18 @@ export class ResourceManager {
       );
     }
 
-    // 3. Path must not escape outside project
-    // Ensure appPath starts with projectRoot (or vice versa for validation)
-    const normalizedAppPath = path.normalize(appPath).toLowerCase();
-    const normalizedProjectRoot = path.normalize(projectRoot).toLowerCase();
-    if (!normalizedAppPath.startsWith(normalizedProjectRoot)) {
+    // 3. HIGH SEVERITY FIX: Prevent path traversal using path.relative()
+    // Check that appPath doesn't escape projectRoot by using '..'
+    const normalizedProjectRoot = path.normalize(projectRoot);
+    const normalizedAppPath = path.normalize(appPath);
+
+    // Get relative path from project root to app path
+    const relativePath = path.relative(normalizedProjectRoot, normalizedAppPath);
+
+    // If relative path starts with '..', appPath is outside projectRoot
+    if (relativePath.startsWith('..') || path.isAbsolute(relativePath)) {
       throw new Error(
-        `Path traversal detected: appPath=${appPath} does not start with projectRoot=${projectRoot}`
+        `Path traversal detected: appPath=${appPath} escapes projectRoot=${projectRoot} (relative: ${relativePath})`
       );
     }
 

@@ -174,21 +174,53 @@ export class PythonIdentificationBridge extends EventEmitter {
         return;
       }
 
-      this.process.once('exit', () => {
-        logger.info('PythonBridge', 'Process stopped gracefully');
-        resolve();
-      });
+      let resolved = false;
+
+      const exitHandler = (code: number | null) => {
+        if (!resolved) {
+          resolved = true;
+          logger.info('PythonBridge', 'Process stopped gracefully', { exitCode: code });
+          resolve();
+        }
+      };
+
+      this.process.once('exit', exitHandler);
 
       logger.info('PythonBridge', 'Sending SIGTERM to Python process');
       this.process.kill('SIGTERM');
 
-      // Force kill after 5 seconds
-      setTimeout(() => {
+      // Force kill after 5 seconds if still running
+      const forceKillTimer = setTimeout(() => {
         if (this.process && !this.process.killed) {
           logger.warn('PythonBridge', 'Force killing process with SIGKILL');
           this.process.kill('SIGKILL');
+
+          // HIGH SEVERITY FIX: Verify termination after SIGKILL
+          // Give process 2 more seconds to die, then check if it's actually dead
+          setTimeout(() => {
+            if (this.process && !this.process.killed) {
+              logger.error('PythonBridge', 'CRITICAL: Process did not terminate after SIGKILL!', undefined, {
+                pid: this.process.pid,
+              });
+              // Force resolve to prevent hanging, but log the zombie
+              if (!resolved) {
+                resolved = true;
+                resolve();
+              }
+            }
+          }, 2000);
         }
       }, 5000);
+
+      // Absolute timeout: resolve after 10 seconds no matter what
+      setTimeout(() => {
+        if (!resolved) {
+          resolved = true;
+          logger.error('PythonBridge', 'Process stop timeout - forcing resolve', undefined);
+          clearTimeout(forceKillTimer);
+          resolve();
+        }
+      }, 10000);
     });
   }
 
