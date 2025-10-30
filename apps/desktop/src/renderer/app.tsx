@@ -90,10 +90,56 @@ const App: React.FC = () => {
 
   // Poll Python service status until ready (no re-initialization)
   useEffect(() => {
-    checkSystemStatus();
-    const interval = setInterval(checkSystemStatus, 1000); // Check every second
+    let startupPollInterval: NodeJS.Timeout | null = null;
+    let healthCheckInterval: NodeJS.Timeout | null = null;
+    let attempts = 0;
+    const maxStartupAttempts = 30;
 
-    return () => clearInterval(interval);
+    const startupPoll = async () => {
+      // Initial check
+      const initialStatus = await checkSystemStatus();
+
+      // If already ready on first check, skip to health check mode
+      if (initialStatus?.ready) {
+        console.log('[App] Service already ready - starting health check mode');
+        healthCheckInterval = setInterval(checkSystemStatus, 30000);
+        return;
+      }
+
+      // Otherwise, poll aggressively every 1 second during startup
+      startupPollInterval = setInterval(async () => {
+        attempts++;
+        const status = await checkSystemStatus();
+
+        // Once ready, stop startup polling and switch to health check mode
+        if (status?.ready) {
+          console.log('[App] Service became ready - switching to health check mode (30s intervals)');
+          if (startupPollInterval) {
+            clearInterval(startupPollInterval);
+            startupPollInterval = null;
+          }
+          // Switch to occasional health check (every 30 seconds)
+          healthCheckInterval = setInterval(checkSystemStatus, 30000);
+          return;
+        }
+
+        // Give up after 30 seconds if not ready
+        if (attempts >= maxStartupAttempts && !status?.ready) {
+          if (startupPollInterval) {
+            clearInterval(startupPollInterval);
+            startupPollInterval = null;
+          }
+          setInitError('Python service failed to start within 30 seconds');
+        }
+      }, 1000);
+    };
+
+    startupPoll();
+
+    return () => {
+      if (startupPollInterval) clearInterval(startupPollInterval);
+      if (healthCheckInterval) clearInterval(healthCheckInterval);
+    };
   }, []);
 
   const checkSystemStatus = async () => {
@@ -113,6 +159,8 @@ const App: React.FC = () => {
         hasShownReadyNotification.current = true;
         showNotification('success', 'System initialized - Ready to scan!');
       }
+
+      return status;
     } catch (error: any) {
       console.error('[App] Status check error:', error);
       // Don't set init error yet - Python might still be starting
@@ -120,6 +168,7 @@ const App: React.FC = () => {
         // Only show error if we were ready before
         setInitError(error.message || 'Failed to connect to identification service');
       }
+      return null;
     }
   };
 
