@@ -165,10 +165,14 @@ export class DataManager extends EventEmitter {
    */
   isGameInstalled(game: string): boolean {
     const dataDir = this.resourceManager.getDataDir();
+    // dataDir points to PROJECT_ROOT/data
+    // artifacts are at PROJECT_ROOT/artifacts (sibling of data/)
+    const projectRoot = path.dirname(dataDir);
+
     const gamePaths = [
-      path.join(dataDir, 'data', 'images', game),
-      path.join(dataDir, 'artifacts', 'faiss', `${game}-dinov2`),
-      path.join(dataDir, 'artifacts', 'metadata', 'embeddings', `${game}-dinov2`),
+      path.join(dataDir, 'images', game),
+      path.join(projectRoot, 'artifacts', 'faiss', `${game}-dinov2`),
+      path.join(projectRoot, 'artifacts', 'metadata', 'embeddings', `${game}-dinov2`),
     ];
 
     const installed = gamePaths.every(p => fs.existsSync(p));
@@ -223,6 +227,8 @@ export class DataManager extends EventEmitter {
 
     const gameDb = this.manifest[game];
     const dataDir = this.resourceManager.getDataDir();
+    // Manifest paths are relative to PROJECT_ROOT, not dataDir
+    const projectRoot = path.dirname(dataDir);
 
     try {
       // Download all files
@@ -238,7 +244,7 @@ export class DataManager extends EventEmitter {
 
         // Extract
         logger.info('DataManager', `Extracting ${fileType}`, { game });
-        const destPath = path.join(dataDir, fileInfo.path);
+        const destPath = path.join(projectRoot, fileInfo.path);
         await this.extractTarGz(tempPath, destPath);
 
         // Clean up temp file
