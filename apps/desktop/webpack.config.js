@@ -1,4 +1,5 @@
 const path = require('path');
+const webpack = require('webpack');
 const CopyWebpackPlugin = require('copy-webpack-plugin');
 const HtmlWebpackPlugin = require('html-webpack-plugin');
 
@@ -78,6 +79,7 @@ module.exports = [
       filename: isDevelopment ? '[name].js' : '[name].[contenthash:8].js',
       chunkFilename: isDevelopment ? '[name].chunk.js' : '[name].[contenthash:8].chunk.js',
       clean: true, // Clean output directory before build
+      globalObject: 'globalThis', // Fix webpack 5 global reference for Electron
     },
     resolve: {
       extensions: ['.tsx', '.ts', '.js'],
