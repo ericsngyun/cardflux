@@ -1,4 +1,11 @@
 import React, { useRef, useEffect, useState } from 'react';
+import { createModuleLogger } from '../utils/logger';
+import {
+  CAMERA_CONSTANTS,
+  POLL_INTERVALS,
+} from '../constants';
+
+const logger = createModuleLogger('CameraView');
 
 interface CameraViewProps {
   onCapture: (imagePath: string) => void;
@@ -31,6 +38,9 @@ export const CameraView: React.FC<CameraViewProps> = React.memo(({ onCapture, is
   const detectionIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const detectionInProgressRef = useRef<boolean>(false);  // Prevent concurrent detections
 
+  // CRITICAL FIX: Reuse detection canvas to prevent memory leak
+  const detectionCanvasRef = useRef<HTMLCanvasElement | null>(null);
+
   // Smoothing and stabilization
   const smoothedBBoxRef = useRef<SmoothedBBox | null>(null);
   const statusHistoryRef = useRef<string[]>([]);
@@ -48,7 +58,19 @@ export const CameraView: React.FC<CameraViewProps> = React.memo(({ onCapture, is
 
   useEffect(() => {
     startCamera();
-    return () => stopCamera();
+
+    return () => {
+      stopCamera();
+
+      // CRITICAL FIX: Cleanup detection canvas on unmount
+      if (detectionCanvasRef.current) {
+        const ctx = detectionCanvasRef.current.getContext('2d');
+        if (ctx) {
+          ctx.clearRect(0, 0, detectionCanvasRef.current.width, detectionCanvasRef.current.height);
+        }
+        detectionCanvasRef.current = null;
+      }
+    };
   }, []);
 
   const startCamera = async () => {
@@ -78,7 +100,7 @@ export const CameraView: React.FC<CameraViewProps> = React.memo(({ onCapture, is
           const capabilities = videoTrack.getCapabilities() as any; // Extended capabilities not in TS types
 
           // Log available capabilities for debugging
-          console.log('[Camera] Capabilities:', {
+          logger.debug('Camera capabilities available', {
             focusMode: capabilities.focusMode,
             focusDistance: capabilities.focusDistance,
             zoom: capabilities.zoom,
@@ -106,10 +128,10 @@ export const CameraView: React.FC<CameraViewProps> = React.memo(({ onCapture, is
 
           if (Object.keys(constraints).length > 0) {
             await videoTrack.applyConstraints({ advanced: [constraints] });
-            console.log('[Camera] Applied advanced focus constraints:', constraints);
+            logger.info('Applied advanced focus constraints', { constraints });
           }
         } catch (constraintError) {
-          console.warn('[Camera] Could not apply advanced constraints:', constraintError);
+          logger.warn('Could not apply advanced constraints', constraintError);
           // Continue anyway - basic stream is still usable
         }
 
@@ -117,7 +139,7 @@ export const CameraView: React.FC<CameraViewProps> = React.memo(({ onCapture, is
         setError(null);
       }
     } catch (err: any) {
-      console.error('Camera error:', err);
+      logger.error('Failed to access camera', err);
       setError('Failed to access camera. Please check permissions.');
       setIsCameraActive(false);
     }
@@ -137,7 +159,7 @@ export const CameraView: React.FC<CameraViewProps> = React.memo(({ onCapture, is
         videoRef.current.srcObject = null;
       }
     } catch (error) {
-      console.error('[Camera] Error stopping video tracks:', error);
+      logger.error('Error stopping video tracks', error);
     } finally {
       // Always mark camera as inactive, even if track.stop() fails
       setIsCameraActive(false);
@@ -168,7 +190,7 @@ export const CameraView: React.FC<CameraViewProps> = React.memo(({ onCapture, is
    */
   const smoothBBox = (newBBox: [number, number, number, number]): SmoothedBBox => {
     const [x, y, w, h] = newBBox;
-    const alpha = 0.3; // Smoothing factor (lower = smoother, higher = more responsive)
+    const alpha = CAMERA_CONSTANTS.BBOX_SMOOTHING_ALPHA; // Smoothing factor (lower = smoother, higher = more responsive)
 
     if (!smoothedBBoxRef.current) {
       smoothedBBoxRef.current = { x, y, w, h };
@@ -191,8 +213,8 @@ export const CameraView: React.FC<CameraViewProps> = React.memo(({ onCapture, is
    * Prevents flickering between states
    */
   const debounceStatus = (status: string): string => {
-    const REQUIRED_CONSECUTIVE = 3; // Must see same status 3 times
-    const MAX_HISTORY = 5;
+    const REQUIRED_CONSECUTIVE = CAMERA_CONSTANTS.STATUS_DEBOUNCE_COUNT; // Must see same status 3 times
+    const MAX_HISTORY = CAMERA_CONSTANTS.STATUS_HISTORY_MAX;
 
     // Add to history
     statusHistoryRef.current.push(status);
@@ -223,7 +245,11 @@ export const CameraView: React.FC<CameraViewProps> = React.memo(({ onCapture, is
     // readyState >= 2 means HAVE_CURRENT_DATA (frame is available)
     // videoWidth/videoHeight > 0 means dimensions are known
     if (video.readyState < 2 || video.videoWidth === 0 || video.videoHeight === 0) {
-      console.debug('[Camera] Video not ready for detection (readyState:', video.readyState, 'size:', video.videoWidth, 'x', video.videoHeight, ')');
+      logger.debug('Video not ready for detection', {
+        readyState: video.readyState,
+        width: video.videoWidth,
+        height: video.videoHeight,
+      });
       return;
     }
 
@@ -244,11 +270,19 @@ export const CameraView: React.FC<CameraViewProps> = React.memo(({ onCapture, is
 
     ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
 
+    // CRITICAL FIX: Reuse detection canvas instead of creating new one
+    // Creates new canvas every 500ms = ~6.5GB memory leak after 1 hour
+    if (!detectionCanvasRef.current) {
+      detectionCanvasRef.current = document.createElement('canvas');
+    }
+    const detectionCanvas = detectionCanvasRef.current;
+
     // Convert to base64 with lower resolution for detection (reduce IPC overhead)
     // Downsample to 640x360 for detection (4x smaller than full HD)
-    const detectionCanvas = document.createElement('canvas');
-    const targetWidth = 640;
+    const targetWidth = CAMERA_CONSTANTS.DETECTION_WIDTH;
     const targetHeight = Math.round((canvas.height / canvas.width) * targetWidth);
+
+    // Canvas automatically clears when resized
     detectionCanvas.width = targetWidth;
     detectionCanvas.height = targetHeight;
 
@@ -260,7 +294,7 @@ export const CameraView: React.FC<CameraViewProps> = React.memo(({ onCapture, is
     }
 
     // Convert to base64 (low quality for detection, faster transmission)
-    const imageData = detectionCanvas.toDataURL('image/jpeg', 0.5);
+    const imageData = detectionCanvas.toDataURL('image/jpeg', CAMERA_CONSTANTS.DETECTION_JPEG_QUALITY);
 
     try {
       // Call detection API
@@ -295,7 +329,7 @@ export const CameraView: React.FC<CameraViewProps> = React.memo(({ onCapture, is
         });
       }
     } catch (error) {
-      console.error('Detection error:', error);
+      logger.error('Detection error', error);
     } finally {
       // Always clear the in-progress flag
       detectionInProgressRef.current = false;
@@ -445,30 +479,64 @@ export const CameraView: React.FC<CameraViewProps> = React.memo(({ onCapture, is
     }
   };
 
-  // Start/stop live detection when camera state changes
+  // CRITICAL FIX: Start/stop live detection when camera state changes
+  // Wait for video to be ready before starting interval to prevent wasted IPC calls
   useEffect(() => {
-    if (isCameraActive && !isIdentifying) {
-      // Start detection interval (every 500ms for better performance)
-      // Reduced frequency to minimize IPC overhead and CPU usage
-      // 500ms is still responsive enough for user feedback
-      detectionIntervalRef.current = setInterval(() => {
-        detectCardInFrame();
-      }, 500);
-    } else {
-      // Stop detection interval
-      if (detectionIntervalRef.current) {
-        clearInterval(detectionIntervalRef.current);
-        detectionIntervalRef.current = null;
-      }
+    // Clear any existing interval first
+    if (detectionIntervalRef.current) {
+      clearInterval(detectionIntervalRef.current);
+      detectionIntervalRef.current = null;
+    }
 
+    // If not active or identifying, stop and reset
+    if (!isCameraActive || isIdentifying) {
       // Reset smoothing state when not detecting
       smoothedBBoxRef.current = null;
       statusHistoryRef.current = [];
       stableStatusRef.current = 'no_card';
       setAutoCapturCountdown(null);
       detectionInProgressRef.current = false;
+      return;
     }
 
+    // Camera is active and not identifying - wait for video to be ready
+    const video = videoRef.current;
+    if (!video) return;
+
+    /**
+     * Wait for video to have loaded frames before starting detection
+     * Prevents ~20 wasted IPC calls during Python service initialization
+     */
+    const waitForVideoReady = () => {
+      // Check if video has loaded metadata and has valid dimensions
+      // readyState >= 2 = HAVE_CURRENT_DATA (at least one frame available)
+      if (video.readyState >= 2 && video.videoWidth > 0 && video.videoHeight > 0) {
+        // Video is ready - start detection interval
+        logger.info('Video ready, starting detection', {
+          readyState: video.readyState,
+          width: video.videoWidth,
+          height: video.videoHeight,
+        });
+
+        detectionIntervalRef.current = setInterval(() => {
+          detectCardInFrame();
+        }, POLL_INTERVALS.ACTIVE);
+      } else {
+        // Video not ready yet - check again soon
+        logger.debug('Waiting for video ready', {
+          readyState: video.readyState,
+          width: video.videoWidth,
+          height: video.videoHeight,
+        });
+
+        setTimeout(waitForVideoReady, POLL_INTERVALS.VIDEO_READY_CHECK);
+      }
+    };
+
+    // Start the ready check
+    waitForVideoReady();
+
+    // Cleanup on unmount or state change
     return () => {
       if (detectionIntervalRef.current) {
         clearInterval(detectionIntervalRef.current);
@@ -492,8 +560,8 @@ export const CameraView: React.FC<CameraViewProps> = React.memo(({ onCapture, is
       // Crop to detected card boundary
       const { x, y, w, h } = smoothedBBoxRef.current;
 
-      // Add 5% padding around detected card for safety
-      const padding = 0.05;
+      // Add padding around detected card for safety
+      const padding = CAMERA_CONSTANTS.BBOX_PADDING;
       const paddedX = Math.max(0, x - w * padding);
       const paddedY = Math.max(0, y - h * padding);
       const paddedW = Math.min(video.videoWidth - paddedX, w * (1 + 2 * padding));
@@ -521,8 +589,8 @@ export const CameraView: React.FC<CameraViewProps> = React.memo(({ onCapture, is
           0, 0, paddedW, paddedH                // Destination rectangle (to canvas)
         );
 
-        // Convert to JPEG with high quality (98% for card details)
-        const imageData = canvas.toDataURL('image/jpeg', 0.98);
+        // Convert to JPEG with high quality for card identification
+        const imageData = canvas.toDataURL('image/jpeg', CAMERA_CONSTANTS.CAPTURE_JPEG_QUALITY);
 
         // Send to main process to save
         const captureResult = await window.camera.capture(imageData);
@@ -530,7 +598,7 @@ export const CameraView: React.FC<CameraViewProps> = React.memo(({ onCapture, is
         if (captureResult.success && captureResult.imagePath) {
           onCapture(captureResult.imagePath);
         } else {
-          console.error('Capture failed:', captureResult.error);
+          logger.error('Capture failed', undefined, { error: captureResult.error });
         }
       }
     } else {
@@ -553,8 +621,8 @@ export const CameraView: React.FC<CameraViewProps> = React.memo(({ onCapture, is
         // Draw the full frame
         ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
 
-        // Convert to JPEG with high quality (98% for card details)
-        const imageData = canvas.toDataURL('image/jpeg', 0.98);
+        // Convert to JPEG with high quality for card identification
+        const imageData = canvas.toDataURL('image/jpeg', CAMERA_CONSTANTS.CAPTURE_JPEG_QUALITY);
 
         // Send to main process to save
         const captureResult = await window.camera.capture(imageData);
@@ -562,7 +630,7 @@ export const CameraView: React.FC<CameraViewProps> = React.memo(({ onCapture, is
         if (captureResult.success && captureResult.imagePath) {
           onCapture(captureResult.imagePath);
         } else {
-          console.error('Capture failed:', captureResult.error);
+          logger.error('Capture failed', undefined, { error: captureResult.error });
         }
       }
     }

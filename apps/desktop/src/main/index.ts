@@ -276,10 +276,63 @@ ipcMain.handle('identifier:identify-multi-frame', async (_event, imagePaths: str
       return { success: false, error: 'Service not initialized' };
     }
 
+    // HIGH SEVERITY FIX: Validate input to prevent crashes and path traversal
+    if (!Array.isArray(imagePaths)) {
+      throw new Error('imagePaths must be an array');
+    }
+
+    if (imagePaths.length === 0) {
+      throw new Error('imagePaths cannot be empty');
+    }
+
+    if (imagePaths.length > 10) {
+      throw new Error('Maximum 10 frames allowed for multi-frame identification');
+    }
+
+    // Validate each path for security
+    const tempDir = path.join(app.getPath('temp'), 'cardflux');
+    for (const imagePath of imagePaths) {
+      // Must be a string
+      if (typeof imagePath !== 'string') {
+        throw new Error('All paths must be strings');
+      }
+
+      // Must be absolute
+      if (!path.isAbsolute(imagePath)) {
+        throw new Error(`Paths must be absolute: ${imagePath}`);
+      }
+
+      // Normalize and check for path traversal
+      const normalizedPath = path.normalize(imagePath);
+      const normalizedTemp = path.normalize(tempDir);
+
+      // Must be within tempDir (prevent path traversal)
+      if (!normalizedPath.startsWith(normalizedTemp)) {
+        throw new Error(`Path outside allowed directory: ${imagePath}`);
+      }
+
+      // Must exist
+      if (!fs.existsSync(normalizedPath)) {
+        throw new Error(`File not found: ${imagePath}`);
+      }
+
+      // Verify it's a file, not directory
+      const stats = fs.statSync(normalizedPath);
+      if (!stats.isFile()) {
+        throw new Error(`Path is not a file: ${imagePath}`);
+      }
+
+      // Check file size (prevent DoS via huge files)
+      const MAX_FILE_SIZE = 20 * 1024 * 1024; // 20MB per frame
+      if (stats.size > MAX_FILE_SIZE) {
+        throw new Error(`File too large: ${imagePath} (${stats.size} bytes > ${MAX_FILE_SIZE} bytes)`);
+      }
+    }
+
     const result = await identificationService.identifyCardMultiFrame(imagePaths, options);
     return { success: true, result };
   } catch (error: any) {
-    console.error('Multi-frame identification error:', error);
+    logger.error('Main', 'Multi-frame identification error', error);
     return { success: false, error: error.message };
   }
 });
@@ -370,6 +423,60 @@ ipcMain.handle('camera:capture', captureRateLimiter.wrap('camera:capture', async
 }));
 
 // Handle data sync
+// Handle renderer logging (centralized logging)
+ipcMain.handle('logger:log', async (_event, level: string, module: string, message: string, data?: any) => {
+  // Forward renderer logs to main logger with [Renderer] prefix
+  const logModule = `Renderer:${module}`;
+
+  switch (level) {
+    case 'debug':
+      logger.debug(logModule, message, data);
+      break;
+    case 'info':
+      logger.info(logModule, message, data);
+      break;
+    case 'warn':
+      logger.warn(logModule, message, data);
+      break;
+    case 'error':
+      logger.error(logModule, message, data instanceof Error ? data : undefined, typeof data === 'object' ? data : undefined);
+      break;
+    default:
+      logger.info(logModule, message, data);
+  }
+});
+
+// Handle settings file persistence (fallback when localStorage fails)
+ipcMain.handle('settings:save-to-file', async (_event, settings: any) => {
+  try {
+    const settingsPath = path.join(app.getPath('userData'), 'settings.json');
+    await fs.promises.writeFile(settingsPath, JSON.stringify(settings, null, 2), 'utf-8');
+    logger.info('Settings', 'Settings saved to file', { path: settingsPath });
+    return { success: true };
+  } catch (error: any) {
+    logger.error('Settings', 'Failed to save settings to file', error);
+    return { success: false, error: error.message };
+  }
+});
+
+ipcMain.handle('settings:load-from-file', async () => {
+  try {
+    const settingsPath = path.join(app.getPath('userData'), 'settings.json');
+
+    if (!fs.existsSync(settingsPath)) {
+      return { success: false, error: 'Settings file not found' };
+    }
+
+    const data = await fs.promises.readFile(settingsPath, 'utf-8');
+    const settings = JSON.parse(data);
+    logger.info('Settings', 'Settings loaded from file', { path: settingsPath });
+    return { success: true, settings };
+  } catch (error: any) {
+    logger.error('Settings', 'Failed to load settings from file', error);
+    return { success: false, error: error.message };
+  }
+});
+
 ipcMain.handle('sync:data', syncRateLimiter.wrap('sync:data', async (_event, game: string) => {
   try {
     // CRITICAL FIX: Whitelist allowed game values to prevent command injection

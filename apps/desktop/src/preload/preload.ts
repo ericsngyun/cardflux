@@ -32,6 +32,15 @@ export interface SyncAPI {
   syncData: (game: string) => Promise<{ success: boolean; updatedCards?: number; newCards?: number; error?: string }>;
 }
 
+export interface LoggerAPI {
+  log: (level: string, module: string, message: string, data?: any) => Promise<void>;
+}
+
+export interface SettingsAPI {
+  saveToFile: (settings: any) => Promise<{ success: boolean; error?: string }>;
+  loadFromFile: () => Promise<{ success: boolean; settings?: any; error?: string }>;
+}
+
 // Expose protected APIs to renderer
 contextBridge.exposeInMainWorld('scanner', {
   start: () => ipcRenderer.invoke('scanner:start'),
@@ -78,6 +87,16 @@ contextBridge.exposeInMainWorld('sync', {
   syncData: (game: string) => ipcRenderer.invoke('sync:data', game),
 } as SyncAPI);
 
+contextBridge.exposeInMainWorld('logger', {
+  log: (level: string, module: string, message: string, data?: any) =>
+    ipcRenderer.invoke('logger:log', level, module, message, data),
+} as LoggerAPI);
+
+contextBridge.exposeInMainWorld('settings', {
+  saveToFile: (settings: any) => ipcRenderer.invoke('settings:save-to-file', settings),
+  loadFromFile: () => ipcRenderer.invoke('settings:load-from-file'),
+} as SettingsAPI);
+
 // Expose type declarations for TypeScript support in renderer
 declare global {
   interface Window {
@@ -85,5 +104,7 @@ declare global {
     camera: CameraAPI;
     identifier: IdentifierAPI;
     sync: SyncAPI;
+    logger: LoggerAPI;
+    settings: SettingsAPI;
   }
 }
