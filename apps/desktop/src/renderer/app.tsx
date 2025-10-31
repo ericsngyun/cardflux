@@ -4,7 +4,11 @@ import { CameraView } from './components/CameraView';
 import { CardStack, CardStackItem } from './components/CardStack';
 import { SettingsPanel, IdentificationSettings } from './components/SettingsPanel';
 import { ErrorBoundary } from './components/ErrorBoundary';
+import { createModuleLogger } from './utils/logger';
+import { APP_CONSTANTS } from './constants';
 import './styles.css';
+
+const logger = createModuleLogger('App');
 
 interface SystemStatus {
   identifier: { initialized: boolean; ready: boolean; running: boolean };
@@ -23,8 +27,8 @@ const DEFAULT_SETTINGS: IdentificationSettings = {
   autoAddModerate: true,        // ON by default (auto-add MODERATE)
 };
 
-// LocalStorage keys
-const SETTINGS_STORAGE_KEY = 'cardflux-settings';
+// Use constants for storage keys
+const SETTINGS_STORAGE_KEY = APP_CONSTANTS.SETTINGS_STORAGE_KEY;
 const SYNC_STATUS_STORAGE_KEY = 'cardflux-sync-status';
 
 const App: React.FC = () => {
@@ -66,27 +70,18 @@ const App: React.FC = () => {
     timestamp: number;
   } | null>(null);  // For manual review of MODERATE/LOW confidence
   const [settings, setSettings] = useState<IdentificationSettings>(() => {
-    // Load settings from localStorage
+    // Load settings from localStorage (or file fallback)
     try {
       const stored = localStorage.getItem(SETTINGS_STORAGE_KEY);
       if (stored) {
         return { ...DEFAULT_SETTINGS, ...JSON.parse(stored) };
       }
     } catch (error) {
-      console.error('[App] Failed to load settings from localStorage:', error);
+      logger.warn('Failed to load settings from localStorage, will try file fallback', error);
+      // Note: File loading happens asynchronously in useEffect below
     }
     return DEFAULT_SETTINGS;
   });
-
-  // Persist settings to localStorage whenever they change
-  useEffect(() => {
-    try {
-      localStorage.setItem(SETTINGS_STORAGE_KEY, JSON.stringify(settings));
-      console.log('[App] Settings saved:', settings);
-    } catch (error) {
-      console.error('[App] Failed to save settings to localStorage:', error);
-    }
-  }, [settings]);
 
   // Helper functions (defined early to avoid "used before declaration" errors)
   const showNotification = useCallback((
@@ -94,7 +89,7 @@ const App: React.FC = () => {
     message: string
   ) => {
     setNotification({ type, message });
-    setTimeout(() => setNotification(null), 5000);
+    setTimeout(() => setNotification(null), APP_CONSTANTS.NOTIFICATION_DURATION_MS);
   }, []);
 
   const playSuccessSound = useCallback(() => {
@@ -102,6 +97,56 @@ const App: React.FC = () => {
     // const audio = new Audio('/assets/success.mp3');
     // audio.play().catch(() => {});
   }, []);
+
+  // HIGH SEVERITY FIX: Persist settings with fallback when localStorage fails
+  useEffect(() => {
+    const saveSettings = async () => {
+      try {
+        // Try localStorage first
+        localStorage.setItem(SETTINGS_STORAGE_KEY, JSON.stringify(settings));
+        logger.debug('Settings saved to localStorage', { settings });
+      } catch (error) {
+        logger.warn('localStorage failed, using file fallback', error);
+
+        // Fallback: Save to file via IPC
+        try {
+          const result = await window.settings.saveToFile(settings);
+          if (result.success) {
+            showNotification('warning', 'Settings saved to file (localStorage unavailable)');
+          } else {
+            logger.error('File fallback failed', undefined, { error: result.error });
+            showNotification('error', 'Failed to save settings! Please check disk space.');
+          }
+        } catch (fileError) {
+          logger.error('Failed to save settings to file', fileError);
+          showNotification('error', 'Failed to save settings! Please check disk space.');
+        }
+      }
+    };
+
+    saveSettings();
+  }, [settings, showNotification]);
+
+  // Load settings from file on startup if localStorage empty
+  useEffect(() => {
+    const loadSettingsFromFile = async () => {
+      try {
+        const stored = localStorage.getItem(SETTINGS_STORAGE_KEY);
+        if (!stored) {
+          // localStorage empty, try loading from file
+          const result = await window.settings.loadFromFile();
+          if (result.success && result.settings) {
+            setSettings({ ...DEFAULT_SETTINGS, ...result.settings });
+            logger.info('Settings loaded from file fallback', { settings: result.settings });
+          }
+        }
+      } catch (error) {
+        logger.warn('Could not load settings from file fallback', error);
+      }
+    };
+
+    loadSettingsFromFile();
+  }, []); // Run once on mount
 
   // Poll Python service status until ready (no re-initialization)
   useEffect(() => {
@@ -116,7 +161,7 @@ const App: React.FC = () => {
 
       // If already ready on first check, skip to health check mode
       if (initialStatus?.ready) {
-        console.log('[App] Service already ready - starting health check mode');
+        logger.info('Service already ready - starting health check mode');
         healthCheckInterval = setInterval(checkSystemStatus, 30000);
         return;
       }
@@ -128,7 +173,7 @@ const App: React.FC = () => {
 
         // Once ready, stop startup polling and switch to health check mode
         if (status?.ready) {
-          console.log('[App] Service became ready - switching to health check mode (30s intervals)');
+          logger.info('Service became ready - switching to health check mode (30s intervals)');
           if (startupPollInterval) {
             clearInterval(startupPollInterval);
             startupPollInterval = null;
@@ -170,14 +215,14 @@ const App: React.FC = () => {
 
       if (isNowReady && !hasShownReadyNotification.current) {
         // First time becoming ready - show notification once
-        console.log('[App] System ready - showing notification');
+        logger.info('System ready - showing notification');
         hasShownReadyNotification.current = true;
         showNotification('success', 'System initialized - Ready to scan!');
       }
 
       return status;
     } catch (error: any) {
-      console.error('[App] Status check error:', error);
+      logger.error('Status check error', error);
       // Don't set init error yet - Python might still be starting
       if (systemStatus.identifier.ready) {
         // Only show error if we were ready before
@@ -208,7 +253,7 @@ const App: React.FC = () => {
         }
 
         // All frames captured - run multi-frame identification
-        console.log('[App] Multi-frame identification:', newFrames.length, 'frames');
+        logger.info('Multi-frame identification', { frameCount: newFrames.length });
         setIsIdentifying(true);
         setCapturedFrames([]); // Reset for next card
 
@@ -227,7 +272,7 @@ const App: React.FC = () => {
           
           // Show fusion info
           if (multiFrame) {
-            console.log('[App] Multi-frame fusion:', multiFrame);
+            logger.debug('Multi-frame fusion stats', multiFrame);
           }
 
           const price = card.prices?.normal?.market || card.prices?.foil?.market || 0;
@@ -272,9 +317,9 @@ const App: React.FC = () => {
             );
           }
 
-          console.log('[App] Multi-frame complete:', card.name, confidence);
+          logger.info('Multi-frame complete', { card: card.name, confidence });
         } catch (error: any) {
-          console.error('[App] Multi-frame identification error:', error);
+          logger.error('Multi-frame identification error', error);
           showNotification('error', `Multi-frame identification failed: ${error.message}`);
           setCapturedFrames([]); // Reset on error
         } finally {
@@ -288,7 +333,7 @@ const App: React.FC = () => {
       setIsIdentifying(true);
 
       try {
-        console.log('[App] Identifying card:', imagePath);
+        logger.debug('Identifying card', { imagePath });
 
         const result = await window.identifier.identify(imagePath, {
           topK: settings.topK,
@@ -325,10 +370,10 @@ const App: React.FC = () => {
 
         if (shouldAutoAdd) {
           // AUTO-ADD: HIGH or MODERATE (if autoAddModerate enabled)
-          // Check for duplicates in last 30 seconds
+          // Check for duplicates in configured window
           const now = Date.now();
           const recentDuplicate = cards.find(
-            (c) => c.productId === card.productId && now - c.timestamp < 30000
+            (c) => c.productId === card.productId && now - c.timestamp < APP_CONSTANTS.DUPLICATE_DETECTION_WINDOW_MS
           );
 
           if (recentDuplicate) {
@@ -385,10 +430,20 @@ const App: React.FC = () => {
           );
         }
 
-        console.log('[App] Identification complete:', card.name, confidence);
+        logger.info('Identification complete', { card: card.name, confidence });
       } catch (error: any) {
-        console.error('[App] Identification error:', error);
-        showNotification('error', `Identification failed: ${error.message}`);
+        logger.error('Identification error', error);
+
+        // HIGH SEVERITY FIX: Check if error is rate limit and provide user feedback
+        const errorMsg = error.message || error.toString();
+        if (errorMsg.includes('rate limit') || errorMsg.includes('Too many')) {
+          showNotification('warning', '⏱ Please wait a moment before scanning again');
+        } else if (errorMsg.includes('Service not initialized')) {
+          showNotification('error', 'System still initializing. Please wait...');
+        } else {
+          showNotification('error', `Identification failed: ${errorMsg}`);
+        }
+
         setScanStats((prev) => ({ ...prev, totalScans: prev.totalScans + 1, lowConfidence: prev.lowConfidence + 1 }));
       } finally {
         setIsIdentifying(false);
