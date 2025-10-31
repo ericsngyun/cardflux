@@ -22,9 +22,6 @@
       console.error('[HTML] Script error:', e.message, e.filename, e.lineno, e.colno, e.error);
     });
   </script>
-  <script src="./app.js" onerror="console.error('[HTML] Failed to load app.js')"></script>
-  <script>
-    console.log('[HTML] app.js script tag processed');
-  </script>
+  <!-- Webpack will inject script tags here automatically -->
 </body>
 </html>
