@@ -3,6 +3,7 @@ import { createRoot } from 'react-dom/client';
 import { CameraView } from './components/CameraView';
 import { CardStack, CardStackItem } from './components/CardStack';
 import { SettingsPanel, IdentificationSettings } from './components/SettingsPanel';
+import { ErrorBoundary } from './components/ErrorBoundary';
 import './styles.css';
 
 interface SystemStatus {
@@ -918,11 +919,28 @@ if (container) {
   try {
     console.log('[App] Creating React root...');
     const root = createRoot(container);
-    console.log('[App] Rendering app...');
-    root.render(<App />);
+    console.log('[App] Rendering app with ErrorBoundary...');
+    root.render(
+      <ErrorBoundary>
+        <App />
+      </ErrorBoundary>
+    );
     console.log('[App] App rendered successfully');
   } catch (error) {
     console.error('[App] Error mounting React app:', error);
+    // Show fallback error UI if React fails to mount
+    container.innerHTML = `
+      <div style="display: flex; align-items: center; justify-content: center; min-height: 100vh; background: #0a0a0a; color: #e0e0e0; font-family: sans-serif; text-align: center; padding: 20px;">
+        <div>
+          <h1 style="color: #f44336; font-size: 32px;">⚠️ Fatal Error</h1>
+          <p style="font-size: 18px; margin: 20px 0;">CardFlux failed to start</p>
+          <p style="font-size: 14px; color: #999;">${error instanceof Error ? error.message : String(error)}</p>
+          <button onclick="window.location.reload()" style="margin-top: 20px; padding: 12px 24px; background: #4CAF50; color: white; border: none; border-radius: 6px; font-size: 16px; cursor: pointer;">
+            Reload Application
+          </button>
+        </div>
+      </div>
+    `;
   }
 } else {
   console.error('[App] Root container not found!');
