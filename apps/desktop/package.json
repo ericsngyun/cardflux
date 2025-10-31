@@ -63,33 +63,5 @@
     "typescript": "^5.3.0",
     "webpack": "^5.89.0",
     "webpack-cli": "^5.1.4"
-  },
-  "build": {
-    "appId": "com.cardflux.desktop",
-    "productName": "CardFlux",
-    "directories": {
-      "output": "out"
-    },
-    "files": [
-      "dist/**/*",
-      "src/python/**/*",
-      "package.json"
-    ],
-    "win": {
-      "target": [
-        "nsis"
-      ]
-    },
-    "mac": {
-      "target": [
-        "dmg"
-      ],
-      "category": "public.app-category.utilities"
-    },
-    "linux": {
-      "target": [
-        "AppImage"
-      ]
-    }
   }
 }

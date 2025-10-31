@@ -13,7 +13,7 @@
   "extraResources": [
     {
       "from": "src/python",
-      "to": "python",
+      "to": "python-scripts",
       "filter": ["**/*"]
     }
   ],
