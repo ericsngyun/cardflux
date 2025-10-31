@@ -88,6 +88,20 @@ const App: React.FC = () => {
     }
   }, [settings]);
 
+  // Helper functions (defined early to avoid "used before declaration" errors)
+  const showNotification = useCallback((
+    type: 'success' | 'error' | 'warning',
+    message: string
+  ) => {
+    setNotification({ type, message });
+    setTimeout(() => setNotification(null), 5000);
+  }, []);
+
+  const playSuccessSound = useCallback(() => {
+    // Optional: Play a success sound
+    // const audio = new Audio('/assets/success.mp3');
+    // audio.play().catch(() => {});
+  }, []);
 
   // Poll Python service status until ready (no re-initialization)
   useEffect(() => {
@@ -380,7 +394,7 @@ const App: React.FC = () => {
         setIsIdentifying(false);
       }
     },
-    [isIdentifying, settings, cards]
+    [isIdentifying, settings, cards, capturedFrames, showNotification, playSuccessSound]
   );
 
   const handleClearStack = useCallback(() => {
@@ -396,7 +410,7 @@ const App: React.FC = () => {
       setCards([]);
       showNotification('success', 'Stack cleared');
     }
-  }, [cards]);
+  }, [cards, showNotification]);
 
   const handleExportStack = useCallback(() => {
     if (cards.length === 0) {
@@ -437,12 +451,12 @@ const App: React.FC = () => {
       console.error('[App] Export error:', error);
       showNotification('error', `Export failed: ${error.message}`);
     }
-  }, [cards]);
+  }, [cards, showNotification]);
 
   const handleRemoveCard = useCallback((id: string) => {
     setCards((prev) => prev.filter((card) => card.id !== id));
     showNotification('success', 'Card removed');
-  }, []);
+  }, [showNotification]);
 
   const handleAcceptReview = useCallback(() => {
     if (!pendingReview) return;
@@ -466,14 +480,14 @@ const App: React.FC = () => {
 
     showNotification('success', `✓ Added: ${card.name} - $${card.price.toFixed(2)} (${confidence})`);
     playSuccessSound();
-  }, [pendingReview]);
+  }, [pendingReview, showNotification, playSuccessSound]);
 
   const handleRejectReview = useCallback(() => {
     if (!pendingReview) return;
 
     setPendingReview(null);
     showNotification('warning', 'Card rejected - scan again with better positioning');
-  }, [pendingReview]);
+  }, [pendingReview, showNotification]);
 
   // Keyboard shortcuts for review modal (Enter=Accept, Esc=Reject)
   useEffect(() => {
@@ -492,20 +506,6 @@ const App: React.FC = () => {
     window.addEventListener('keydown', handleKeyPress);
     return () => window.removeEventListener('keydown', handleKeyPress);
   }, [pendingReview, handleAcceptReview, handleRejectReview]);
-
-  const showNotification = (
-    type: 'success' | 'error' | 'warning',
-    message: string
-  ) => {
-    setNotification({ type, message });
-    setTimeout(() => setNotification(null), 5000);
-  };
-
-  const playSuccessSound = () => {
-    // Optional: Play a success sound
-    // const audio = new Audio('/assets/success.mp3');
-    // audio.play().catch(() => {});
-  };
 
   const handleSync = useCallback(async () => {
     if (isSyncing) return;
@@ -543,7 +543,7 @@ const App: React.FC = () => {
     } finally {
       setIsSyncing(false);
     }
-  }, [isSyncing, settings.tcgGame]);
+  }, [isSyncing, settings.tcgGame, showNotification]);
 
   // Calculate sync status
   const getSyncStatus = useMemo(() => {
