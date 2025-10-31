@@ -59,6 +59,8 @@ body {
   transform: translateZ(0);
   backface-visibility: hidden;
   perspective: 1000px;
+  /* Smooth scrolling for entire app */
+  scroll-behavior: smooth;
 }
 
 button {
@@ -786,6 +788,12 @@ button {
   flex: 1;
   overflow-y: auto;
   padding: var(--spacing-md);
+  /* Smooth momentum scrolling on mobile/trackpad */
+  -webkit-overflow-scrolling: touch;
+  /* Optimize scroll performance */
+  will-change: scroll-position;
+  /* Smoother scroll on desktop */
+  scroll-behavior: smooth;
 }
 
 .empty-state {
@@ -827,14 +835,19 @@ button {
   border: 1px solid var(--border-primary);
   border-radius: var(--radius-md);
   overflow: hidden;
-  transition: all 0.05s ease-out; /* Instant feel - was 0.2s */
+  transition: background 0.15s cubic-bezier(0.4, 0, 0.2, 1),
+              border-color 0.15s cubic-bezier(0.4, 0, 0.2, 1),
+              transform 0.15s cubic-bezier(0.4, 0, 0.2, 1);
   /* GPU acceleration */
   transform: translateZ(0);
+  will-change: transform;
 }
 
 .stack-item:hover {
   background: var(--bg-tertiary);
   border-color: var(--accent-dim);
+  transform: translateY(-2px) translateZ(0);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
 }
 
 .stack-item-main {
@@ -957,16 +970,26 @@ button {
   border-radius: var(--radius-sm);
   color: var(--text-secondary);
   cursor: pointer;
-  transition: all 0.05s ease-out; /* Instant feel - was 0.2s */
+  transition: background 0.15s cubic-bezier(0.4, 0, 0.2, 1),
+              color 0.15s cubic-bezier(0.4, 0, 0.2, 1),
+              border-color 0.15s cubic-bezier(0.4, 0, 0.2, 1),
+              transform 0.15s cubic-bezier(0.4, 0, 0.2, 1);
   font-size: 0.875rem;
   /* GPU acceleration */
   transform: translateZ(0);
+  will-change: transform;
 }
 
 .btn-icon:hover {
   background: var(--bg-primary);
   color: var(--text-primary);
   border-color: var(--accent-dim);
+  transform: scale(1.1) translateZ(0);
+}
+
+.btn-icon:active {
+  transform: scale(0.95) translateZ(0);
+  transition: transform 0.05s ease-out;
 }
 
 .stack-item-footer {
@@ -1141,16 +1164,19 @@ button {
   align-items: center;
   gap: var(--spacing-md);
   z-index: 9999;
-  animation: slideIn 0.3s ease;
+  animation: slideIn 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  /* Hardware acceleration */
+  transform: translateZ(0);
+  will-change: transform, opacity;
 }
 
 @keyframes slideIn {
   from {
-    transform: translateX(100%);
+    transform: translateX(100%) translateZ(0);
     opacity: 0;
   }
   to {
-    transform: translateX(0);
+    transform: translateX(0) translateZ(0);
     opacity: 1;
   }
 }
@@ -1375,16 +1401,19 @@ kbd {
   max-height: 80vh;
   display: flex;
   flex-direction: column;
-  animation: slideUp 0.3s ease;
+  animation: slideUp 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  /* Hardware acceleration */
+  transform: translateZ(0);
+  will-change: transform, opacity;
 }
 
 @keyframes slideUp {
   from {
-    transform: translateY(20px);
+    transform: translateY(20px) translateZ(0) scale(0.95);
     opacity: 0;
   }
   to {
-    transform: translateY(0);
+    transform: translateY(0) translateZ(0) scale(1);
     opacity: 1;
   }
 }
@@ -1406,6 +1435,9 @@ kbd {
   flex: 1;
   overflow-y: auto;
   padding: var(--spacing-xl);
+  /* Smooth momentum scrolling */
+  -webkit-overflow-scrolling: touch;
+  scroll-behavior: smooth;
 }
 
 .settings-content::-webkit-scrollbar {
@@ -1419,6 +1451,11 @@ kbd {
 .settings-content::-webkit-scrollbar-thumb {
   background: var(--bg-tertiary);
   border-radius: var(--radius-sm);
+  transition: background 0.2s ease;
+}
+
+.settings-content::-webkit-scrollbar-thumb:hover {
+  background: var(--bg-elevated);
 }
 
 .setting-group {
@@ -1443,7 +1480,8 @@ kbd {
   font-size: 0.875rem;
   font-family: inherit;
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: border-color 0.2s cubic-bezier(0.4, 0, 0.2, 1),
+              box-shadow 0.2s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .setting-select:hover {
@@ -1454,6 +1492,7 @@ kbd {
   outline: none;
   border-color: var(--accent);
   box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.1);
+  transition: border-color 0.1s ease, box-shadow 0.1s ease;
 }
 
 .setting-toggle {
@@ -1475,7 +1514,8 @@ kbd {
   background: var(--bg-primary);
   border: 1px solid var(--border-primary);
   border-radius: 12px;
-  transition: all 0.2s ease;
+  transition: background 0.25s cubic-bezier(0.4, 0, 0.2, 1),
+              border-color 0.25s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .toggle-slider::before {
@@ -1487,7 +1527,9 @@ kbd {
   top: 2px;
   background: var(--text-tertiary);
   border-radius: 50%;
-  transition: all 0.2s ease;
+  transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1),
+              background 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
 }
 
 .setting-toggle input[type="checkbox"]:checked + .toggle-slider {
@@ -1496,7 +1538,7 @@ kbd {
 }
 
 .setting-toggle input[type="checkbox"]:checked + .toggle-slider::before {
-  transform: translateX(20px);
+  transform: translateX(20px) translateZ(0);
   background: var(--bg-primary);
 }
 
@@ -1868,17 +1910,20 @@ kbd {
   width: 90%;
   max-width: 500px;
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
-  animation: slideUp 0.3s ease;
+  animation: modalSlideUp 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  /* Hardware acceleration */
+  transform: translateZ(0);
+  will-change: transform, opacity;
 }
 
-@keyframes slideUp {
+@keyframes modalSlideUp {
   from {
     opacity: 0;
-    transform: translateY(20px);
+    transform: translateY(20px) translateZ(0) scale(0.95);
   }
   to {
     opacity: 1;
-    transform: translateY(0);
+    transform: translateY(0) translateZ(0) scale(1);
   }
 }
 
@@ -2012,11 +2057,15 @@ kbd {
   border-radius: var(--radius-md);
   border: none;
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: background 0.2s cubic-bezier(0.4, 0, 0.2, 1),
+              transform 0.2s cubic-bezier(0.4, 0, 0.2, 1),
+              box-shadow 0.2s cubic-bezier(0.4, 0, 0.2, 1);
   display: flex;
   align-items: center;
   justify-content: center;
   gap: var(--spacing-sm);
+  transform: translateZ(0);
+  will-change: transform;
 }
 
 .btn-reject {
@@ -2027,7 +2076,13 @@ kbd {
 
 .btn-reject:hover {
   background: rgba(244, 67, 54, 0.25);
-  transform: translateY(-1px);
+  transform: translateY(-2px) translateZ(0);
+  box-shadow: 0 4px 12px rgba(244, 67, 54, 0.3);
+}
+
+.btn-reject:active {
+  transform: scale(0.98) translateZ(0);
+  transition: transform 0.05s ease-out;
 }
 
 .btn-accept {
@@ -2038,7 +2093,13 @@ kbd {
 
 .btn-accept:hover {
   background: rgba(76, 175, 80, 0.25);
-  transform: translateY(-1px);
+  transform: translateY(-2px) translateZ(0);
+  box-shadow: 0 4px 12px rgba(76, 175, 80, 0.3);
+}
+
+.btn-accept:active {
+  transform: scale(0.98) translateZ(0);
+  transition: transform 0.05s ease-out;
 }
 
 /* Settings section title */
