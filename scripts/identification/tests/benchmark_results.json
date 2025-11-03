@@ -1,0 +1,98 @@
+{
+  "production": [
+    {
+      "image": "bege.png",
+      "card": "Capone\"Gang\"Bege",
+      "confidence": "HIGH",
+      "score": 0.9232078194618225,
+      "time_ms": 976.4358997344971
+    },
+    {
+      "image": "blackbeard.png",
+      "card": "Marshall.D.Teach (093) (Manga)",
+      "confidence": "HIGH",
+      "score": 0.7226884664387753,
+      "time_ms": 1652.8246402740479
+    },
+    {
+      "image": "mihawk.png",
+      "card": "Dracule Mihawk (OP01-070) (Alternate Art)",
+      "confidence": "HIGH",
+      "score": 0.7009623675663553,
+      "time_ms": 1102.921724319458
+    },
+    {
+      "image": "radicalbeam.png",
+      "card": "Radical Beam!! (Premium Card Collection -Best Selection Vol. 1-)",
+      "confidence": "HIGH",
+      "score": 0.9377794199813314,
+      "time_ms": 645.5683708190918
+    },
+    {
+      "image": "yellow_event.png",
+      "card": "Barrier!!",
+      "confidence": "MODERATE",
+      "score": 0.5711692035198211,
+      "time_ms": 3175.854444503784
+    },
+    {
+      "image": "blackbeard-db.jpg",
+      "card": "Marshall.D.Teach (093) (Manga)",
+      "confidence": "HIGH",
+      "score": 1.0,
+      "time_ms": 706.2482833862305
+    }
+  ],
+  "fast": [
+    {
+      "image": "bege.png",
+      "card": "Capone\"Gang\"Bege",
+      "confidence": "HIGH",
+      "score": 0.8759494453668595,
+      "time_ms": 129.50968742370605
+    },
+    {
+      "image": "blackbeard.png",
+      "card": "Marshall.D.Teach (093) (Manga)",
+      "confidence": "HIGH",
+      "score": 0.7969259440898895,
+      "time_ms": 101.7608642578125
+    },
+    {
+      "image": "mihawk.png",
+      "card": "Dracule Mihawk (OP01-070) (Alternate Art)",
+      "confidence": "HIGH",
+      "score": 0.7515463471412659,
+      "time_ms": 87.02754974365234
+    },
+    {
+      "image": "radicalbeam.png",
+      "card": "Radical Beam!! (Premium Card Collection -Best Selection Vol. 1-)",
+      "confidence": "HIGH",
+      "score": 0.9558625161647797,
+      "time_ms": 113.90328407287598
+    },
+    {
+      "image": "yellow_event.png",
+      "card": "You're the One Who Should Disappear",
+      "confidence": "HIGH",
+      "score": 0.6940054684877396,
+      "time_ms": 111.03558540344238
+    },
+    {
+      "image": "blackbeard-db.jpg",
+      "card": "Marshall.D.Teach (093) (Manga)",
+      "confidence": "HIGH",
+      "score": 0.9937608957290649,
+      "time_ms": 123.19636344909668
+    }
+  ],
+  "comparison": {
+    "speedup_pct": 91.93165659171531,
+    "top1_rate": 83.33333333333334,
+    "confidence_rate": 83.33333333333334,
+    "avg_score_diff": 0.05320638279054827,
+    "max_score_diff": 0.12283626496791844,
+    "divergences": 1
+  }
+}
