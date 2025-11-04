@@ -172,17 +172,23 @@ cd apps/desktop && pnpm package   # Create installer (NSIS/DMG/AppImage)
 
 ## Roadmap
 
-### Immediate (This Sprint)
+### Immediate (This Sprint) - IN PROGRESS
+- ✅ Fix Fast Identifier v2 JSON serialization bug
+- ✅ Set up Git LFS tracking for keypoints cache (120 MB)
+- ✅ Add comprehensive pytest testing framework (15 unit tests passing)
+- ✅ Create testing documentation (TESTING_GUIDE.md)
+- ✅ Create production validation plan (PRODUCTION_VALIDATION_PLAN.md)
+- [ ] **Next**: Execute production validation (collect ground truth dataset, test accuracy)
 - [ ] Test with real shop inventory (50-100 cards)
-- [ ] Collect production accuracy metrics
+- [ ] Collect production accuracy metrics (target: 95%+ HIGH confidence)
 - [ ] Optimize startup time (<2s)
 
-### Short-Term (1-2 Months)
-- [ ] Add Pokémon, Magic TCG support
+### Short-Term (1-2 Months) - READY AFTER VALIDATION
+- [ ] Add Pokémon TCG support
+- [ ] Add Magic: The Gathering support
 - [ ] Variant classifier (alternate art)
 - [ ] GPU acceleration (10x additional speedup on top of Fast v2)
 - [ ] Batch scanning mode
-- [ ] Track Git LFS to keypoints cache (artifacts/keypoints/)
 
 ### Medium-Term (3-6 Months)
 - [ ] Cloud sync for inventory
@@ -206,6 +212,7 @@ cd apps/desktop && pnpm package   # Create installer (NSIS/DMG/AppImage)
 7. **Less is More** (2025-11-03): Fast v2 verifies only 5 candidates vs Production's 20, resulting in BETTER accuracy (100% vs 83%) - focused matching > exhaustive search
 8. **Pre-computation Pays Off** (2025-11-03): 45s one-time pre-compute yields 60% geometric speedup forever (120 MB cache)
 9. **Benchmark Ground Truth** (2025-11-03): ALWAYS verify ground truth manually - initial benchmark incorrectly assumed Production was correct
+10. **Test Before Expand** (2025-11-04): Production hardening BEFORE multi-game expansion prevents shipping bugs at scale - comprehensive testing framework saves weeks of debugging
 
 ## Quick Reference
 - **Setup Guide**: `SETUP.md` ⭐ Comprehensive cross-platform setup instructions
