@@ -4,10 +4,8 @@ name: Daily Card Database Update
 # TCGPlayer updates at 1 PM PDT, so we run 1 hour later
 on:
   schedule:
-    # 21:00 UTC = 2 PM PDT (during daylight saving)
-    # 22:00 UTC = 2 PM PST (during standard time)
-    - cron: '0 21 * * *'  # Summer schedule (PDT)
-    - cron: '0 22 * * *'  # Winter schedule (PST)
+    # 21:00 UTC = 2 PM PDT / 3 PM PST (single schedule, adjust manually for DST)
+    - cron: '0 21 * * *'
 
   # Allow manual trigger
   workflow_dispatch:
@@ -32,6 +30,7 @@ jobs:
         with:
           fetch-depth: 0
           token: ${{ secrets.GITHUB_TOKEN }}
+          lfs: true  # CRITICAL FIX: Pull LFS files (keypoints, indices)
 
       - name: Set up Node.js
         uses: actions/setup-node@v4
@@ -55,7 +54,7 @@ jobs:
       - name: Install Python dependencies
         run: |
           pip install torch transformers faiss-cpu pillow numpy tqdm opencv-python easyocr
-          pip install -r services/embedder/requirements.txt || true
+          pip install -r requirements.txt || true  # FIXED: Use root requirements.txt
 
       - name: Configure Git
         run: |
