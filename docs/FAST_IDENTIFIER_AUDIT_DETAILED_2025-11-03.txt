@@ -1,0 +1,195 @@
+FAST IDENTIFIER INTEGRATION - DETAILED AUDIT WITH CODE LOCATIONS
+Date: 2025-11-03
+Type: Comprehensive Codebase Audit
+Status: Ready for Implementation
+
+==============================================================================
+CRITICAL ISSUES WITH CODE LOCATIONS
+==============================================================================
+
+CRITICAL #1: Missing identify_multi_frame() Implementation
+
+File: C:\Users\rayno\eric\cardflux\scripts\identification\core\fast_card_identifier.py
+Issue: Class has NO identify_multi_frame() method
+Lines: 339-540 (identify method exists, but no identify_multi_frame)
+
+Impact Path:
+1. Service calls: apps/desktop/src/python/identification_service.py:224
+   result = self.version_manager.identify_multi_frame(image_paths, version="v2", top_k=top_k,)
+
+2. Version manager tries: scripts/identification/tools/identifier_version_manager.py:250
+   if hasattr(identifier, 'identify_multi_frame'):
+       result = identifier.identify_multi_frame(image_paths, **kwargs)
+
+3. FastCardIdentifier has NO such method, so falls back to first frame only!
+
+Evidence: grep shows NO identify_multi_frame in fast_card_identifier.py
+Result: (no output - method doesn't exist)
+
+Fix Options:
+- Option A: Implement in FastCardIdentifier (20-30 lines, average embeddings)
+- Option B: Remove from service and docs (preferred - Fast v2 is single-frame)
+
+==============================================================================
+
+CRITICAL #2: "Enhanced Identifier V2" Doesn't Exist
+
+Non-existent File: scripts/identification/core/production_card_identifier_v2.py
+Referenced In: Multiple archived docs claiming it's implemented
+
+Archive Docs to Fix:
+1. C:\Users\rayno\eric\cardflux\docs\archive\improvements\V2_UPGRADE_SUMMARY.md
+   - Line 21: References production_card_identifier_v2.py
+   - Lines 41-48: Claims v2 features (adaptive preprocessing, multi-frame, sleeve detection)
+   - These were NEVER implemented in FastCardIdentifier
+
+2. C:\Users\rayno\eric\cardflux\docs\archive\improvements\V2_IMPLEMENTATION_COMPLETE.md
+   - Line 21: References "Enhanced Identifier V2"
+   - Claims "multi-frame fusion" as implemented
+   - Not in FastCardIdentifier
+
+3. C:\Users\rayno\eric\cardflux\docs\archive\improvements\CONFIDENCE_IMPROVEMENT_FINDINGS.md
+   - References identify_multi_frame on line 180
+   - Describes adaptive preprocessing on lines 74-87
+   - Not in current fast_card_identifier.py
+
+Reality Check:
+- Actual Fast v2: Lines 64-575 in fast_card_identifier.py
+- Speed-focused (FP16, pre-computed keypoints, parallel processing)
+- No adaptive preprocessing (uses standard bilateral filter)
+- No multi-frame fusion
+- Lightweight ORB only (500 features, lines 168-176)
+
+Fix: Add this header to each V2_*.md file:
+> ARCHIVED (2025-11-03): This documents an Enhanced V2 proposal from Oct 21.
+> It was NOT implemented. Instead, Fast Identifier v2 was created.
+> For current v2: see scripts/identification/core/fast_card_identifier.py
+
+==============================================================================
+
+CRITICAL #3: Default Fallback Inconsistency
+
+File: scripts/identification/tools/identifier_version_manager.py
+Line 58:
+    def __init__(self, default_version: str = "v2", enable_fallback: bool = False):
+CORRECT: Defaults to False (v2 is superior)
+
+Line 361 (PROBLEM):
+    def create_identifier(version: str = "v2", enable_fallback: bool = True):
+WRONG: Defaults to True (contradicts service and __init__)
+
+File: apps/desktop/src/python/identification_service.py
+Line 42:
+    self.enable_fallback = False
+CORRECT: Service defaults to False
+
+Impact: If someone uses create_identifier() they get different behavior!
+
+Fix: Change line 361 to:
+    def create_identifier(version: str = "v2", enable_fallback: bool = False):
+
+==============================================================================
+HIGH PRIORITY ISSUES
+==============================================================================
+
+Issue #4: Terminology Confusion (Enhanced vs Fast)
+
+Files needing archive headers:
+1. docs/archive/improvements/V2_UPGRADE_SUMMARY.md
+2. docs/archive/improvements/V2_IMPLEMENTATION_COMPLETE.md
+3. docs/archive/improvements/CONFIDENCE_IMPROVEMENT_FINDINGS.md
+
+Issue #5: Performance Metrics Don't Match
+
+File: CLAUDE.md Line 37-40
+Claims breakdown:
+- DINOv2: 40ms
+- FAISS: 0.2ms
+- Geometric: 50ms
+- Total: 111ms
+
+Problem: 40 + 0.2 + 50 = 90.2ms, missing 20.8ms
+
+Fix: Add breakdown including:
+- Card Detection: 5-10ms
+- Image Preprocessing: 3-5ms
+- Scoring & Formatting: 5-10ms
+
+==============================================================================
+MEDIUM PRIORITY ISSUES
+==============================================================================
+
+Issue #6: Path Calculations
+
+File: fast_card_identifier.py:47-48
+    ARTIFACTS_DIR = Path(__file__).parent.parent.parent.parent / "artifacts" / "metadata"
+    FAISS_DIR = Path(__file__).parent.parent.parent.parent / "artifacts" / "faiss"
+Status: CORRECT (verified)
+
+File: fast_card_identifier.py:183
+    KEYPOINTS_DIR = Path(__file__).parent.parent.parent.parent / "artifacts" / "keypoints"
+Status: CORRECT (verified)
+
+File: fast_card_identifier.py:151
+    metadata_file = ARTIFACTS_DIR / "embeddings" / f"{game}-dinov2" / "metadata.jsonl"
+Status: NEEDS VERIFICATION - Does this file exist?
+
+==============================================================================
+FILES REQUIRING UPDATES
+==============================================================================
+
+CRITICAL (IMMEDIATE):
+1. scripts/identification/tools/identifier_version_manager.py
+   - Line 361: Change enable_fallback default from True to False
+
+2. scripts/identification/core/fast_card_identifier.py
+   - Add identify_multi_frame() method OR document limitation
+
+3. Archive docs:
+   - docs/archive/improvements/V2_UPGRADE_SUMMARY.md - Add archive header
+   - docs/archive/improvements/V2_IMPLEMENTATION_COMPLETE.md - Add archive header
+   - docs/archive/improvements/CONFIDENCE_IMPROVEMENT_FINDINGS.md - Add archive header
+
+HIGH (THIS WEEK):
+1. CLAUDE.md - Fix performance breakdown
+2. Create docs/architecture/FAST_IDENTIFIER_V2_SPECIFICATION.md
+3. Add integration tests for version manager
+
+NICE TO HAVE:
+1. Create docs/guides/FAST_IDENTIFIER_SETUP.md
+2. Verify metadata file paths
+3. Add error handling for missing artifacts
+
+==============================================================================
+IMPORT CHAIN VERIFICATION
+==============================================================================
+
+Service imports verified:
+- identification_service.py imports production_card_identifier ✓
+- identification_service.py imports fast_card_identifier ✓
+- identification_service.py imports identifier_version_manager ✓
+- identifier_version_manager.py dynamically loads both identifiers ✓
+
+All import paths correct!
+
+==============================================================================
+SUMMARY
+==============================================================================
+
+Critical Issues Found: 3
+High Priority Issues: 2
+Medium Priority Issues: 2
+
+Current Risk Level: MEDIUM
+- Fast identifier works but docs are misleading
+- Multi-frame feature promised but not implemented
+- Could cause support issues
+
+Risk After Fixes: LOW
+- Clear documentation
+- No unsupported feature promises
+- Accurate performance metrics
+
+==============================================================================
+
+Generated: 2025-11-03 | Ready for Implementation
