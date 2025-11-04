@@ -27,9 +27,10 @@ numpy>=1.24.0
 # Utilities
 tqdm>=4.66.0
 
-# Optional: Development and Testing
-# pytest>=7.4.0
-# pytest-cov>=4.1.0
+# Development and Testing
+pytest>=7.4.0
+pytest-cov>=4.1.0
+pytest-timeout>=2.2.0
 
 # Notes:
 # - For GPU acceleration: Install faiss-gpu instead of faiss-cpu
