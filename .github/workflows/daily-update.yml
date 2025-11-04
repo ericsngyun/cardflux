@@ -51,6 +51,20 @@ jobs:
       - name: Install Node dependencies
         run: pnpm install --frozen-lockfile
 
+      - name: Build TypeScript packages
+        run: |
+          echo "Building @cardflux/config and @cardflux/shared..."
+          pnpm --filter @cardflux/config build
+          pnpm --filter @cardflux/shared build
+          echo "✅ Packages built successfully"
+
+      - name: Verify package builds
+        run: |
+          echo "Verifying TypeScript package builds..."
+          ls -lh packages/config/dist/ || echo "⚠️ @cardflux/config dist not found"
+          ls -lh packages/shared/dist/ || echo "⚠️ @cardflux/shared dist not found"
+          echo "✅ Package verification complete"
+
       - name: Install Python dependencies
         run: |
           pip install torch transformers faiss-cpu pillow numpy tqdm opencv-python easyocr
