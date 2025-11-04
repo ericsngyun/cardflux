@@ -44,3 +44,6 @@ artifacts/faiss/**/*.json !filter !diff !merge text
 artifacts/metadata/**/*.npy filter=lfs diff=lfs merge=lfs -text
 artifacts/metadata/**/*.jsonl filter=lfs diff=lfs merge=lfs -text
 artifacts/metadata/**/*.json !filter !diff !merge text
+# Pre-computed ORB keypoints cache (~120 MB per game) - CRITICAL for Fast Identifier v2
+artifacts/keypoints/**/*.npz filter=lfs diff=lfs merge=lfs -text
+artifacts/keypoints/**/*.pkl filter=lfs diff=lfs merge=lfs -text

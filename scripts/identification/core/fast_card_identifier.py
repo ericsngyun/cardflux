@@ -530,7 +530,7 @@ class FastCardIdentifier:
                 'final': best_match['final_score'],
             },
             'foil_detected': foil_result.is_foil if foil_result else False,
-            'foil_type': foil_result.foil_type if foil_result else None,
+            'foil_type': foil_result.foil_type.value if foil_result and foil_result.foil_type else None,
             'timing': {
                 'total_ms': total_time * 1000,
                 'feature_extraction_ms': features_time * 1000,
