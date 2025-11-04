@@ -27,7 +27,8 @@
       "Bash(cat:*)",
       "Bash(pnpm list:*)",
       "Bash(rm:*)",
-      "Bash(git lfs ls-files:*)"
+      "Bash(git lfs ls-files:*)",
+      "Bash(Select-Object -Last 100)"
     ],
     "deny": [],
     "ask": []
