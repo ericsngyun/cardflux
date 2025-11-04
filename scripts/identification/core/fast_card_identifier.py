@@ -179,7 +179,8 @@ class FastCardIdentifier:
             print(f"  [OK] ORB initialized (lightweight mode)")
 
         # OPTIMIZATION 4: Pre-compute and cache geometric features
-        KEYPOINTS_DIR = Path(__file__).parent.parent.parent / "artifacts" / "keypoints"
+        # Path: scripts/identification/core/ -> parent.parent.parent.parent -> root
+        KEYPOINTS_DIR = Path(__file__).parent.parent.parent.parent / "artifacts" / "keypoints"
         keypoints_path = KEYPOINTS_DIR / game / "orb_keypoints.npz"
 
         if keypoints_path.exists():

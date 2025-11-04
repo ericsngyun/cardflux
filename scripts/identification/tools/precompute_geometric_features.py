@@ -28,9 +28,10 @@ import cv2
 from tqdm import tqdm
 
 # Configuration
+# Path calculation: scripts/identification/tools/ -> parent.parent.parent.parent -> root
 IMAGES_DIR = Path(__file__).parent.parent.parent.parent / "data" / "images"
 FAISS_DIR = Path(__file__).parent.parent.parent.parent / "artifacts" / "faiss"
-KEYPOINTS_DIR = Path(__file__).parent.parent.parent / "artifacts" / "keypoints"
+KEYPOINTS_DIR = Path(__file__).parent.parent.parent.parent / "artifacts" / "keypoints"  # Fixed: was missing one .parent
 
 
 def precompute_geometric_features(game: str, force: bool = False):
