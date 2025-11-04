@@ -65,10 +65,27 @@ jobs:
           ls -lh packages/shared/dist/ || echo "⚠️ @cardflux/shared dist not found"
           echo "✅ Package verification complete"
 
+      - name: Free up disk space
+        run: |
+          echo "=== Disk Space Before Cleanup ==="
+          df -h
+          echo ""
+          echo "Removing unnecessary packages to free disk space..."
+          # Remove large packages we don't need
+          sudo rm -rf /usr/share/dotnet
+          sudo rm -rf /usr/local/lib/android
+          sudo rm -rf /opt/ghc
+          sudo rm -rf /opt/hostedtoolcache/CodeQL
+          sudo docker image prune -af || true
+          sudo apt-get clean || true
+          echo ""
+          echo "=== Disk Space After Cleanup ==="
+          df -h
+
       - name: Install Python dependencies
         run: |
-          pip install torch transformers faiss-cpu pillow numpy tqdm opencv-python easyocr
-          pip install -r requirements.txt || true  # FIXED: Use root requirements.txt
+          # Install from requirements.txt only (avoid duplicates and save disk space)
+          pip install -r requirements.txt
 
       - name: Configure Git
         run: |
@@ -246,7 +263,11 @@ jobs:
       - name: Cleanup old backups
         if: always()
         run: |
-          # Keep only last 3 backups
-          cd backups
-          ls -t | tail -n +4 | xargs -r rm -rf
-          echo "Cleaned up old backups"
+          # Keep only last 3 backups (if backups directory exists)
+          if [ -d "backups" ]; then
+            cd backups
+            ls -t | tail -n +4 | xargs -r rm -rf || true
+            echo "✅ Cleaned up old backups (kept last 3)"
+          else
+            echo "ℹ️  No backups directory found (first run)"
+          fi
