@@ -77,7 +77,6 @@ jobs:
           echo "Building shared packages..."
           cd packages/config && pnpm build
           cd ../shared && pnpm build
-          cd ../../services/ingest && pnpm build
           cd ../..
           echo "✅ Packages built successfully"
 
