@@ -70,9 +70,10 @@ jobs:
 
       - name: Build TypeScript packages
         run: |
-          echo "Building @cardflux/config and @cardflux/shared..."
+          echo "Building @cardflux/config, @cardflux/shared, and @cardflux/ingest..."
           pnpm --filter @cardflux/config build
           pnpm --filter @cardflux/shared build
+          pnpm --filter @cardflux/ingest build
           echo "✅ Packages built successfully"
 
       - name: Verify package builds
@@ -170,8 +171,14 @@ jobs:
           echo "Game: ${{ github.event.inputs.game || 'one-piece' }}"
           echo "Time: $(date)"
 
+          # ✅ CRITICAL FIX: Remove tsconfig to prevent tsx path resolution issues
+          mv services/ingest/tsconfig.json services/ingest/tsconfig.json.bak || true
+
           # Run the incremental pipeline
           pnpm pipeline:update || exit 1
+
+          # Restore tsconfig
+          mv services/ingest/tsconfig.json.bak services/ingest/tsconfig.json || true
 
           echo "Update completed successfully"
           echo "update_status=success" >> $GITHUB_OUTPUT

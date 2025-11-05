@@ -77,6 +77,7 @@ jobs:
           echo "Building shared packages..."
           cd packages/config && pnpm build
           cd ../shared && pnpm build
+          cd ../../services/ingest && pnpm build
           cd ../..
           echo "✅ Packages built successfully"
 
@@ -193,8 +194,14 @@ jobs:
           echo "Estimated time: 5-15 minutes"
           echo ""
 
+          # ✅ CRITICAL FIX: Remove tsconfig to prevent tsx path resolution issues
+          mv services/ingest/tsconfig.json services/ingest/tsconfig.json.bak || true
+
           # ✅ Use the incremental pipeline script
           pnpm pipeline:update
+
+          # Restore tsconfig
+          mv services/ingest/tsconfig.json.bak services/ingest/tsconfig.json || true
 
           echo ""
           echo "Update completed successfully"
