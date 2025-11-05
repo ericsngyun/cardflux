@@ -67,7 +67,10 @@ jobs:
             ${{ runner.os }}-pnpm-store-
 
       - name: Install Node dependencies
-        run: pnpm install --frozen-lockfile
+        run: |
+          # Clear any cached tsx/tsconfig state
+          rm -rf node_modules/.cache 2>/dev/null || true
+          pnpm install --frozen-lockfile
 
       - name: Build TypeScript packages
         run: |
