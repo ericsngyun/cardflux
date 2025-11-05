@@ -70,6 +70,7 @@ jobs:
         run: |
           # Clear any cached tsx/tsconfig state
           rm -rf node_modules/.cache 2>/dev/null || true
+          rm -rf services/ingest/node_modules/.cache 2>/dev/null || true
           pnpm install --frozen-lockfile
 
       - name: Build TypeScript packages
@@ -193,8 +194,8 @@ jobs:
           echo "Estimated time: 5-15 minutes"
           echo ""
 
-          # ✅ ULTIMATE FIX: Use ts-node with --skip-project flag (bypasses all tsconfig)
-          # No need to remove tsconfig - ts-node ignores it completely
+          # ✅ ULTIMATE FIX: Use tsx (already installed, simpler than ts-node)
+          # tsx handles module resolution correctly without needing config overrides
 
           # ✅ Use the incremental pipeline script
           pnpm pipeline:update
