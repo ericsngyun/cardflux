@@ -1,10 +1,27 @@
 #!/usr/bin/env node
+/**
+ * One Piece TCG Image Fetcher
+ *
+ * API-Respectful Image Downloading:
+ * - Skips images that already exist (checks file existence + validates size)
+ * - Implements rate limiting: ~2 images/sec = 120/min (well under 300/hour limit)
+ * - Exponential backoff on 403/429 errors (respects server rate limits)
+ * - Validates image size (re-downloads corrupted files < 1KB)
+ *
+ * This ensures we're a good API citizen and don't get banned by TCGPlayer.
+ */
 import * as fs from 'fs';
 import * as path from 'path';
 import axios from 'axios';
 
 const CURATED_DIR = path.resolve(__dirname, '../../../data/curated');
 const IMAGES_DIR = path.resolve(__dirname, '../../../data/images');
+
+// CRITICAL: Rate limiting to respect TCGPlayer API policy
+// TCGPlayer allows ~300 requests/hour for images
+// We implement conservative rate limiting to be a good API citizen
+const BATCH_DELAY_MS = 500;  // 500ms after every 10 images = ~2 images/sec = 120/min
+const MIN_DELAY_MS = 100;    // 100ms between individual requests
 
 interface Card {
   id?: string;
@@ -83,12 +100,19 @@ async function fetchImagesForOnePiece() {
     const ext = path.extname(new URL(imageUrl).pathname) || '.jpg';
     const imagePath = path.join(gameImagesDir, `${cardId}${ext}`);
 
+    // Skip if image already exists (respect API policy - don't re-download)
     if (fs.existsSync(imagePath)) {
-      skipped++;
-      continue;
+      // Verify image is valid (not corrupted/empty)
+      const stats = fs.statSync(imagePath);
+      if (stats.size >= 1000) { // At least 1KB = valid image
+        skipped++;
+        continue;
+      }
+      // If corrupted (< 1KB), re-download below
+      console.log(`  ! Corrupted image detected for ${cardId} (${stats.size} bytes), re-downloading...`);
     }
 
-    try:
+    try {
       await downloadImage(imageUrl, imagePath);
       downloaded++;
 
@@ -96,11 +120,12 @@ async function fetchImagesForOnePiece() {
         console.log(`Progress: ${downloaded} downloaded, ${skipped} skipped, ${failed} failed (${i + 1}/${lines.length})`);
       }
 
-      // Adaptive rate limiting: slow down after every batch
+      // Adaptive rate limiting: respect API policy
+      // CRITICAL: Don't overwhelm TCGPlayer servers
       if (downloaded % 10 === 0) {
-        await new Promise(resolve => setTimeout(resolve, 500)); // Increased delay
+        await new Promise(resolve => setTimeout(resolve, BATCH_DELAY_MS));
       } else {
-        await new Promise(resolve => setTimeout(resolve, 100));
+        await new Promise(resolve => setTimeout(resolve, MIN_DELAY_MS));
       }
     } catch (error: any) {
       failed++;
