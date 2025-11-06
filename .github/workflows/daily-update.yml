@@ -79,7 +79,12 @@ jobs:
           cd packages/config && pnpm build
           cd ../shared && pnpm build
           cd ../..
-          echo "✅ Packages built successfully"
+          echo "✅ Shared packages built successfully"
+
+          echo "Building ingest service..."
+          cd services/ingest && pnpm build
+          cd ../..
+          echo "✅ Ingest service built successfully"
 
       - name: Install Python dependencies
         run: |
@@ -194,10 +199,11 @@ jobs:
           echo "Estimated time: 5-15 minutes"
           echo ""
 
-          # ✅ ULTIMATE FIX: Use tsx (already installed, simpler than ts-node)
-          # tsx handles module resolution correctly without needing config overrides
+          # ✅ ULTIMATE FIX: Compile TypeScript to JavaScript, then run with Node.js
+          # tsx/ts-node have path resolution conflicts with pnpm workspace dependencies
+          # Running compiled JavaScript avoids all TypeScript module resolution issues
 
-          # ✅ Use the incremental pipeline script
+          # ✅ Use the incremental pipeline script (now runs compiled JS)
           pnpm pipeline:update
 
           echo ""

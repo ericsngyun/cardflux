@@ -3,6 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
+    "build": "tsc",
     "pull-tcgcsv": "ts-node bin/pull_tcgcsv.ts",
     "normalize": "ts-node bin/normalize.ts",
     "fetch-images": "ts-node bin/fetch_images.ts",
@@ -16,7 +17,7 @@
     "@cardflux/shared": "workspace:*",
     "axios": "^1.6.2",
     "better-sqlite3": "^9.2.2",
-    "p-limit": "^5.0.0"
+    "p-limit": "^3.1.0"
   },
   "devDependencies": {
     "@types/better-sqlite3": "^7.6.8",

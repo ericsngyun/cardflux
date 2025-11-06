@@ -26,7 +26,7 @@
     "pipeline:all": "node scripts/make/run-pipeline.mjs",
     "pipeline:update": "node scripts/make/run-pipeline-incremental.mjs",
     "tcgplayer:scrape": "tsx services/ingest/bin/tcgplayer-scraper.ts",
-    "tcgplayer:scrape:incremental": "tsx services/ingest/bin/tcgplayer-scraper-incremental.ts",
+    "tcgplayer:scrape:incremental": "node services/ingest/dist/bin/tcgplayer-scraper-incremental.js",
     "tcgplayer:db": "tsx services/ingest/bin/build_sqlite_tcgplayer.ts",
     "dev:health": "node scripts/dev/check-health.mjs",
     "dev:test-scrape": "node scripts/dev/test-scraper.mjs",
