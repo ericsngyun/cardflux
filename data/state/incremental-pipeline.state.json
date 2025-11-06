@@ -1,0 +1,8 @@
+{
+  "completedSteps": [
+    "scrape"
+  ],
+  "lastRun": "2025-11-06T18:09:23.815Z",
+  "failedStep": "normalize",
+  "error": "Step normalize failed with code 134"
+}
