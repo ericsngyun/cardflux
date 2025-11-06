@@ -70,3 +70,17 @@ cardflux-data-*.zip
 # Testing
 coverage/
 .nyc_output/
+
+# Desktop app build artifacts
+apps/desktop/.bundle-temp/
+apps/desktop/resources/python-runtime/
+
+# Test coverage
+.coverage
+**/.coverage
+
+# Local npm config
+.npmrc
+
+# Local data directory
+services/data/
