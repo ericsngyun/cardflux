@@ -328,9 +328,23 @@ async function main() {
   });
 
   const games = getAllGames();
+
+  // Only process games that have existing curated data (enabled games)
+  const gamesToProcess = games.filter(game => {
+    const curatedPath = path.join(CURATED_DIR, `${game.slug}.jsonl`);
+    return fs.existsSync(curatedPath);
+  });
+
+  if (gamesToProcess.length === 0) {
+    console.log('ℹ️  No games with curated data found. Run full scrape first.');
+    return;
+  }
+
+  console.log(`Processing ${gamesToProcess.length} game(s): ${gamesToProcess.map(g => g.name).join(', ')}\n`);
+
   const totalStats = { new: 0, updated: 0, unchanged: 0 };
 
-  for (const game of games) {
+  for (const game of gamesToProcess) {
     if (isShuttingDown()) {
       console.log('\n⚠️  Shutdown requested, stopping pipeline...');
       break;

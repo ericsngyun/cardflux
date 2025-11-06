@@ -325,11 +325,25 @@ async function main() {
   });
 
   const games = getAllGames();
+
+  // Only process games that have existing curated data
+  const gamesToProcess = games.filter(game => {
+    const curatedPath = path.join(__dirname, `../../../data/curated/${game.slug}.jsonl`);
+    return fs.existsSync(curatedPath);
+  });
+
+  if (gamesToProcess.length === 0) {
+    console.log('ℹ️  No games with curated data found. Run normalize first.');
+    return;
+  }
+
+  console.log(`Processing ${gamesToProcess.length} game(s): ${gamesToProcess.map(g => g.name).join(', ')}\n`);
+
   const totalStats = { new: 0, skipped: 0, failed: 0 };
 
   const startTime = Date.now();
 
-  for (const game of games) {
+  for (const game of gamesToProcess) {
     if (isShuttingDown()) {
       console.log('\n⚠️  Shutdown requested, stopping image pipeline...');
       break;
