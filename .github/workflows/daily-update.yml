@@ -36,6 +36,25 @@ jobs:
           token: ${{ secrets.GITHUB_TOKEN }}
           lfs: ${{ github.event.inputs.skip_lfs != 'true' }}  # ✅ FIXED: Add LFS support
 
+      - name: Pull Git LFS files explicitly
+        if: github.event.inputs.skip_lfs != 'true'
+        run: |
+          echo "Pulling Git LFS files..."
+          git lfs pull
+          echo "LFS files pulled successfully"
+
+          # Verify LFS files were downloaded (not just pointers)
+          if [ -f "data/curated/one-piece.jsonl" ]; then
+            SIZE=$(stat -f%z "data/curated/one-piece.jsonl" 2>/dev/null || stat -c%s "data/curated/one-piece.jsonl" 2>/dev/null)
+            if [ "$SIZE" -lt 1000 ]; then
+              echo "⚠️  WARNING: one-piece.jsonl is only ${SIZE} bytes (likely a pointer file)"
+              echo "This means Git LFS files weren't downloaded properly"
+              cat data/curated/one-piece.jsonl
+            else
+              echo "✅ LFS files verified: one-piece.jsonl is ${SIZE} bytes"
+            fi
+          fi
+
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
