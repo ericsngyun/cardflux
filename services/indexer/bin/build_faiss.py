@@ -339,12 +339,18 @@ def main():
     if args.game:
         games = [args.game]
     else:
-        games = [d.name for d in EMBEDDINGS_DIR.iterdir() if d.is_dir()]
+        # Check if embeddings directory exists
+        if not EMBEDDINGS_DIR.exists():
+            games = []
+        else:
+            games = [d.name for d in EMBEDDINGS_DIR.iterdir() if d.is_dir()]
 
     if not games:
-        print("\nNo games found in artifacts/embeddings/")
-        print("Run: python services/embedder/bin/embed_cards.py")
-        sys.exit(1)
+        print("\n[INFO] No games found in artifacts/embeddings/")
+        print("This is expected when using game-specific embedders (e.g., embed_onepiece_dinov2_with_preprocessing.py)")
+        print("which build FAISS indices directly without intermediate embeddings directory.")
+        print("\nSkipping FAISS index building step.")
+        sys.exit(0)  # Exit successfully
 
     print(f"\nGames: {', '.join(games)}")
 
