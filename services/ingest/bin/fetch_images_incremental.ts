@@ -99,7 +99,9 @@ async function downloadImage(
         throw new Error('Invalid response: not an image');
       }
 
-      const buffer = Buffer.from(response.data);
+      const buffer = Buffer.isBuffer(response.data)
+        ? response.data
+        : Buffer.from(response.data as ArrayBuffer);
 
       // Verify minimum size (corrupted images are usually tiny)
       if (buffer.length < 1000) {
