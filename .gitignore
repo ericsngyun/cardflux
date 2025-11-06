@@ -15,6 +15,10 @@ data/images/**
 # Curated data (JSONL) stored in Git LFS
 !data/curated/**/*.jsonl
 
+# Pipeline state files (temporary, should not be committed)
+data/state/
+data/state/**
+
 # Artifacts - Store indices/embeddings in Git LFS, exclude large files
 # FAISS indices and embeddings stored in Git LFS
 !artifacts/faiss/**
@@ -22,6 +26,9 @@ data/images/**
 # Exception: Keep tiny samples for development
 !artifacts/samples/**
 !artifacts/.gitkeep
+
+# Generated manifests (temporary, regenerated on each build)
+artifacts/manifests/
 
 # Python
 __pycache__/
@@ -62,6 +69,9 @@ infra/.cdk.staging/
 # Temp
 *.tmp
 .cache/
+
+# CI backups (created during workflow runs, should not be committed)
+backups/
 
 # Data packages (too large for Git - upload to GitHub Releases instead)
 *.zip
