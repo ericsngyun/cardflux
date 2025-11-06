@@ -1,7 +1,7 @@
 {
   "index_type": "IndexFlatIP",
   "dimension": 384,
-  "total_vectors": 4967,
+  "total_vectors": 5142,
   "preprocessing": {
     "bilateral_filter": {
       "d": 5,
@@ -22,9 +22,9 @@
     "complexity": "O(n)"
   },
   "benchmark": {
-    "avg_latency_ms": 0.1362323760986328,
+    "avg_latency_ms": 0.20278453826904297,
     "recall": 1.0,
     "queries": 100
   },
-  "created_at": "2025-10-27 15:25:03"
+  "created_at": "2025-11-06 10:29:59"
 }
