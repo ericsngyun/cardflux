@@ -28,6 +28,10 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 240  # 4 hours max
 
+    # Grant write permissions for pushing commits
+    permissions:
+      contents: write  # Allow git push
+
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
