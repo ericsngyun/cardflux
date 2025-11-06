@@ -1,0 +1,118 @@
+{
+  "timestamp": "2025-11-06 10:59:17",
+  "total": 10,
+  "successful": 10,
+  "failed": 0,
+  "results": [
+    {
+      "image": "bege.png",
+      "matched_card": "Capone\"Gang\"Bege",
+      "card_number": "ST02-004",
+      "confidence": "HIGH",
+      "final_score": 0.8759494453668595,
+      "visual_score": 0.8694204688072205,
+      "geometric_score": 0.0,
+      "time_ms": 930.1543235778809,
+      "success": true
+    },
+    {
+      "image": "blackbeard.png",
+      "matched_card": "Marshall.D.Teach (093) (Manga)",
+      "card_number": "OP09-093",
+      "confidence": "HIGH",
+      "final_score": 0.7969259440898895,
+      "visual_score": 0.7862378358840942,
+      "geometric_score": 0.0,
+      "time_ms": 428.49278450012207,
+      "success": true
+    },
+    {
+      "image": "mihawk.png",
+      "matched_card": "Dracule Mihawk (OP01-070) (Alternate Art)",
+      "card_number": "OP01-070",
+      "confidence": "HIGH",
+      "final_score": 0.7515463471412659,
+      "visual_score": 0.7384698390960693,
+      "geometric_score": 0.0,
+      "time_ms": 435.75310707092285,
+      "success": true
+    },
+    {
+      "image": "nusjuro_altart.png",
+      "matched_card": "St. Ethanbaron V. Nusjuro (Alternate Art)",
+      "card_number": "OP13-080",
+      "confidence": "HIGH",
+      "final_score": 0.7281208842992782,
+      "visual_score": 0.713811457157135,
+      "geometric_score": 0.0,
+      "time_ms": 434.2622756958008,
+      "success": true
+    },
+    {
+      "image": "op13_garp_altart.png",
+      "matched_card": "Monkey.D.Garp (Alternate Art)",
+      "card_number": "OP13-016",
+      "confidence": "HIGH",
+      "final_score": 0.8011917442083358,
+      "visual_score": 0.7907281517982483,
+      "geometric_score": 0.0,
+      "time_ms": 476.0599136352539,
+      "success": true
+    },
+    {
+      "image": "op13_saboleader_altart.png",
+      "matched_card": "Sabo (004) (Alternate Art)",
+      "card_number": "OP13-004",
+      "confidence": "HIGH",
+      "final_score": 0.8510319292545319,
+      "visual_score": 0.8431915044784546,
+      "geometric_score": 0.0,
+      "time_ms": 442.8725242614746,
+      "success": true
+    },
+    {
+      "image": "op13_shanks_altart.png",
+      "matched_card": "Shanks (065) (Alternate Art)",
+      "card_number": "OP13-065",
+      "confidence": "HIGH",
+      "final_score": 0.8177191078662872,
+      "visual_score": 0.808125376701355,
+      "geometric_score": 0.0,
+      "time_ms": 466.9632911682129,
+      "success": true
+    },
+    {
+      "image": "radicalbeam.png",
+      "matched_card": "Radical Beam!! (Premium Card Collection -Best Selection Vol. 1-)",
+      "card_number": "OP01-029",
+      "confidence": "HIGH",
+      "final_score": 0.9558625161647797,
+      "visual_score": 0.9535394906997681,
+      "geometric_score": 0.0,
+      "time_ms": 126.20782852172852,
+      "success": true
+    },
+    {
+      "image": "yellow_event.png",
+      "matched_card": "You're the One Who Should Disappear",
+      "card_number": "OP06-115",
+      "confidence": "HIGH",
+      "final_score": 0.6940054684877396,
+      "visual_score": 0.677900493144989,
+      "geometric_score": 0.0,
+      "time_ms": 484.036922454834,
+      "success": true
+    },
+    {
+      "image": "blackbeard-db.jpg",
+      "matched_card": "Marshall.D.Teach (093) (Manga)",
+      "card_number": "OP09-093",
+      "confidence": "HIGH",
+      "final_score": 0.9937608957290649,
+      "visual_score": 0.9934325218200684,
+      "geometric_score": 0.0,
+      "time_ms": 140.7942771911621,
+      "success": true
+    }
+  ]
+}
