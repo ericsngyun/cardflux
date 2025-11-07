@@ -3,6 +3,7 @@
 **Date:** $(date)
 **Status:** success
 **Game:** one-piece
+**Price Scraping:** failed
 
 ## Changes
 
@@ -21,6 +22,15 @@ $(ls -lh artifacts/keypoints/*/orb_keypoints.npz 2>/dev/null || echo "No keypoin
 ## Card Counts
 
 $(find data/curated -name "*.jsonl" -exec sh -c 'echo "{}: $(wc -l < {})" cards' \; 2>/dev/null || echo "No JSONL files found")
+
+## Price Data
+
+$(if [ -d "data/prices/historical/one-piece" ]; then
+    echo "Total price snapshots: $(ls -1 data/prices/historical/one-piece/*.jsonl 2>/dev/null | wc -l)"
+    echo "Latest: $(ls -1t data/prices/historical/one-piece/*.jsonl 2>/dev/null | head -1)"
+  else
+    echo "No price data collected yet"
+  fi)
 
 ## System Info
 
