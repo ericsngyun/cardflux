@@ -1,0 +1,490 @@
+name: Daily Card Database Update with Price Tracking
+
+# Runs daily at 2 PM PDT (21:00 UTC, adjusts automatically for DST)
+# TCGPlayer updates at 1 PM PDT, so we run 1 hour later
+on:
+  schedule:
+    # Single cron schedule - 21:00 UTC = 2 PM PDT / 3 PM PST
+    - cron: '0 21 * * *'
+
+  # Allow manual trigger
+  workflow_dispatch:
+    inputs:
+      game:
+        description: 'Game to update (or "all")'
+        required: false
+        default: 'one-piece'
+      dry_run:
+        description: 'Dry run (no commits)'
+        required: false
+        default: 'false'
+      skip_lfs:
+        description: 'Skip LFS download (if artifacts not changed)'
+        required: false
+        default: 'false'
+      skip_prices:
+        description: 'Skip price scraping (testing only)'
+        required: false
+        default: 'false'
+
+jobs:
+  update-database:
+    runs-on: ubuntu-latest
+    timeout-minutes: 240  # 4 hours max
+
+    # Grant write permissions for pushing commits
+    permissions:
+      contents: write  # Allow git push
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+          lfs: ${{ github.event.inputs.skip_lfs != 'true' }}
+
+      - name: Pull Git LFS files explicitly
+        if: github.event.inputs.skip_lfs != 'true'
+        run: |
+          echo "Pulling Git LFS files..."
+          git lfs pull
+          echo "LFS files pulled successfully"
+
+          # Verify LFS files were downloaded (not just pointers)
+          if [ -f "data/curated/one-piece.jsonl" ]; then
+            SIZE=$(stat -f%z "data/curated/one-piece.jsonl" 2>/dev/null || stat -c%s "data/curated/one-piece.jsonl" 2>/dev/null)
+            if [ "$SIZE" -lt 1000 ]; then
+              echo "⚠️  WARNING: one-piece.jsonl is only ${SIZE} bytes (likely a pointer file)"
+              echo "This means Git LFS files weren't downloaded properly"
+              cat data/curated/one-piece.jsonl
+            else
+              echo "✅ LFS files verified: one-piece.jsonl is ${SIZE} bytes"
+            fi
+          fi
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v3
+        with:
+          version: 9
+          run_install: false
+
+      - name: Get pnpm store directory
+        shell: bash
+        run: |
+          echo "STORE_PATH=$(pnpm store path --silent)" >> $GITHUB_ENV
+
+      - name: Setup pnpm cache
+        uses: actions/cache@v4
+        with:
+          path: ${{ env.STORE_PATH }}
+          key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
+          restore-keys: |
+            ${{ runner.os }}-pnpm-store-
+
+      - name: Install Node dependencies
+        run: |
+          # Clear any cached tsx/tsconfig state
+          rm -rf node_modules/.cache 2>/dev/null || true
+          rm -rf services/ingest/node_modules/.cache 2>/dev/null || true
+          pnpm install --frozen-lockfile
+
+      - name: Build TypeScript packages
+        run: |
+          echo "Building shared packages..."
+          cd packages/config && pnpm build
+          cd ../shared && pnpm build
+          cd ../..
+          echo "✅ Shared packages built successfully"
+
+          echo "Building ingest service..."
+          cd services/ingest && pnpm build
+          cd ../..
+          echo "✅ Ingest service built successfully"
+
+      - name: Install Python dependencies
+        run: |
+          pip install -r requirements-ci.txt
+          echo "✅ Installed minimal Python dependencies for CI scraper"
+
+      - name: Configure Git
+        run: |
+          git config user.name "CardFlux Bot"
+          git config user.email "bot@cardflux.com"
+
+      - name: Check system health (pre-update)
+        run: |
+          echo "=== Pre-Update Health Check ==="
+          echo "Node version: $(node --version)"
+          echo "Python version: $(python --version)"
+          echo "pnpm version: $(pnpm --version)"
+          echo "Disk space:"
+          df -h
+          echo "Memory:"
+          free -h
+
+      - name: Create backup of current state
+        run: |
+          mkdir -p backups/pre-update-$(date +%Y%m%d)
+
+          # Backup FAISS indices
+          if [ -d "artifacts/faiss" ]; then
+            cp -r artifacts/faiss backups/pre-update-$(date +%Y%m%d)/ || true
+            echo "✅ Backed up FAISS indices"
+          fi
+
+          # Backup metadata
+          if [ -d "artifacts/metadata" ]; then
+            cp -r artifacts/metadata backups/pre-update-$(date +%Y%m%d)/ || true
+            echo "✅ Backed up metadata"
+          fi
+
+          echo "Backup created: backups/pre-update-$(date +%Y%m%d)"
+
+      - name: Check if initial data exists
+        id: check_data
+        run: |
+          # Check for both curated data AND FAISS index
+          if [ -f "data/curated/one-piece.jsonl" ] && [ -f "artifacts/faiss/one-piece-dinov2/index.faiss" ]; then
+            echo "has_data=true" >> $GITHUB_OUTPUT
+            echo "✅ Existing data found - will run incremental update"
+
+            # Show stats
+            echo "Cards in database: $(wc -l < data/curated/one-piece.jsonl)"
+            echo "Index size: $(du -h artifacts/faiss/one-piece-dinov2/index.faiss | cut -f1)"
+          else
+            echo "has_data=false" >> $GITHUB_OUTPUT
+            echo "⚠️  No existing data - will run full scrape"
+
+            if [ ! -f "data/curated/one-piece.jsonl" ]; then
+              echo "Missing: data/curated/one-piece.jsonl"
+            fi
+            if [ ! -f "artifacts/faiss/one-piece-dinov2/index.faiss" ]; then
+              echo "Missing: artifacts/faiss/one-piece-dinov2/index.faiss"
+            fi
+          fi
+
+      - name: Run initial full scrape (first time only)
+        if: steps.check_data.outputs.has_data == 'false'
+        run: |
+          echo "🔄 Running full scrape from TCGPlayer..."
+          echo "This is the first run - building database from scratch"
+          echo "Estimated time: 30-60 minutes"
+          echo ""
+
+          # Step 1: Scrape TCGPlayer data
+          echo "[1/6] Scraping TCGPlayer..."
+          pnpm tsx services/ingest/bin/tcgplayer-scraper-onepiece.ts
+
+          # Step 2: Normalize data
+          echo "[2/6] Normalizing data..."
+          pnpm pipeline:normalize
+
+          # Step 3: Download images
+          echo "[3/6] Downloading images..."
+          pnpm tsx services/ingest/bin/fetch_images_onepiece.ts
+
+          # Step 4: Build SQLite database
+          echo "[4/6] Building metadata database..."
+          pnpm pipeline:metadata
+
+          # Step 5: Generate embeddings
+          echo "[5/6] Generating embeddings (DINOv2 with preprocessing)..."
+          python services/embedder/bin/embed_onepiece_dinov2_with_preprocessing.py
+
+          # Step 6: Build FAISS index
+          echo "[6/6] Building FAISS index..."
+          pnpm pipeline:index
+
+          echo "✅ Initial data created successfully"
+
+      - name: Run incremental card update
+        id: update
+        if: steps.check_data.outputs.has_data == 'true'
+        run: |
+          echo "Starting CardFlux incremental update..."
+          echo "Game: ${{ github.event.inputs.game || 'one-piece' }}"
+          echo "Time: $(date)"
+          echo "Estimated time: 5-15 minutes"
+          echo ""
+
+          # Run incremental pipeline (scrapes cards, NOT prices)
+          pnpm pipeline:update
+
+          echo ""
+          echo "✅ Card update completed successfully"
+          echo "update_status=success" >> $GITHUB_OUTPUT
+        continue-on-error: false
+
+      # ✨ NEW: Daily Price Scraping
+      - name: Scrape daily prices from TCGPlayer
+        id: scrape_prices
+        if: steps.check_data.outputs.has_data == 'true' && github.event.inputs.skip_prices != 'true'
+        env:
+          TCGPLAYER_API_KEY: ${{ secrets.TCGPLAYER_API_KEY }}
+        run: |
+          echo "💰 Scraping current prices from TCGPlayer API..."
+          echo "Date: $(date +%Y-%m-%d)"
+          echo "Game: one-piece"
+          echo ""
+
+          # Create price directories if they don't exist
+          mkdir -p data/prices/historical/one-piece
+          mkdir -p data/state
+
+          # Run daily price scraper
+          pnpm prices:daily
+
+          # Verify output
+          TODAY=$(date +%Y-%m-%d)
+          PRICE_FILE="data/prices/historical/one-piece/${TODAY}.jsonl"
+
+          if [ -f "$PRICE_FILE" ]; then
+            PRICE_COUNT=$(wc -l < "$PRICE_FILE")
+            FILE_SIZE=$(du -h "$PRICE_FILE" | cut -f1)
+            echo "✅ Scraped prices for $PRICE_COUNT cards"
+            echo "   File: $PRICE_FILE"
+            echo "   Size: $FILE_SIZE"
+            echo ""
+            echo "price_scrape_status=success" >> $GITHUB_OUTPUT
+            echo "price_count=$PRICE_COUNT" >> $GITHUB_OUTPUT
+          else
+            echo "⚠️  Price file not created: $PRICE_FILE"
+            echo "This may indicate TCGPlayer API issues or missing API key"
+            echo ""
+            echo "price_scrape_status=failed" >> $GITHUB_OUTPUT
+            # Don't fail the whole workflow - continue without prices
+          fi
+        continue-on-error: true  # Don't fail if price scraping has issues
+
+      - name: Regenerate keypoints cache (if missing)
+        if: steps.check_data.outputs.has_data == 'true'
+        run: |
+          # Check if keypoints exist
+          if [ ! -f "artifacts/keypoints/one-piece/orb_keypoints.npz" ]; then
+            echo "⚠️  Keypoints cache missing - regenerating..."
+            echo "This takes ~45 seconds..."
+
+            python scripts/identification/tools/precompute_geometric_features.py
+
+            echo "✅ Keypoints cache regenerated"
+          else
+            echo "✅ Keypoints cache exists"
+            echo "Size: $(du -h artifacts/keypoints/one-piece/orb_keypoints.npz | cut -f1)"
+          fi
+
+      - name: Generate update report
+        if: always()
+        run: |
+          cat > update-report.md << 'EOF'
+          # CardFlux Update Report
+
+          **Date:** $(date)
+          **Status:** ${{ steps.update.outputs.update_status || 'failed' }}
+          **Game:** ${{ github.event.inputs.game || 'one-piece' }}
+          **Price Scraping:** ${{ steps.scrape_prices.outputs.price_scrape_status || 'skipped' }}
+
+          ## Changes
+
+          $(git diff --stat || echo "No changes detected")
+
+          ## New Files
+
+          $(git status --short || echo "No new files")
+
+          ## Artifacts Status
+
+          $(ls -lh artifacts/faiss/*/index.faiss 2>/dev/null || echo "No index files found")
+          $(ls -lh artifacts/metadata/embeddings/*/metadata.jsonl 2>/dev/null || echo "No metadata files found")
+          $(ls -lh artifacts/keypoints/*/orb_keypoints.npz 2>/dev/null || echo "No keypoints files found")
+
+          ## Card Counts
+
+          $(find data/curated -name "*.jsonl" -exec sh -c 'echo "{}: $(wc -l < {})" cards' \; 2>/dev/null || echo "No JSONL files found")
+
+          ## Price Data
+
+          $(if [ -d "data/prices/historical/one-piece" ]; then
+              echo "Total price snapshots: $(ls -1 data/prices/historical/one-piece/*.jsonl 2>/dev/null | wc -l)"
+              echo "Latest: $(ls -1t data/prices/historical/one-piece/*.jsonl 2>/dev/null | head -1)"
+            else
+              echo "No price data collected yet"
+            fi)
+
+          ## System Info
+
+          - Node: $(node --version)
+          - Python: $(python --version)
+          - Disk: $(df -h . | tail -1)
+          - pnpm: $(pnpm --version)
+
+          EOF
+
+          cat update-report.md
+
+      - name: Check for changes
+        id: check_changes
+        run: |
+          git add -A
+
+          # Show what changed
+          echo "=== Git Status ==="
+          git status --short
+
+          if git diff --staged --quiet; then
+            echo "has_changes=false" >> $GITHUB_OUTPUT
+            echo ""
+            echo "ℹ️  No changes detected - database is already up to date"
+          else
+            echo "has_changes=true" >> $GITHUB_OUTPUT
+            echo ""
+            echo "✅ Changes detected:"
+            git diff --staged --stat
+          fi
+
+      - name: Commit and push changes
+        if: steps.check_changes.outputs.has_changes == 'true' && github.event.inputs.dry_run != 'true'
+        run: |
+          # Get stats for commit message
+          CARDS_ADDED=$(git diff --cached data/curated/*.jsonl | grep -c "^+" 2>/dev/null || echo "0")
+          PRICES_UPDATED=$(git diff --staged data/prices/ --name-only 2>/dev/null | wc -l || echo "0")
+          FILES_CHANGED=$(git diff --staged --name-only | wc -l)
+
+          # Build commit message
+          COMMIT_MSG="chore: Automated database update - $(date +%Y-%m-%d)
+
+          Incremental update from TCGPlayer:
+          - Scraped latest card data ($CARDS_ADDED new/updated cards)
+          - Downloaded new images"
+
+          # Add price info if prices were scraped
+          if [ "$PRICES_UPDATED" -gt 0 ]; then
+            COMMIT_MSG="$COMMIT_MSG
+          - Scraped current prices (${{ steps.scrape_prices.outputs.price_count }} cards)"
+          fi
+
+          COMMIT_MSG="$COMMIT_MSG
+          - Generated embeddings (DINOv2 with preprocessing)
+          - Rebuilt FAISS indices
+          - Updated metadata and manifests
+
+          Files changed: $FILES_CHANGED
+
+          🤖 Automated update via GitHub Actions
+          📅 $(date -u +%Y-%m-%dT%H:%M:%SZ)
+          🔗 Run: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+
+          # Commit
+          git commit -m "$COMMIT_MSG"
+
+          echo "Pushing changes to main..."
+          git push origin main
+
+          echo "✅ Changes committed and pushed"
+
+      - name: Post-update health check
+        if: steps.update.outputs.update_status == 'success' || steps.check_data.outputs.has_data == 'false'
+        run: |
+          echo "=== Post-Update Health Check ==="
+
+          # Check each enabled game
+          for game in one-piece; do
+            echo ""
+            echo "Checking: $game"
+
+            INDEX="artifacts/faiss/${game}-dinov2/index.faiss"
+            META="artifacts/metadata/embeddings/${game}-dinov2/metadata.jsonl"
+            KEYPOINTS="artifacts/keypoints/${game}/orb_keypoints.npz"
+            DATA="data/curated/${game}.jsonl"
+            PRICES="data/prices/historical/${game}"
+
+            # Check index
+            if [ -f "$INDEX" ]; then
+              SIZE=$(du -h "$INDEX" | cut -f1)
+              echo "  ✅ Index: $SIZE"
+            else
+              echo "  ❌ Index: MISSING"
+            fi
+
+            # Check metadata
+            if [ -f "$META" ]; then
+              CARDS=$(wc -l < "$META")
+              echo "  ✅ Metadata: $CARDS cards"
+            else
+              echo "  ❌ Metadata: MISSING"
+            fi
+
+            # Check keypoints
+            if [ -f "$KEYPOINTS" ]; then
+              SIZE=$(du -h "$KEYPOINTS" | cut -f1)
+              echo "  ✅ Keypoints: $SIZE"
+            else
+              echo "  ⚠️  Keypoints: MISSING (will regenerate on next run)"
+            fi
+
+            # Check curated data
+            if [ -f "$DATA" ]; then
+              CARDS=$(wc -l < "$DATA")
+              echo "  ✅ Curated data: $CARDS cards"
+            else
+              echo "  ❌ Curated data: MISSING"
+            fi
+
+            # Check price data
+            if [ -d "$PRICES" ]; then
+              SNAPSHOTS=$(ls -1 "$PRICES"/*.jsonl 2>/dev/null | wc -l)
+              echo "  ✅ Price snapshots: $SNAPSHOTS days"
+            else
+              echo "  ⚠️  Price data: MISSING (will create on next run)"
+            fi
+          done
+
+      - name: Upload update artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: update-report-${{ github.run_number }}
+          path: |
+            update-report.md
+            logs/**/*.log
+            data/state/*.json
+          retention-days: 30
+
+      - name: Notify on failure
+        if: failure()
+        run: |
+          echo "❌ Update failed!"
+          echo "Check the logs: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+
+      - name: Cleanup old backups
+        if: always()
+        run: |
+          # Keep only last 3 backups
+          if [ -d "backups" ]; then
+            cd backups
+            ls -t | tail -n +4 | xargs -r rm -rf || true
+            cd ..
+            echo "✅ Cleaned up old backups (kept last 3)"
+          fi
+
+      - name: Cleanup build artifacts (save space)
+        if: always()
+        run: |
+          # Remove node_modules to save space (will be cached)
+          rm -rf node_modules
+
+          # Remove Python cache
+          find . -type d -name "__pycache__" -exec rm -rf {} + 2>/dev/null || true
+
+          echo "✅ Cleaned up build artifacts"
