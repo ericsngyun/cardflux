@@ -298,6 +298,7 @@ const App: React.FC = () => {
               confidence: confidence,
               timestamp: Date.now(),
               productId: card.productId,
+              imageUrl: card.imageUrl,  // FIX: Add image URL for card thumbnail display
             };
 
             setCards((prev) => [stackItem, ...prev]);
