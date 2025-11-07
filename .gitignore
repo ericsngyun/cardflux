@@ -19,6 +19,10 @@ data/images/**
 data/state/
 data/state/**
 
+# Price data (will be stored in Git LFS or S3 depending on size)
+data/prices/
+.temp/
+
 # Artifacts - Store indices/embeddings in Git LFS, exclude large files
 # FAISS indices and embeddings stored in Git LFS
 !artifacts/faiss/**

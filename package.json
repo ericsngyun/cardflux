@@ -28,6 +28,8 @@
     "tcgplayer:scrape": "tsx services/ingest/bin/tcgplayer-scraper.ts",
     "tcgplayer:scrape:incremental": "node services/ingest/dist/bin/tcgplayer-scraper-incremental.js",
     "tcgplayer:db": "tsx services/ingest/bin/build_sqlite_tcgplayer.ts",
+    "prices:backfill": "tsx services/ingest/bin/backfill_historical_prices.ts",
+    "prices:daily": "tsx services/ingest/bin/scrape_prices_tcgplayer.ts",
     "dev:health": "node scripts/dev/check-health.mjs",
     "dev:test-scrape": "node scripts/dev/test-scraper.mjs",
     "dev:validate": "tsx services/ingest/bin/validate-data.ts",
