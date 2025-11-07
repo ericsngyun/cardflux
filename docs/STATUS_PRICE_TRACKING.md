@@ -49,7 +49,7 @@ pnpm prices:backfill
 - ✅ Retry logic with exponential backoff
 - ✅ Resume support for interrupted scrapes
 - ✅ State tracking
-- ✅ Outputs JSONL format: `data/prices/snapshots/{game}/{YYYY-MM-DD}.jsonl`
+- ✅ Outputs JSONL format: `data/prices/historical/{game}/{YYYY-MM-DD}.jsonl` (unified with backfill)
 
 **Usage**:
 ```bash

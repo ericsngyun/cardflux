@@ -109,6 +109,13 @@ pnpm prices:daily
 
 **Runs:** Daily at 3 PM PDT via CI workflow
 
+**Integration with Backfill:**
+- Writes to same directory: `data/prices/historical/{game}/`
+- Backfill handles: Feb 8, 2024 → yesterday (from tcgcsv archives)
+- Daily scraper handles: today → future (from TCGPlayer API)
+- Creates unified, seamless dataset with continuous price history
+- Use `source` field to distinguish data origin if needed
+
 ### 3. SQLite Storage (Future)
 **File**: `services/ingest/bin/build_price_database.ts` (TODO)
 
@@ -175,21 +182,21 @@ if (archiveData[card.productId]) {
 
 ## Storage Strategy
 
-### File Structure
+### File Structure (Unified)
 ```
 data/prices/
-  historical/
+  historical/              # Unified price history
     one-piece/
-      2024-02-08.jsonl
-      2024-02-09.jsonl
+      2024-02-08.jsonl     # From tcgcsv archive (backfill)
+      2024-02-09.jsonl     # From tcgcsv archive (backfill)
       ...
-      2025-11-05.jsonl     # Yesterday
-  snapshots/
-    one-piece/
-      2025-11-06.jsonl     # Today (from TCGPlayer API)
-      2025-11-07.jsonl     # Tomorrow
+      2025-11-06.jsonl     # From tcgcsv archive (backfill, yesterday)
+      2025-11-07.jsonl     # From TCGPlayer API (daily scraper, today)
+      2025-11-08.jsonl     # From TCGPlayer API (daily scraper, tomorrow)
       ...
 ```
+
+**Design Decision**: Both backfill and daily scraper write to the same `historical/` directory for a unified, seamless dataset. The `source` field in each JSON record distinguishes between "tcgcsv-archive" (backfilled) and "tcgplayer" (daily scraped) data.
 
 ### JSONL Format
 One price snapshot per line:
@@ -248,7 +255,7 @@ console.log(`7-day trend: ${currentPrice.trend7d > 0 ? '↑' : '↓'} ${currentP
 
 - name: Commit price data
   run: |
-    git add data/prices/snapshots/
+    git add data/prices/historical/
     git commit -m "chore: Daily price update - $(date +%Y-%m-%d)"
 ```
 
