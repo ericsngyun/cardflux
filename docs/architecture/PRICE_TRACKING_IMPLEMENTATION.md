@@ -100,7 +100,7 @@ pnpm prices:backfill
 1. Fetches current prices from TCGPlayer API
 2. Batch requests (50 products per request)
 3. Rate limiting (300 req/hour limit)
-4. Saves to JSONL: `data/prices/snapshots/{game}/{YYYY-MM-DD}.jsonl`
+4. Saves to JSONL: `data/prices/historical/{game}/{YYYY-MM-DD}.jsonl` (same as backfill)
 
 **Usage:**
 ```bash
