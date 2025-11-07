@@ -13,7 +13,7 @@
  * - Multiple condition support (NM, LP, MP, HP)
  * - Foil/Normal variant support
  *
- * Output: data/prices/snapshots/{game}/{YYYY-MM-DD}.jsonl
+ * Output: data/prices/historical/{game}/{YYYY-MM-DD}.jsonl (unified with backfill data)
  */
 
 import * as fs from 'fs';
@@ -22,7 +22,8 @@ import axios, { AxiosError } from 'axios';
 import { getAllGames } from '@cardflux/config';
 import { parseJsonLines, sleep, retry } from '@cardflux/shared';
 
-const PRICES_DIR = path.resolve(__dirname, '../../../data/prices/snapshots');
+// Use same directory as historical backfill for unified dataset
+const PRICES_DIR = path.resolve(__dirname, '../../../data/prices/historical');
 const CURATED_DIR = path.resolve(__dirname, '../../../data/curated');
 const STATE_DIR = path.resolve(__dirname, '../../../data/state');
 

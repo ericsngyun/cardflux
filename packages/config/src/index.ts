@@ -4,6 +4,9 @@ import yugiohConfig from './yugioh.json';
 import onepieceConfig from './onepiece.json';
 import digimonConfig from './digimon.json';
 
+// Export TCGPlayer config utilities
+export * from './tcgplayer-config.js';
+
 export interface GameConfig {
   name: string;
   slug: string;

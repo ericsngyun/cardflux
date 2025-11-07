@@ -30,6 +30,7 @@ import * as child_process from 'child_process';
 import axios from 'axios';
 import { getAllGames } from '@cardflux/config';
 import { parseJsonLines, sleep } from '@cardflux/shared';
+import { getCategoryByName } from '@cardflux/config';
 
 const ARCHIVE_BASE_URL = 'https://tcgcsv.com/archive/tcgplayer';
 const TEMP_DIR = path.resolve(__dirname, '../../../.temp/price-archives');
@@ -242,15 +243,23 @@ async function processPricesForDate(
   const snapshots: PriceSnapshot[] = [];
   let matchedProducts = 0;
 
-  // Get category ID for this game
+  // Get category ID for this game from TCGPlayer config
   const games = getAllGames();
   const gameConfig = games.find(g => g.slug === gameSlug);
-  if (!gameConfig || !('categoryId' in gameConfig.source)) {
-    console.error(`  ✗ No categoryId found for ${gameSlug}`);
+  if (!gameConfig) {
+    console.error(`  ✗ No game config found for ${gameSlug}`);
     return [];
   }
 
-  const categoryId = (gameConfig.source as any).categoryId;
+  // Map game name to TCGPlayer category
+  const category = getCategoryByName(gameConfig.name);
+  if (!category) {
+    console.error(`  ✗ No TCGPlayer category found for ${gameConfig.name}`);
+    return [];
+  }
+
+  const categoryId = category.categoryId;
+  console.log(`  Using TCGPlayer category ${categoryId}: ${category.name}`);
 
   // Process each group
   for (const groupId of groupIds) {
