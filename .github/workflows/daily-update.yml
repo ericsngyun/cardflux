@@ -1,4 +1,4 @@
-name: Daily Card Database Update (Fixed)
+name: Daily Card Database Update with Price Tracking
 
 # Runs daily at 2 PM PDT (21:00 UTC, adjusts automatically for DST)
 # TCGPlayer updates at 1 PM PDT, so we run 1 hour later
@@ -22,6 +22,10 @@ on:
         description: 'Skip LFS download (if artifacts not changed)'
         required: false
         default: 'false'
+      skip_prices:
+        description: 'Skip price scraping (testing only)'
+        required: false
+        default: 'false'
 
 jobs:
   update-database:
@@ -38,7 +42,7 @@ jobs:
         with:
           fetch-depth: 0
           token: ${{ secrets.GITHUB_TOKEN }}
-          lfs: ${{ github.event.inputs.skip_lfs != 'true' }}  # ✅ FIXED: Add LFS support
+          lfs: ${{ github.event.inputs.skip_lfs != 'true' }}
 
       - name: Pull Git LFS files explicitly
         if: github.event.inputs.skip_lfs != 'true'
@@ -111,12 +115,8 @@ jobs:
 
       - name: Install Python dependencies
         run: |
-          # ✅ OPTIMIZED: Use CI-specific requirements (75% smaller, 3-5x faster)
           pip install -r requirements-ci.txt
-
           echo "✅ Installed minimal Python dependencies for CI scraper"
-          echo "   Excluded: OCR engines, GPU libraries, test dependencies"
-          echo "   Savings: ~3-5 GB disk space, 5-10 min install time"
 
       - name: Configure Git
         run: |
@@ -138,13 +138,13 @@ jobs:
         run: |
           mkdir -p backups/pre-update-$(date +%Y%m%d)
 
-          # Backup FAISS indices (small, always backup)
+          # Backup FAISS indices
           if [ -d "artifacts/faiss" ]; then
             cp -r artifacts/faiss backups/pre-update-$(date +%Y%m%d)/ || true
             echo "✅ Backed up FAISS indices"
           fi
 
-          # Backup metadata (small, always backup)
+          # Backup metadata
           if [ -d "artifacts/metadata" ]; then
             cp -r artifacts/metadata backups/pre-update-$(date +%Y%m%d)/ || true
             echo "✅ Backed up metadata"
@@ -183,8 +183,6 @@ jobs:
           echo "Estimated time: 30-60 minutes"
           echo ""
 
-          # ✅ FIXED: Use pnpm scripts consistently (no cd commands)
-
           # Step 1: Scrape TCGPlayer data
           echo "[1/6] Scraping TCGPlayer..."
           pnpm tsx services/ingest/bin/tcgplayer-scraper-onepiece.ts
@@ -203,7 +201,6 @@ jobs:
 
           # Step 5: Generate embeddings
           echo "[5/6] Generating embeddings (DINOv2 with preprocessing)..."
-          # ✅ FIXED: Use One Piece specific embedder
           python services/embedder/bin/embed_onepiece_dinov2_with_preprocessing.py
 
           # Step 6: Build FAISS index
@@ -212,7 +209,7 @@ jobs:
 
           echo "✅ Initial data created successfully"
 
-      - name: Run incremental update
+      - name: Run incremental card update
         id: update
         if: steps.check_data.outputs.has_data == 'true'
         run: |
@@ -222,17 +219,54 @@ jobs:
           echo "Estimated time: 5-15 minutes"
           echo ""
 
-          # ✅ ULTIMATE FIX: Compile TypeScript to JavaScript, then run with Node.js
-          # tsx/ts-node have path resolution conflicts with pnpm workspace dependencies
-          # Running compiled JavaScript avoids all TypeScript module resolution issues
-
-          # ✅ Use the incremental pipeline script (now runs compiled JS)
+          # Run incremental pipeline (scrapes cards, NOT prices)
           pnpm pipeline:update
 
           echo ""
-          echo "Update completed successfully"
+          echo "✅ Card update completed successfully"
           echo "update_status=success" >> $GITHUB_OUTPUT
         continue-on-error: false
+
+      # ✨ NEW: Daily Price Scraping
+      - name: Scrape daily prices from TCGPlayer
+        id: scrape_prices
+        if: steps.check_data.outputs.has_data == 'true' && github.event.inputs.skip_prices != 'true'
+        env:
+          TCGPLAYER_API_KEY: ${{ secrets.TCGPLAYER_API_KEY }}
+        run: |
+          echo "💰 Scraping current prices from TCGPlayer API..."
+          echo "Date: $(date +%Y-%m-%d)"
+          echo "Game: one-piece"
+          echo ""
+
+          # Create price directories if they don't exist
+          mkdir -p data/prices/historical/one-piece
+          mkdir -p data/state
+
+          # Run daily price scraper
+          pnpm prices:daily
+
+          # Verify output
+          TODAY=$(date +%Y-%m-%d)
+          PRICE_FILE="data/prices/historical/one-piece/${TODAY}.jsonl"
+
+          if [ -f "$PRICE_FILE" ]; then
+            PRICE_COUNT=$(wc -l < "$PRICE_FILE")
+            FILE_SIZE=$(du -h "$PRICE_FILE" | cut -f1)
+            echo "✅ Scraped prices for $PRICE_COUNT cards"
+            echo "   File: $PRICE_FILE"
+            echo "   Size: $FILE_SIZE"
+            echo ""
+            echo "price_scrape_status=success" >> $GITHUB_OUTPUT
+            echo "price_count=$PRICE_COUNT" >> $GITHUB_OUTPUT
+          else
+            echo "⚠️  Price file not created: $PRICE_FILE"
+            echo "This may indicate TCGPlayer API issues or missing API key"
+            echo ""
+            echo "price_scrape_status=failed" >> $GITHUB_OUTPUT
+            # Don't fail the whole workflow - continue without prices
+          fi
+        continue-on-error: true  # Don't fail if price scraping has issues
 
       - name: Regenerate keypoints cache (if missing)
         if: steps.check_data.outputs.has_data == 'true'
@@ -259,6 +293,7 @@ jobs:
           **Date:** $(date)
           **Status:** ${{ steps.update.outputs.update_status || 'failed' }}
           **Game:** ${{ github.event.inputs.game || 'one-piece' }}
+          **Price Scraping:** ${{ steps.scrape_prices.outputs.price_scrape_status || 'skipped' }}
 
           ## Changes
 
@@ -277,6 +312,15 @@ jobs:
           ## Card Counts
 
           $(find data/curated -name "*.jsonl" -exec sh -c 'echo "{}: $(wc -l < {})" cards' \; 2>/dev/null || echo "No JSONL files found")
+
+          ## Price Data
+
+          $(if [ -d "data/prices/historical/one-piece" ]; then
+              echo "Total price snapshots: $(ls -1 data/prices/historical/one-piece/*.jsonl 2>/dev/null | wc -l)"
+              echo "Latest: $(ls -1t data/prices/historical/one-piece/*.jsonl 2>/dev/null | head -1)"
+            else
+              echo "No price data collected yet"
+            fi)
 
           ## System Info
 
@@ -313,15 +357,24 @@ jobs:
         if: steps.check_changes.outputs.has_changes == 'true' && github.event.inputs.dry_run != 'true'
         run: |
           # Get stats for commit message
-          CARDS_ADDED=$(git diff --cached data/curated/*.jsonl | grep -c "^+" || echo "0")
+          CARDS_ADDED=$(git diff --cached data/curated/*.jsonl | grep -c "^+" 2>/dev/null || echo "0")
+          PRICES_UPDATED=$(git diff --staged data/prices/ --name-only 2>/dev/null | wc -l || echo "0")
           FILES_CHANGED=$(git diff --staged --name-only | wc -l)
 
-          # Create detailed commit message
-          git commit -m "chore: Automated database update - $(date +%Y-%m-%d)
+          # Build commit message
+          COMMIT_MSG="chore: Automated database update - $(date +%Y-%m-%d)
 
-          Incremental update from TCGPlayer API:
-          - Scraped latest card data
-          - Downloaded new images ($CARDS_ADDED new cards)
+          Incremental update from TCGPlayer:
+          - Scraped latest card data ($CARDS_ADDED new/updated cards)
+          - Downloaded new images"
+
+          # Add price info if prices were scraped
+          if [ "$PRICES_UPDATED" -gt 0 ]; then
+            COMMIT_MSG="$COMMIT_MSG
+          - Scraped current prices (${{ steps.scrape_prices.outputs.price_count }} cards)"
+          fi
+
+          COMMIT_MSG="$COMMIT_MSG
           - Generated embeddings (DINOv2 with preprocessing)
           - Rebuilt FAISS indices
           - Updated metadata and manifests
@@ -331,6 +384,9 @@ jobs:
           🤖 Automated update via GitHub Actions
           📅 $(date -u +%Y-%m-%dT%H:%M:%SZ)
           🔗 Run: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+
+          # Commit
+          git commit -m "$COMMIT_MSG"
 
           echo "Pushing changes to main..."
           git push origin main
@@ -351,6 +407,7 @@ jobs:
             META="artifacts/metadata/embeddings/${game}-dinov2/metadata.jsonl"
             KEYPOINTS="artifacts/keypoints/${game}/orb_keypoints.npz"
             DATA="data/curated/${game}.jsonl"
+            PRICES="data/prices/historical/${game}"
 
             # Check index
             if [ -f "$INDEX" ]; then
@@ -383,6 +440,14 @@ jobs:
             else
               echo "  ❌ Curated data: MISSING"
             fi
+
+            # Check price data
+            if [ -d "$PRICES" ]; then
+              SNAPSHOTS=$(ls -1 "$PRICES"/*.jsonl 2>/dev/null | wc -l)
+              echo "  ✅ Price snapshots: $SNAPSHOTS days"
+            else
+              echo "  ⚠️  Price data: MISSING (will create on next run)"
+            fi
           done
 
       - name: Upload update artifacts
@@ -401,12 +466,6 @@ jobs:
         run: |
           echo "❌ Update failed!"
           echo "Check the logs: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
-
-          # TODO: Add webhook notifications here (Slack, Discord, etc.)
-          # Uncomment and add webhook URL to secrets:
-          # curl -X POST "${{ secrets.SLACK_WEBHOOK }}" \
-          #   -H 'Content-Type: application/json' \
-          #   -d '{"text":"CardFlux update failed: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"}'
 
       - name: Cleanup old backups
         if: always()
