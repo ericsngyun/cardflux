@@ -10,7 +10,8 @@
  */
 export const CAMERA_CONSTANTS = {
   // Image Quality Settings
-  CAPTURE_JPEG_QUALITY: 0.98, // High quality (98%) for card identification - preserves fine details
+  CAPTURE_JPEG_QUALITY: 0.90, // High quality (90%) for card identification - optimal balance of quality vs file size
+  CAPTURE_MAX_DIMENSION: 1280, // Max width/height for captured images (1280x720 = 0.92 MP, matches test images)
   DETECTION_JPEG_QUALITY: 0.5, // Lower quality (50%) for detection - faster transmission, sufficient for analysis
 
   // Detection Image Sizing
