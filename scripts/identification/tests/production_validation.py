@@ -88,10 +88,10 @@ GROUND_TRUTH = [
     ),
     TestCase(
         image_path=str(TEST_IMAGES_DIR / "radicalbeam.png"),
-        expected_name="Radical Beam!!!",
-        expected_number="OP03-057",
-        expected_set="Pillars of Strength",
-        notes="Event card - text heavy"
+        expected_name="Radical Beam!! (Premium Card Collection -Best Selection Vol. 1-)",
+        expected_number="OP01-029",
+        expected_set="Premium Card Collection -Best Selection Vol. 1-",
+        notes="Event card - Premium Collection variant"
     ),
     TestCase(
         image_path=str(TEST_IMAGES_DIR / "mihawk.png"),
