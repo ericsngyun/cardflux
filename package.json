@@ -33,6 +33,8 @@
     "dev:health": "node scripts/dev/check-health.mjs",
     "dev:test-scrape": "node scripts/dev/test-scraper.mjs",
     "dev:profile-bridge": "node scripts/dev/profile-python-bridge.mjs",
+    "dev:camera-sim": "node scripts/dev/simulate-camera-flow.mjs",
+    "dev:camera-sim:optimized": "node scripts/dev/simulate-camera-flow.mjs --optimized",
     "dev:validate": "tsx services/ingest/bin/validate-data.ts",
     "dev:pipeline": "node scripts/dev/local-pipeline.mjs",
     "update:now": "node scripts/automation/update-orchestrator.mjs",
