@@ -1,0 +1,204 @@
+{
+  "timestamp": "2025-11-10 11:46:37",
+  "test_cases": 9,
+  "results": [
+    {
+      "image": "blackbeard.png",
+      "expected": {
+        "name": "Marshall.D.Teach",
+        "number": "OP02-093",
+        "set": "Paramount War"
+      },
+      "identified": {
+        "name": "Marshall.D.Teach (093) (Manga)",
+        "number": "OP09-093",
+        "set": null
+      },
+      "confidence": "HIGH",
+      "score": 0.7969259440898895,
+      "correct": false,
+      "time_ms": 458.45603942871094,
+      "error": null,
+      "notes": "Standard quality photo"
+    },
+    {
+      "image": "bege.png",
+      "expected": {
+        "name": "Capone\"Gang\"Bege",
+        "number": "ST02-004",
+        "set": "Starter Deck Worst Generation"
+      },
+      "identified": {
+        "name": "Capone\"Gang\"Bege",
+        "number": "ST02-004",
+        "set": null
+      },
+      "confidence": "HIGH",
+      "score": 0.8759494453668595,
+      "correct": true,
+      "time_ms": 101.6685962677002,
+      "error": null,
+      "notes": "Standard quality photo"
+    },
+    {
+      "image": "yellow_event.png",
+      "expected": {
+        "name": "FILM",
+        "number": "OP06-058",
+        "set": "Wings of the Captain"
+      },
+      "identified": {
+        "name": "You're the One Who Should Disappear",
+        "number": "OP06-115",
+        "set": null
+      },
+      "confidence": "HIGH",
+      "score": 0.6940054684877396,
+      "correct": false,
+      "time_ms": 103.7147045135498,
+      "error": null,
+      "notes": "Event card (different layout)"
+    },
+    {
+      "image": "radicalbeam.png",
+      "expected": {
+        "name": "Radical Beam!!",
+        "number": "ST01-006",
+        "set": "Starter Deck Straw Hat Crew"
+      },
+      "identified": {
+        "name": "Radical Beam!! (Premium Card Collection -Best Selection Vol. 1-)",
+        "number": "OP01-029",
+        "set": null
+      },
+      "confidence": "HIGH",
+      "score": 0.9558625161647797,
+      "correct": false,
+      "time_ms": 101.35173797607422,
+      "error": null,
+      "notes": "Event card with special effects"
+    },
+    {
+      "image": "mihawk.png",
+      "expected": {
+        "name": "Dracule Mihawk",
+        "number": "OP01-070",
+        "set": "Romance Dawn"
+      },
+      "identified": {
+        "name": "Dracule Mihawk (OP01-070) (Alternate Art)",
+        "number": "OP01-070",
+        "set": null
+      },
+      "confidence": "HIGH",
+      "score": 0.7515463471412659,
+      "correct": false,
+      "time_ms": 80.49845695495605,
+      "error": null,
+      "notes": "Character card"
+    },
+    {
+      "image": "nusjuro_altart.png",
+      "expected": {
+        "name": "Ethanbaron.V.Nusjuro",
+        "number": "OP09-113",
+        "set": "Four Emperors"
+      },
+      "identified": {
+        "name": "St. Ethanbaron V. Nusjuro (Alternate Art)",
+        "number": "OP13-080",
+        "set": null
+      },
+      "confidence": "HIGH",
+      "score": 0.7281208842992782,
+      "correct": false,
+      "time_ms": 84.87772941589355,
+      "error": null,
+      "notes": "Alternate art variant - may identify as base card"
+    },
+    {
+      "image": "op13_shanks_altart.png",
+      "expected": {
+        "name": "Shanks",
+        "number": "OP13-013",
+        "set": "One Piece Film Edition"
+      },
+      "identified": {
+        "name": "Shanks (065) (Alternate Art)",
+        "number": "OP13-065",
+        "set": null
+      },
+      "confidence": "HIGH",
+      "score": 0.8177191078662872,
+      "correct": false,
+      "time_ms": 88.45114707946777,
+      "error": null,
+      "notes": "Alternate art variant"
+    },
+    {
+      "image": "op13_garp_altart.png",
+      "expected": {
+        "name": "Monkey.D.Garp",
+        "number": "OP13-027",
+        "set": "One Piece Film Edition"
+      },
+      "identified": {
+        "name": "Monkey.D.Garp (Alternate Art)",
+        "number": "OP13-016",
+        "set": null
+      },
+      "confidence": "HIGH",
+      "score": 0.8011917442083358,
+      "correct": false,
+      "time_ms": 86.69590950012207,
+      "error": null,
+      "notes": "Alternate art variant"
+    },
+    {
+      "image": "op13_saboleader_altart.png",
+      "expected": {
+        "name": "Sabo",
+        "number": "OP13-004",
+        "set": "One Piece Film Edition"
+      },
+      "identified": {
+        "name": "Sabo (004) (Alternate Art)",
+        "number": "OP13-004",
+        "set": null
+      },
+      "confidence": "HIGH",
+      "score": 0.8510319292545319,
+      "correct": false,
+      "time_ms": 78.68623733520508,
+      "error": null,
+      "notes": "Alternate art leader variant"
+    }
+  ],
+  "metrics": {
+    "total_tests": 9,
+    "correct": 1,
+    "incorrect": 8,
+    "errors": 0,
+    "accuracy": 0.1111111111111111,
+    "confidence_distribution": {
+      "HIGH": 9,
+      "MODERATE": 0,
+      "LOW": 0
+    },
+    "accuracy_by_confidence": {
+      "HIGH": 0.1111111111111111,
+      "MODERATE": 0,
+      "LOW": 0
+    },
+    "timing": {
+      "avg_ms": 131.60006205240884,
+      "min_ms": 78.68623733520508,
+      "max_ms": 458.45603942871094
+    },
+    "scores": {
+      "avg": 0.8080392652087741,
+      "min": 0.6940054684877396,
+      "max": 0.9558625161647797
+    }
+  }
+}
