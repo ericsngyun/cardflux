@@ -32,6 +32,7 @@
     "prices:daily": "tsx services/ingest/bin/scrape_prices_tcgplayer.ts",
     "dev:health": "node scripts/dev/check-health.mjs",
     "dev:test-scrape": "node scripts/dev/test-scraper.mjs",
+    "dev:profile-bridge": "node scripts/dev/profile-python-bridge.mjs",
     "dev:validate": "tsx services/ingest/bin/validate-data.ts",
     "dev:pipeline": "node scripts/dev/local-pipeline.mjs",
     "update:now": "node scripts/automation/update-orchestrator.mjs",

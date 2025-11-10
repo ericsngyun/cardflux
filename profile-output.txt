@@ -1,0 +1,58 @@
+
+> cardflux-monorepo@1.0.0 dev:profile-bridge C:\Users\rayno\eric\cardflux
+> node scripts/dev/profile-python-bridge.mjs
+
+[36m
+╔════════════════════════════════════════════════════════════╗[0m
+[36m║          PYTHON BRIDGE PERFORMANCE PROFILER              ║[0m
+[36m╚════════════════════════════════════════════════════════════╝[0m
+[1m
+📊 Phase 1: Process Spawn[0m
+[34m   Python: python[0m
+[34m   Script: C:\Users\rayno\eric\cardflux\apps\desktop\src\python\identification_service.py[0m
+[32m   ✓ Process spawned in 151ms[0m
+[1m
+📊 Phase 2: Initialization (Model + FAISS Loading)[0m
+[33m   [PY] Warning: CaptureManager not available (module not found)[0m
+[33m   [PY] Card Identification Service started
+[PY] Waiting for requests...
+[PY] Initializing identifier for game: one-piece (version: v2, fallback: False, auto_capture: True)
+[VersionManager] Initialized (default: v2, fallback: False)
+[VersionManager] Loading v2 (fast) identifier...[0m
+[33m   [VersionManager] \u2713 Fast identifier loaded (12x speedup, 100% accuracy)
+[PY] Initializing polished card detector...[0m
+[32m   ✓ Initialized in 11.91s[0m
+[1m
+📊 Phase 3: Identification Performance[0m
+[36m
+   Test 1: First Identification (Cold Start)[0m
+[33m   [PY] Capture manager not available (skipping)
+[PY] Identifier, card detector, and capture manager ready (version: v2)
+[PY] Identifying card: C:\Users\rayno\eric\cardflux\test-images\one-piece\blackbeard.png (version: v2, k=50, geometric=True, fallback: False)
+[PY] Identification error: FastCardIdentifier.identify() got an unexpected keyword argument 'tcg_hint'[0m
+[33m   [PY] Invalid parameters for identify: FastCardIdentifier.identify() got an unexpected keyword argument 'tcg_hint'
+Traceback (most recent call last):
+  File "C:\Users\rayno\eric\cardflux\apps\desktop\src\python\identification_service.py", line 380, in handle_request
+    result = self.identify_card(**params)
+  File "C:\Users\rayno\eric\cardflux\apps\desktop\src\python\identification_service.py", line 138, in identify_card
+    result = self.version_manager.identify(
+        image_path,
+    ...<4 lines>...
+        tcg_hint=tcg_hint
+    )
+  File "C:\Users\rayno\eric\cardflux\scripts\identification\tools\identifier_version_manager.py", line 172, in identify
+    result = identifier.identify(image_path, **kwargs)
+TypeError: FastCardIdentifier.identify() got an unexpected keyword argument 'tcg_hint'[0m
+[31m   ❌ First identification failed: Invalid parameters for method 'identify': FastCardIdentifier.identify() got an unexpected keyword argument 'tcg_hint'[0m
+[31m
+❌ Profiling failed: Invalid parameters for method 'identify': FastCardIdentifier.identify() got an unexpected keyword argument 'tcg_hint'[0m
+Error: Invalid parameters for method 'identify': FastCardIdentifier.identify() got an unexpected keyword argument 'tcg_hint'
+    at PythonBridgeProfiler.handleResponse (file:///C:/Users/rayno/eric/cardflux/scripts/dev/profile-python-bridge.mjs:310:22)
+    at PythonBridgeProfiler.handleStdout (file:///C:/Users/rayno/eric/cardflux/scripts/dev/profile-python-bridge.mjs:292:16)
+    at Socket.<anonymous> (file:///C:/Users/rayno/eric/cardflux/scripts/dev/profile-python-bridge.mjs:110:55)
+    at Socket.emit (node:events:519:28)
+    at addChunk (node:internal/streams/readable:559:12)
+    at readableAddChunkPushByteMode (node:internal/streams/readable:510:3)
+    at Readable.push (node:internal/streams/readable:390:5)
+    at Pipe.onStreamRead (node:internal/stream_base_commons:191:23)
+ ELIFECYCLE  Command failed with exit code 1.

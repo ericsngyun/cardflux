@@ -169,7 +169,11 @@ class IdentifierVersionManager:
         # Try primary version
         start_time = time.time()
         identifier = self.get_identifier(version)
-        result = identifier.identify(image_path, **kwargs)
+
+        # Filter out unsupported parameters (tcg_hint is not supported by Fast Identifier)
+        supported_kwargs = {k: v for k, v in kwargs.items() if k != 'tcg_hint'}
+
+        result = identifier.identify(image_path, **supported_kwargs)
         elapsed_ms = int((time.time() - start_time) * 1000)
 
         # Track metrics
