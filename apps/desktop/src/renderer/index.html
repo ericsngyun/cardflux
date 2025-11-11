@@ -13,15 +13,6 @@
       <p>If you see this message, the HTML loaded but React is not mounting.</p>
     </div>
   </div>
-  <script>
-    console.log('[HTML] Page loaded, DOM ready');
-    console.log('[HTML] Root element:', document.getElementById('root'));
-
-    // Listen for script load errors
-    window.addEventListener('error', function(e) {
-      console.error('[HTML] Script error:', e.message, e.filename, e.lineno, e.colno, e.error);
-    });
-  </script>
   <!-- Webpack will inject script tags here automatically -->
 </body>
 </html>

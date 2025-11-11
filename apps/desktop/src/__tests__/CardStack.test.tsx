@@ -264,7 +264,9 @@ describe('CardStack Component', () => {
         />
       );
 
-      expect(screen.getByText('3 cards')).toBeInTheDocument();
+      // "3 cards" appears in both header and footer
+      const cardCounts = screen.getAllByText('3 cards');
+      expect(cardCounts.length).toBeGreaterThan(0);
     });
 
     it('uses singular form for single card', () => {
@@ -277,7 +279,9 @@ describe('CardStack Component', () => {
         />
       );
 
-      expect(screen.getByText('1 card')).toBeInTheDocument();
+      // "1 card" appears in both header and footer
+      const cardCounts = screen.getAllByText('1 card');
+      expect(cardCounts.length).toBeGreaterThan(0);
     });
 
     it('calculates total value correctly', () => {
@@ -304,7 +308,7 @@ describe('CardStack Component', () => {
         />
       );
 
-      expect(screen.getByText('3 cards')).toBeInTheDocument();
+      expect(screen.getAllByText('3 cards').length).toBeGreaterThan(0);
 
       // Simulate removing a card
       rerender(
@@ -316,7 +320,7 @@ describe('CardStack Component', () => {
         />
       );
 
-      expect(screen.getByText('2 cards')).toBeInTheDocument();
+      expect(screen.getAllByText('2 cards').length).toBeGreaterThan(0);
     });
 
     it('updates total value after removing card', () => {
@@ -492,9 +496,9 @@ describe('CardStack Component', () => {
         />
       );
 
-      expect(screen.getByText('100 cards')).toBeInTheDocument();
+      expect(screen.getAllByText('100 cards').length).toBeGreaterThan(0);
       // Total: 1.0*100 + 0.1*(0+1+2+...+99) = 100 + 0.1*4950 = 100 + 495 = 595.00
-      expect(screen.getByText('$595.00')).toBeInTheDocument();
+      expect(screen.getAllByText('$595.00').length).toBeGreaterThan(0);
     });
   });
 
@@ -547,7 +551,8 @@ describe('CardStack Component', () => {
         />
       );
 
-      expect(screen.getByText('$0.00')).toBeInTheDocument();
+      // $0.00 appears in both the card price and total value
+      expect(screen.getAllByText('$0.00').length).toBeGreaterThan(0);
     });
 
     it('handles card with very high price', () => {

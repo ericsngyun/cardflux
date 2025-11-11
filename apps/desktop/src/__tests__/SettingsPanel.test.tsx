@@ -350,8 +350,8 @@ describe('SettingsPanel Component', () => {
         />
       );
 
-      const baseEstimate = screen.getByText(/~\d+ms/);
-      const baseValue = baseEstimate.textContent;
+      const baseEstimates = screen.getAllByText(/~\d+ms/);
+      const baseValue = baseEstimates[0].textContent;
 
       rerender(
         <SettingsPanel
@@ -361,8 +361,8 @@ describe('SettingsPanel Component', () => {
         />
       );
 
-      const newEstimate = screen.getByText(/~\d+ms/);
-      const newValue = newEstimate.textContent;
+      const newEstimates = screen.getAllByText(/~\d+ms/);
+      const newValue = newEstimates[0].textContent;
 
       // OCR adds ~170ms, so new estimate should be higher
       expect(newValue).not.toBe(baseValue);

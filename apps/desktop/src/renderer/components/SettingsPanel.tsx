@@ -18,15 +18,6 @@ interface SettingsPanelProps {
   onClose: () => void;
 }
 
-const TCG_GAMES = [
-  { value: 'one-piece', label: 'One Piece TCG' },
-  { value: 'pokemon', label: 'Pokémon TCG' },
-  { value: 'magic', label: 'Magic: The Gathering' },
-  { value: 'yugioh', label: 'Yu-Gi-Oh!' },
-  { value: 'digimon', label: 'Digimon Card Game' },
-  { value: 'lorcana', label: 'Disney Lorcana' },
-];
-
 export const SettingsPanel: React.FC<SettingsPanelProps> = React.memo(({
   settings,
   onSettingsChange,
@@ -59,16 +50,13 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = React.memo(({
               id="tcg-game"
               className="setting-select"
               value={settings.tcgGame}
-              onChange={(e) => handleChange('tcgGame', e.target.value)}
+              disabled
+              style={{ opacity: 0.7, cursor: 'not-allowed' }}
             >
-              {TCG_GAMES.map((game) => (
-                <option key={game.value} value={game.value}>
-                  {game.label}
-                </option>
-              ))}
+              <option value="one-piece">One Piece TCG</option>
             </select>
             <p className="setting-description">
-              Select the card game you're scanning for better accuracy
+              Currently supporting One Piece TCG (5,390 cards). Additional games coming soon.
             </p>
           </div>
 
@@ -244,12 +232,12 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = React.memo(({
         </div>
 
         <div className="settings-footer">
-          <button className="btn btn-secondary" onClick={onClose}>
-            Cancel
-          </button>
           <button className="btn btn-primary" onClick={onClose}>
-            Save Settings
+            Close
           </button>
+          <p style={{ fontSize: '12px', color: '#888', marginTop: '8px' }}>
+            Settings are automatically saved
+          </p>
         </div>
       </div>
     </div>

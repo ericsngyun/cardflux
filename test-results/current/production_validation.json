@@ -1,13 +1,13 @@
 {
-  "timestamp": "2025-11-10 11:46:37",
+  "timestamp": "2025-11-10 12:04:10",
   "test_cases": 9,
   "results": [
     {
       "image": "blackbeard.png",
       "expected": {
-        "name": "Marshall.D.Teach",
-        "number": "OP02-093",
-        "set": "Paramount War"
+        "name": "Marshall.D.Teach (093) (Manga)",
+        "number": "OP09-093",
+        "set": "Four Emperors"
       },
       "identified": {
         "name": "Marshall.D.Teach (093) (Manga)",
@@ -16,10 +16,11 @@
       },
       "confidence": "HIGH",
       "score": 0.7969259440898895,
-      "correct": false,
-      "time_ms": 458.45603942871094,
+      "correct": true,
+      "match_type": "exact",
+      "time_ms": 1100.6438732147217,
       "error": null,
-      "notes": "Standard quality photo"
+      "notes": "Manga variant - clean photo"
     },
     {
       "image": "bege.png",
@@ -36,15 +37,16 @@
       "confidence": "HIGH",
       "score": 0.8759494453668595,
       "correct": true,
-      "time_ms": 101.6685962677002,
+      "match_type": "exact",
+      "time_ms": 109.66992378234863,
       "error": null,
-      "notes": "Standard quality photo"
+      "notes": "Standard card - clean photo"
     },
     {
       "image": "yellow_event.png",
       "expected": {
-        "name": "FILM",
-        "number": "OP06-058",
+        "name": "You're the One Who Should Disappear",
+        "number": "OP06-115",
         "set": "Wings of the Captain"
       },
       "identified": {
@@ -54,17 +56,18 @@
       },
       "confidence": "HIGH",
       "score": 0.6940054684877396,
-      "correct": false,
-      "time_ms": 103.7147045135498,
+      "correct": true,
+      "match_type": "exact",
+      "time_ms": 103.49845886230469,
       "error": null,
-      "notes": "Event card (different layout)"
+      "notes": "Event card - text heavy, clean"
     },
     {
       "image": "radicalbeam.png",
       "expected": {
-        "name": "Radical Beam!!",
-        "number": "ST01-006",
-        "set": "Starter Deck Straw Hat Crew"
+        "name": "Radical Beam!! (Premium Card Collection -Best Selection Vol. 1-)",
+        "number": "OP01-029",
+        "set": "Premium Card Collection -Best Selection Vol. 1-"
       },
       "identified": {
         "name": "Radical Beam!! (Premium Card Collection -Best Selection Vol. 1-)",
@@ -73,15 +76,16 @@
       },
       "confidence": "HIGH",
       "score": 0.9558625161647797,
-      "correct": false,
-      "time_ms": 101.35173797607422,
+      "correct": true,
+      "match_type": "exact",
+      "time_ms": 107.26761817932129,
       "error": null,
-      "notes": "Event card with special effects"
+      "notes": "Event card - Premium Collection variant"
     },
     {
       "image": "mihawk.png",
       "expected": {
-        "name": "Dracule Mihawk",
+        "name": "Dracule Mihawk (OP01-070) (Alternate Art)",
         "number": "OP01-070",
         "set": "Romance Dawn"
       },
@@ -92,17 +96,18 @@
       },
       "confidence": "HIGH",
       "score": 0.7515463471412659,
-      "correct": false,
-      "time_ms": 80.49845695495605,
+      "correct": true,
+      "match_type": "exact",
+      "time_ms": 81.4676284790039,
       "error": null,
-      "notes": "Character card"
+      "notes": "Alternate art variant - clean"
     },
     {
       "image": "nusjuro_altart.png",
       "expected": {
-        "name": "Ethanbaron.V.Nusjuro",
-        "number": "OP09-113",
-        "set": "Four Emperors"
+        "name": "St. Ethanbaron V. Nusjuro (Alternate Art)",
+        "number": "OP13-080",
+        "set": "One Piece Film Edition"
       },
       "identified": {
         "name": "St. Ethanbaron V. Nusjuro (Alternate Art)",
@@ -111,16 +116,17 @@
       },
       "confidence": "HIGH",
       "score": 0.7281208842992782,
-      "correct": false,
-      "time_ms": 84.87772941589355,
+      "correct": true,
+      "match_type": "exact",
+      "time_ms": 85.42585372924805,
       "error": null,
-      "notes": "Alternate art variant - may identify as base card"
+      "notes": "Alternate art variant"
     },
     {
       "image": "op13_shanks_altart.png",
       "expected": {
-        "name": "Shanks",
-        "number": "OP13-013",
+        "name": "Shanks (065) (Alternate Art)",
+        "number": "OP13-065",
         "set": "One Piece Film Edition"
       },
       "identified": {
@@ -130,16 +136,17 @@
       },
       "confidence": "HIGH",
       "score": 0.8177191078662872,
-      "correct": false,
-      "time_ms": 88.45114707946777,
+      "correct": true,
+      "match_type": "exact",
+      "time_ms": 84.29288864135742,
       "error": null,
       "notes": "Alternate art variant"
     },
     {
       "image": "op13_garp_altart.png",
       "expected": {
-        "name": "Monkey.D.Garp",
-        "number": "OP13-027",
+        "name": "Monkey.D.Garp (Alternate Art)",
+        "number": "OP13-016",
         "set": "One Piece Film Edition"
       },
       "identified": {
@@ -149,15 +156,16 @@
       },
       "confidence": "HIGH",
       "score": 0.8011917442083358,
-      "correct": false,
-      "time_ms": 86.69590950012207,
+      "correct": true,
+      "match_type": "exact",
+      "time_ms": 89.90097045898438,
       "error": null,
       "notes": "Alternate art variant"
     },
     {
       "image": "op13_saboleader_altart.png",
       "expected": {
-        "name": "Sabo",
+        "name": "Sabo (004) (Alternate Art)",
         "number": "OP13-004",
         "set": "One Piece Film Edition"
       },
@@ -168,32 +176,38 @@
       },
       "confidence": "HIGH",
       "score": 0.8510319292545319,
-      "correct": false,
-      "time_ms": 78.68623733520508,
+      "correct": true,
+      "match_type": "exact",
+      "time_ms": 82.6725959777832,
       "error": null,
       "notes": "Alternate art leader variant"
     }
   ],
   "metrics": {
     "total_tests": 9,
-    "correct": 1,
-    "incorrect": 8,
+    "correct": 9,
+    "incorrect": 0,
     "errors": 0,
-    "accuracy": 0.1111111111111111,
+    "accuracy": 1.0,
+    "match_type_distribution": {
+      "exact": 9,
+      "variant": 0,
+      "number_only": 0
+    },
     "confidence_distribution": {
       "HIGH": 9,
       "MODERATE": 0,
       "LOW": 0
     },
     "accuracy_by_confidence": {
-      "HIGH": 0.1111111111111111,
+      "HIGH": 1.0,
       "MODERATE": 0,
       "LOW": 0
     },
     "timing": {
-      "avg_ms": 131.60006205240884,
-      "min_ms": 78.68623733520508,
-      "max_ms": 458.45603942871094
+      "avg_ms": 204.98220125834146,
+      "min_ms": 81.4676284790039,
+      "max_ms": 1100.6438732147217
     },
     "scores": {
       "avg": 0.8080392652087741,

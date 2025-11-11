@@ -504,7 +504,6 @@ const App: React.FC = () => {
 
       showNotification('success', `Exported ${cards.length} cards to ${filename}`);
     } catch (error: any) {
-      console.error('[App] Export error:', error);
       showNotification('error', `Export failed: ${error.message}`);
     }
   }, [cards, showNotification]);
@@ -571,8 +570,6 @@ const App: React.FC = () => {
     showNotification('warning', 'Syncing card data and prices...');
 
     try {
-      console.log('[App] Starting data sync...');
-
       // Call sync IPC handler
       const result = await window.sync.syncData(settings.tcgGame);
 
@@ -592,10 +589,7 @@ const App: React.FC = () => {
         'success',
         `Sync complete! Updated ${result.updatedCards || 0} cards, ${result.newCards || 0} new cards.`
       );
-
-      console.log('[App] Sync complete:', result);
     } catch (error: any) {
-      console.error('[App] Sync error:', error);
       showNotification('error', `Sync failed: ${error.message}`);
     } finally {
       setIsSyncing(false);
@@ -968,23 +962,17 @@ const App: React.FC = () => {
 };
 
 // Mount the React app
-console.log('[App] Starting React mount...');
 const container = document.getElementById('root');
-console.log('[App] Container found:', container);
 
 if (container) {
   try {
-    console.log('[App] Creating React root...');
     const root = createRoot(container);
-    console.log('[App] Rendering app with ErrorBoundary...');
     root.render(
       <ErrorBoundary>
         <App />
       </ErrorBoundary>
     );
-    console.log('[App] App rendered successfully');
   } catch (error) {
-    console.error('[App] Error mounting React app:', error);
     // Show fallback error UI if React fails to mount
     container.innerHTML = `
       <div style="display: flex; align-items: center; justify-content: center; min-height: 100vh; background: #0a0a0a; color: #e0e0e0; font-family: sans-serif; text-align: center; padding: 20px;">
@@ -999,8 +987,6 @@ if (container) {
       </div>
     `;
   }
-} else {
-  console.error('[App] Root container not found!');
 }
 
 export default App;

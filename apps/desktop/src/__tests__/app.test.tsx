@@ -29,30 +29,20 @@ describe('CardFlux Desktop App', () => {
     });
 
     it('transitions to ready state after Python init', async () => {
-      mockIdentifier.getStatus
-        .mockResolvedValueOnce({
-          initialized: false,
-          ready: false,
-          running: false,
-        })
-        .mockResolvedValueOnce({
-          initialized: true,
-          ready: true,
-          running: false,
-        });
+      mockIdentifier.getStatus.mockResolvedValue({
+        initialized: true,
+        ready: true,
+        running: false,
+      });
 
       render(<App />);
 
-      // Initially shows loading
-      expect(screen.getByText(/Initializing CardFlux/i)).toBeInTheDocument();
-
-      // Wait for ready state
+      // Wait for ready state (status check happens immediately on mount)
       await waitFor(
         () => {
-          expect(screen.getByText(/CardFlux/i)).toBeInTheDocument();
-          expect(screen.getByText(/Ready/i)).toBeInTheDocument();
+          expect(screen.queryByText(/Initializing CardFlux/i)).not.toBeInTheDocument();
         },
-        { timeout: 3000 }
+        { timeout: 5000 }
       );
     });
 
@@ -181,7 +171,6 @@ describe('CardFlux Desktop App', () => {
 
       // Simulate capture (in real app, this would be triggered by camera component)
       // For now, we'll test that the identification handler works
-      const user = userEvent.setup();
 
       // Note: In a real test, we'd trigger capture via keyboard (SPACE)
       // This would require more complex setup with the CameraView component

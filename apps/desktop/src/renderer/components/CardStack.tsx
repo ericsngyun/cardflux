@@ -96,6 +96,7 @@ export const CardStack: React.FC<CardStackProps> = React.memo(({ cards, onClear,
                       className="btn-icon"
                       onClick={() => onRemoveCard(card.id)}
                       title="Remove card"
+                      aria-label="Remove card"
                     >
                       ✕
                     </button>
