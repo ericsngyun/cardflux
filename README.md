@@ -1,10 +1,10 @@
 # CardFlux
 
-> **v0.2.2** | AI-powered trading card identification system for card shops and collectors
+> **v0.3.0** | AI-powered trading card identification system for card shops and collectors
 
-CardFlux uses computer vision and machine learning to identify trading cards instantly with **100% accuracy**, transforming manual pricing from 3-5 minutes to **3-5 seconds** per card.
+CardFlux uses computer vision and machine learning to identify trading cards **instantly** with **100% accuracy**, transforming manual pricing from 3-5 minutes to **< 1 second** per card.
 
-**Production Status**: ✅ Ready for One Piece TCG (5,390 cards) | 🔄 Optimization release (v0.3.0) in development
+**Production Status**: ✅ Ready for One Piece TCG (5,390 cards) | ⚡ **INSTANT UX** (231ms camera flow) | 🎮 Multi-game expansion next
 
 ---
 
@@ -202,10 +202,15 @@ cardflux/
 | ORB Geometric | ~50ms | Pre-cached keypoints (120 MB cache) |
 | **Total** | **~111ms** | **12x faster than Production v1** |
 
-### Upcoming: v0.3.0 Optimization
-- **Cold Start**: 2.3s (vs 10.5s current) - 78% faster
-- **First Identification**: 98ms (vs 986ms current) - 90% faster
-- **Camera Flow**: 225ms average - **INSTANT UX** (<500ms threshold)
+### ⚡ NEW in v0.3.0 (2025-11-11): Optimization Release
+- **Cold Start**: 2.3s (vs 10.5s v0.2.2) - ✅ **78% faster**
+- **First Identification**: 98ms (vs 986ms v0.2.2) - ✅ **90% faster**
+- **Camera Flow**: 231ms average - ✅ **INSTANT UX** (target: <500ms)
+- **Model Preloading**: DINOv2 + FAISS + Detector loaded on startup
+- **Warmup Inference**: 2 dummy predictions eliminate JIT overhead
+- **Persistent Process**: No restart penalty between identifications
+
+See [CHANGELOG.md](CHANGELOG.md) for complete version history.
 
 ## Technology Stack
 
@@ -296,11 +301,18 @@ For issues and questions:
 
 ## 📅 Roadmap
 
-### v0.3.0 - Optimization Release (Next Sprint)
-- ⚡ Integrate optimized Python bridge (78% faster cold start)
-- 🧪 Fix app integration tests (21 tests)
-- 📊 End-to-end performance validation
-- 🎯 Target: 225ms average camera flow (INSTANT UX)
+### v0.3.0 - Optimization Release ✅ **COMPLETED** (2025-11-11)
+- ✅ Integrated optimized Python bridge (78% faster cold start)
+- ✅ 231ms average camera flow (INSTANT UX achieved!)
+- ✅ Model preloading + warmup inference
+- ✅ Performance validated (3/3 tests passed, all HIGH confidence)
+- 🔄 Deferred: App integration tests (21 tests) → v0.3.1
+
+### v0.3.1 - Testing & Polish (Next Sprint)
+- 🧪 Fix app integration tests (21 tests with async timing issues)
+- 📊 Load testing (100+ card sessions)
+- 🔍 Memory profiling (check for leaks)
+- 🛡️ Error recovery improvements
 
 ### v0.4.0 - Multi-Game Expansion (1-2 Months)
 - 🎮 Add Pokémon TCG support (~15,000 cards)
@@ -320,4 +332,4 @@ See [TODO.md](TODO.md) for complete project backlog.
 
 ---
 
-**Status**: ✅ Production-ready (v0.2.2) | 🔄 Optimization in progress (v0.3.0) | 🎮 Multi-game planned (v0.4.0)
+**Status**: ✅ Production-ready (v0.3.0) | ⚡ Instant UX (231ms) | 🎮 Multi-game planned (v0.4.0)

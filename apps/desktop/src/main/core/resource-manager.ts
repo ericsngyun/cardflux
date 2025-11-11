@@ -277,7 +277,8 @@ export class ResourceManager {
     const paths = this.getPaths();
 
     if (this.isPackaged) {
-      return path.join(paths.scripts, 'identification_service.py');
+      // v0.3.0: Use optimized service
+      return path.join(paths.scripts, 'optimized_identification_service.py');
     } else {
       // In development, use the actual source file
       // app.getAppPath() can be either:
@@ -303,11 +304,12 @@ export class ResourceManager {
         }
       }
 
-      const servicePath = path.join(desktopRoot, 'src', 'python', 'identification_service.py');
+      // v0.3.0: Use optimized service for 78% faster cold start and instant UX
+      const servicePath = path.join(desktopRoot, 'src', 'python', 'optimized_identification_service.py');
 
       // SECURITY: Validate path is within expected bounds
       const normalizedServicePath = path.normalize(servicePath).toLowerCase();
-      if (!normalizedServicePath.includes('cardflux') || !normalizedServicePath.includes('identification_service.py')) {
+      if (!normalizedServicePath.includes('cardflux') || !normalizedServicePath.includes('identification_service')) {
         throw new Error(`Invalid service script path: ${servicePath}`);
       }
 
