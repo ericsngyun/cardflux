@@ -288,6 +288,13 @@ class OptimizedIdentificationService:
             raise RuntimeError("Service not initialized")
 
         try:
+            # Strip data URI prefix if present (e.g., "data:image/jpeg;base64,")
+            if image_data.startswith('data:'):
+                # Find the comma that separates the header from the data
+                comma_index = image_data.find(',')
+                if comma_index != -1:
+                    image_data = image_data[comma_index + 1:]
+
             # Decode base64 image
             img_bytes = base64.b64decode(image_data)
             img_array = np.frombuffer(img_bytes, dtype=np.uint8)
