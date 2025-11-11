@@ -57,6 +57,28 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - ✅ Desktop app builds successfully
 - ✅ Backward compatible (old service kept as fallback)
 
+### Fixed (Post-Release Critical Bugs)
+- **CRITICAL**: Fixed JSON serialization error (`float('inf')` → `None`)
+  - Python's `float('inf')` serialized to `"Infinity"` (invalid JSON)
+  - Caused `SyntaxError: Unexpected token 'I'` in Node.js
+  - Desktop app couldn't start - all status requests failed
+  - Fixed in commit `014009d` - now uses `None` (serializes to `null`)
+- **CRITICAL**: Fixed camera detection base64 decoding error
+  - Camera sent data URIs (`data:image/jpeg;base64,...`) but Python expected raw base64
+  - Caused `ValueError: Failed to decode image` every 500ms
+  - Card detection completely non-functional
+  - Fixed in commit `8e1b8af` - strips data URI prefix before decoding
+
+### Documentation
+- **PRODUCTION_AUDIT_REPORT.md** (687 lines) - Comprehensive production readiness audit
+  - Architecture review (Main, Python Bridge, React App)
+  - Camera workflow validation (231ms avg, INSTANT UX)
+  - Performance benchmarks (v0.3.0 vs v0.2.2)
+  - Security assessment (path traversal, rate limiting)
+  - Error handling validation
+  - Testing status (60/60 component tests)
+  - Documents both critical bugs discovered and fixed
+
 ---
 
 ## [0.2.2] - 2025-11-10

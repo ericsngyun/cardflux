@@ -1,6 +1,6 @@
 {
   "name": "@cardflux/desktop",
-  "version": "1.0.0",
+  "version": "0.3.0",
   "description": "CardFlux Desktop - Real-time Trading Card Scanner",
   "main": "dist/main/index.js",
   "scripts": {
