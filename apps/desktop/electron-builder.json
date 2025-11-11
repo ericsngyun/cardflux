@@ -15,6 +15,26 @@
       "from": "src/python",
       "to": "python-scripts",
       "filter": ["**/*"]
+    },
+    {
+      "from": "../../artifacts/faiss",
+      "to": "artifacts/faiss",
+      "filter": ["**/*"]
+    },
+    {
+      "from": "../../artifacts/metadata",
+      "to": "artifacts/metadata",
+      "filter": ["**/*"]
+    },
+    {
+      "from": "../../artifacts/keypoints",
+      "to": "artifacts/keypoints",
+      "filter": ["**/*"]
+    },
+    {
+      "from": "../../data/curated",
+      "to": "data/curated",
+      "filter": ["one-piece-card-game.jsonl"]
     }
   ],
   "win": {
@@ -23,8 +43,7 @@
         "target": "nsis",
         "arch": ["x64"]
       }
-    ],
-    "icon": "resources/icon.ico"
+    ]
   },
   "mac": {
     "target": [
@@ -34,16 +53,12 @@
       }
     ],
     "category": "public.app-category.utilities",
-    "icon": "resources/icon.icns",
-    "hardenedRuntime": true,
-    "gatekeeperAssess": false,
-    "entitlements": "resources/entitlements.mac.plist",
-    "entitlementsInherit": "resources/entitlements.mac.plist"
+    "hardenedRuntime": false,
+    "gatekeeperAssess": false
   },
   "linux": {
     "target": ["AppImage"],
-    "category": "Utility",
-    "icon": "resources/icon.png"
+    "category": "Utility"
   },
   "nsis": {
     "oneClick": false,
