@@ -51,7 +51,7 @@ class OptimizedIdentificationService:
             'total_identifications': 0,
             'total_time_ms': 0,
             'avg_time_ms': 0,
-            'fastest_ms': float('inf'),
+            'fastest_ms': None,  # Will be set on first identification
             'slowest_ms': 0,
         }
 
@@ -227,7 +227,13 @@ class OptimizedIdentificationService:
             self.stats['total_identifications'] += 1
             self.stats['total_time_ms'] += elapsed_ms
             self.stats['avg_time_ms'] = self.stats['total_time_ms'] / self.stats['total_identifications']
-            self.stats['fastest_ms'] = min(self.stats['fastest_ms'], elapsed_ms)
+
+            # Handle first identification (fastest_ms is None initially)
+            if self.stats['fastest_ms'] is None:
+                self.stats['fastest_ms'] = elapsed_ms
+            else:
+                self.stats['fastest_ms'] = min(self.stats['fastest_ms'], elapsed_ms)
+
             self.stats['slowest_ms'] = max(self.stats['slowest_ms'], elapsed_ms)
 
             # Return simplified result for UI
