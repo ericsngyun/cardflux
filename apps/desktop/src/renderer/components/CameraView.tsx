@@ -861,7 +861,8 @@ export const CameraView: React.FC<CameraViewProps> = React.memo(({ onCapture, is
               </>
             ) : (
               <>
-                📸 Capture Card
+                <span className="btn-capture-icon">📸</span>
+                Capture Card
                 <span className="keyboard-hint">SPACE</span>
               </>
             )}

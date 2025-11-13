@@ -5,6 +5,7 @@
     "output": "out",
     "buildResources": "resources"
   },
+  "npmRebuild": false,
   "files": [
     "dist/**/*",
     "src/python/**/*",
@@ -43,7 +44,8 @@
         "target": "nsis",
         "arch": ["x64"]
       }
-    ]
+    ],
+    "sign": null
   },
   "mac": {
     "target": [

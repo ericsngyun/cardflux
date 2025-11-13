@@ -117,6 +117,23 @@ Object.defineProperty(window, 'confirm', {
   value: jest.fn(() => true),
 });
 
+// Mock navigator.mediaDevices for camera tests
+Object.defineProperty(navigator, 'mediaDevices', {
+  writable: true,
+  value: {
+    getUserMedia: jest.fn().mockResolvedValue({
+      getVideoTracks: () => [{
+        getCapabilities: () => ({}),
+        applyConstraints: jest.fn().mockResolvedValue(undefined),
+        stop: jest.fn(),
+      }],
+      getTracks: () => [{
+        stop: jest.fn(),
+      }],
+    }),
+  },
+});
+
 // Suppress console errors in tests (can be removed for debugging)
 global.console = {
   ...console,

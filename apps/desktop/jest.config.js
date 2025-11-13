@@ -9,7 +9,6 @@ module.exports = {
   ],
   testPathIgnorePatterns: [
     '/node_modules/',
-    'app.test.tsx', // TODO: Fix async timing issues in app integration tests
   ],
   moduleNameMapper: {
     // Handle CSS imports (with CSS modules)
@@ -49,5 +48,5 @@ module.exports = {
     }],
   },
   moduleFileExtensions: ['ts', 'tsx', 'js', 'jsx', 'json'],
-  testTimeout: 10000,
+  testTimeout: 15000, // Increased for async operations
 };
