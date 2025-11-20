@@ -5,6 +5,15 @@
 
 import * as fs from 'fs';
 import * as path from 'path';
+import {
+  S3Client,
+  PutObjectCommand,
+  GetObjectCommand,
+  HeadObjectCommand,
+  DeleteObjectCommand,
+  ListObjectsV2Command,
+  CopyObjectCommand
+} from '@aws-sdk/client-s3';
 import { logger } from './logger.js';
 
 export interface StorageConfig {
@@ -175,47 +184,195 @@ export class LocalStorage implements CloudStorage {
 }
 
 /**
- * AWS S3 Storage (placeholder - implement when needed)
+ * AWS S3 Storage
  */
 export class S3Storage implements CloudStorage {
+  private client: S3Client;
+  private bucket: string;
+
   constructor(config: StorageConfig) {
-    // TODO: Initialize AWS SDK
-    throw new Error('S3Storage not yet implemented. Use LocalStorage for now.');
+    if (!config.bucket) {
+      throw new Error('S3 bucket name is required');
+    }
+
+    this.bucket = config.bucket;
+
+    // Initialize S3 client with credentials
+    const clientConfig: any = {
+      region: config.region || 'us-east-1',
+    };
+
+    if (config.credentials?.accessKeyId && config.credentials?.secretAccessKey) {
+      clientConfig.credentials = {
+        accessKeyId: config.credentials.accessKeyId,
+        secretAccessKey: config.credentials.secretAccessKey,
+      };
+    }
+    // If no credentials provided, SDK will use default credential chain
+    // (environment variables, IAM roles, etc.)
+
+    this.client = new S3Client(clientConfig);
+    logger.info('S3Storage initialized', { bucket: this.bucket, region: clientConfig.region });
   }
 
   async upload(data: Buffer | string, remotePath: string, contentType?: string): Promise<void> {
-    // TODO: Implement S3 upload
-    throw new Error('Not implemented');
+    try {
+      const body = typeof data === 'string' ? Buffer.from(data) : data;
+
+      const command = new PutObjectCommand({
+        Bucket: this.bucket,
+        Key: remotePath,
+        Body: body,
+        ContentType: contentType,
+      });
+
+      await this.client.send(command);
+      logger.debug('Uploaded to S3', { bucket: this.bucket, path: remotePath, size: body.length });
+    } catch (error: any) {
+      logger.error('S3 upload failed', { path: remotePath }, error);
+      throw new Error(`S3 upload failed: ${error.message}`);
+    }
   }
 
   async download(remotePath: string): Promise<Buffer> {
-    // TODO: Implement S3 download
-    throw new Error('Not implemented');
+    try {
+      const command = new GetObjectCommand({
+        Bucket: this.bucket,
+        Key: remotePath,
+      });
+
+      const response = await this.client.send(command);
+
+      if (!response.Body) {
+        throw new Error('No data received from S3');
+      }
+
+      // Convert ReadableStream to Buffer
+      const chunks: Uint8Array[] = [];
+      const stream = response.Body as any;
+
+      for await (const chunk of stream) {
+        chunks.push(chunk);
+      }
+
+      const buffer = Buffer.concat(chunks);
+      logger.debug('Downloaded from S3', { bucket: this.bucket, path: remotePath, size: buffer.length });
+      return buffer;
+    } catch (error: any) {
+      logger.error('S3 download failed', { path: remotePath }, error);
+      throw new Error(`S3 download failed: ${error.message}`);
+    }
   }
 
   async exists(remotePath: string): Promise<boolean> {
-    // TODO: Implement S3 exists check
-    throw new Error('Not implemented');
+    try {
+      const command = new HeadObjectCommand({
+        Bucket: this.bucket,
+        Key: remotePath,
+      });
+
+      await this.client.send(command);
+      return true;
+    } catch (error: any) {
+      if (error.name === 'NotFound' || error.$metadata?.httpStatusCode === 404) {
+        return false;
+      }
+      logger.error('S3 exists check failed', { path: remotePath }, error);
+      throw new Error(`S3 exists check failed: ${error.message}`);
+    }
   }
 
-  async list(prefix?: string): Promise<StorageFile[]> {
-    // TODO: Implement S3 list
-    throw new Error('Not implemented');
+  async list(prefix: string = ''): Promise<StorageFile[]> {
+    try {
+      const files: StorageFile[] = [];
+      let continuationToken: string | undefined;
+
+      do {
+        const command = new ListObjectsV2Command({
+          Bucket: this.bucket,
+          Prefix: prefix,
+          ContinuationToken: continuationToken,
+        });
+
+        const response = await this.client.send(command);
+
+        if (response.Contents) {
+          for (const item of response.Contents) {
+            if (item.Key) {
+              files.push({
+                path: item.Key,
+                size: item.Size || 0,
+                lastModified: item.LastModified || new Date(),
+                etag: item.ETag,
+              });
+            }
+          }
+        }
+
+        continuationToken = response.NextContinuationToken;
+      } while (continuationToken);
+
+      logger.debug('Listed S3 files', { bucket: this.bucket, prefix, count: files.length });
+      return files;
+    } catch (error: any) {
+      logger.error('S3 list failed', { prefix }, error);
+      throw new Error(`S3 list failed: ${error.message}`);
+    }
   }
 
   async delete(remotePath: string): Promise<void> {
-    // TODO: Implement S3 delete
-    throw new Error('Not implemented');
+    try {
+      const command = new DeleteObjectCommand({
+        Bucket: this.bucket,
+        Key: remotePath,
+      });
+
+      await this.client.send(command);
+      logger.debug('Deleted from S3', { bucket: this.bucket, path: remotePath });
+    } catch (error: any) {
+      logger.error('S3 delete failed', { path: remotePath }, error);
+      throw new Error(`S3 delete failed: ${error.message}`);
+    }
   }
 
   async getMetadata(remotePath: string): Promise<StorageFile | null> {
-    // TODO: Implement S3 metadata
-    throw new Error('Not implemented');
+    try {
+      const command = new HeadObjectCommand({
+        Bucket: this.bucket,
+        Key: remotePath,
+      });
+
+      const response = await this.client.send(command);
+
+      return {
+        path: remotePath,
+        size: response.ContentLength || 0,
+        lastModified: response.LastModified || new Date(),
+        etag: response.ETag,
+      };
+    } catch (error: any) {
+      if (error.name === 'NotFound' || error.$metadata?.httpStatusCode === 404) {
+        return null;
+      }
+      logger.error('S3 getMetadata failed', { path: remotePath }, error);
+      throw new Error(`S3 getMetadata failed: ${error.message}`);
+    }
   }
 
   async copy(sourcePath: string, destPath: string): Promise<void> {
-    // TODO: Implement S3 copy
-    throw new Error('Not implemented');
+    try {
+      const command = new CopyObjectCommand({
+        Bucket: this.bucket,
+        CopySource: `${this.bucket}/${sourcePath}`,
+        Key: destPath,
+      });
+
+      await this.client.send(command);
+      logger.debug('Copied in S3', { bucket: this.bucket, from: sourcePath, to: destPath });
+    } catch (error: any) {
+      logger.error('S3 copy failed', { from: sourcePath, to: destPath }, error);
+      throw new Error(`S3 copy failed: ${error.message}`);
+    }
   }
 }
 
