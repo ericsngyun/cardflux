@@ -1,0 +1,56 @@
+#!/bin/sh
+# CardFlux Pre-commit Hook
+# Runs code quality checks before allowing commit
+
+echo "🔍 Running pre-commit checks..."
+
+# Get list of staged files
+STAGED_FILES=$(git diff --cached --name-only --diff-filter=ACMR | grep -E '\.(ts|tsx|js|jsx|json)$' || true)
+
+if [ -z "$STAGED_FILES" ]; then
+  echo "✅ No TypeScript/JavaScript files staged, skipping checks"
+  exit 0
+fi
+
+echo "📝 Files to check:"
+echo "$STAGED_FILES" | sed 's/^/  - /'
+echo ""
+
+# Check 1: Prettier format check
+echo "🎨 Checking code formatting..."
+if ! pnpm format:check 2>/dev/null; then
+  echo "❌ Code formatting issues found. Run 'pnpm format' to fix."
+  echo ""
+  echo "To skip this check (not recommended), use: git commit --no-verify"
+  exit 1
+fi
+echo "✅ Code formatting looks good"
+echo ""
+
+# Check 2: ESLint
+echo "🔧 Running ESLint..."
+if ! pnpm lint 2>/dev/null; then
+  echo "❌ ESLint errors found. Please fix the issues above."
+  echo ""
+  echo "To skip this check (not recommended), use: git commit --no-verify"
+  exit 1
+fi
+echo "✅ ESLint passed"
+echo ""
+
+# Check 3: TypeScript type check (only for TypeScript files)
+TS_FILES=$(echo "$STAGED_FILES" | grep -E '\.(ts|tsx)$' || true)
+if [ -n "$TS_FILES" ]; then
+  echo "📘 Running TypeScript type check..."
+  if ! pnpm typecheck 2>/dev/null; then
+    echo "❌ TypeScript errors found. Please fix the issues above."
+    echo ""
+    echo "To skip this check (not recommended), use: git commit --no-verify"
+    exit 1
+  fi
+  echo "✅ TypeScript type check passed"
+  echo ""
+fi
+
+echo "✨ All pre-commit checks passed!"
+exit 0
